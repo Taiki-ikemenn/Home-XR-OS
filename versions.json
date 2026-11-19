@@ -1,0 +1,6 @@
+{
+  "latest": "3.1.0",
+  "versions": [
+    {"v": "3.1.0", "date": "2026-11-19", "notes_ja": "アカウント・チャット・フィード（Firebase）、アップデート機能、自動アップデートを追加", "notes_en": "Added accounts, chat and feed (Firebase), updates and auto-update"}
+  ]
+}
