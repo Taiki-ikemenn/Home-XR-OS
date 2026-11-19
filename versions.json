@@ -1,6 +1,17 @@
 {
-  "latest": "3.1.0",
+  "latest": "3.1.1",
   "versions": [
-    {"v": "3.1.0", "date": "2026-11-19", "notes_ja": "アカウント・チャット・フィード（Firebase）、アップデート機能、自動アップデートを追加", "notes_en": "Added accounts, chat and feed (Firebase), updates and auto-update"}
+    {
+      "v": "3.1.1",
+      "date": "2026-11-19",
+      "notes_ja": "チャットとフィードが、たいアカウントで本当に使えるようになりました",
+      "notes_en": "Chats and Feed now work with your Tai account"
+    },
+    {
+      "v": "3.1.0",
+      "date": "2026-11-19",
+      "notes_ja": "アカウント・チャット・フィード（Firebase）、アップデート機能、自動アップデートを追加",
+      "notes_en": "Added accounts, chat and feed (Firebase), updates and auto-update"
+    }
   ]
 }

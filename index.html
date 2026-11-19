@@ -211,7 +211,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.0';
+const APP_VERSION='3.1.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{let d=a-b;while(d>180)d-=360;while(d<-180)d+=360;return d};
@@ -2271,8 +2271,8 @@ APPIMPL.settings=(body,w)=>{
 
 
 /* ================= アカウント・チャット・フィード（Firebase） ================= */
-// cute m! と同じ Firebase プロジェクトを使います。データは xr_ で始まる場所に入れるので、cute m! のデータとはまざりません。
-const FB_CONFIG=/*FBCONFIG*/null;
+// たいアカウント（Firebase プロジェクト tai-account）を使います。データは xr_ で始まる場所に入れるので、cute m! のデータとはまざりません。
+const FB_CONFIG={apiKey:"AIzaSyDNKPM8KCe6RGWuaQOUDorBtjCD3IGoe1E",authDomain:"tai-account.firebaseapp.com",databaseURL:"https://tai-account-default-rtdb.firebaseio.com",projectId:"tai-account",storageBucket:"tai-account.firebasestorage.app",messagingSenderId:"579819210756",appId:"1:579819210756:web:7eba19a9d4c2ac7697cd51"};
 const FBV='10.12.2';
 const FB={ready:null,m:null,auth:null,db:null,user:null,profile:null,subs:[]};
 function fbOn(f){ FB.subs.push(f); return ()=>{ const i=FB.subs.indexOf(f); if(i>=0) FB.subs.splice(i,1); }; }
@@ -2298,7 +2298,7 @@ function fbErr(e){ const c=(e&&e.code)||''; return ({'auth/invalid-email':L('メ
 function loginUI(el,w,done){
   el.innerHTML=''; const box=h('div',''); box.style.cssText='max-width:520px;margin:0 auto;padding:30px 20px;display:flex;flex-direction:column;gap:14px'; el.appendChild(box);
   let mode='login';
-  const draw=()=>{ box.innerHTML=`<div style="text-align:center"><div style="font-size:54px">👤</div><h3 style="margin:6px 0">${mode==='login'?L('ログイン','Sign in'):L('アカウントをつくる','Create account')}</h3><div class="sub">${L('チャットとフィードを使うには、アカウントが必要です','An account is needed for Chats and Feed')}</div></div>`;
+  const draw=()=>{ box.innerHTML=`<div style="text-align:center"><div style="font-size:54px">👤</div><h3 style="margin:6px 0">${mode==='login'?L('ログイン','Sign in'):L('アカウントをつくる','Create account')}</h3><div class="sub">${L('たいアカウントでログインしてね（チャットとフィードで使います）','Sign in with your Tai account (used for Chats and Feed)')}</div></div>`;
     const seg=h('div','seg'); seg.style.alignSelf='center'; for(const [k,ja,en] of [['login','ログイン','Sign in'],['signup','新しくつくる','Sign up']]){ const b=h('button',k===mode?'on':'',L(ja,en)); b.onclick=()=>{ mode=k; draw(); }; seg.appendChild(b); } box.appendChild(seg);
     const name=mode==='signup'?inputField(w,L('表示する名前','Display name'),{}):null;
     const mail=inputField(w,L('メールアドレス','Email'),{mode:'abc'});

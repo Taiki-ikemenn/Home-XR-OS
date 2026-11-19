@@ -1,7 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ※ cute m! で使っているルールは、この下に「そのまま」残してください。
+    // ※ たいアカウントで今使っているルール（たいアカウントセンターや nicehome+ のぶん）は、消さずに「そのまま」残して、この xr_ の部分だけを足してください。
 
     // Home XR OS：ユーザー
     match /xr_users/{uid} {
