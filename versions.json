@@ -1,6 +1,12 @@
 {
-  "latest": "3.1.5",
+  "latest": "3.1.6",
   "versions": [
+    {
+      "v": "3.1.6",
+      "date": "2026-11-20",
+      "notes_ja": "つまむ判定を3Dの指のすき間（cm）で測るようにして、指さしただけでつまみ扱いになる問題を修正。カメラの下に手の状態とすき間を表示。",
+      "notes_en": "Pinch now measured as 3D finger gap (cm), fixing false pinches when pointing. Hand status shown under the camera."
+    },
     {
       "v": "3.1.5",
       "date": "2026-11-20",

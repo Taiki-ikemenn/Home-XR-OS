@@ -157,6 +157,8 @@ body.nopad #pads{display:none}
 }
 #handCam{position:fixed;left:14px;top:14px;width:160px;border-radius:14px;transform:scaleX(-1);z-index:8;opacity:.8;display:none;border:2px solid rgba(255,255,255,.4)}
 body.hands #handCam{display:block}
+#htInfo{position:fixed;left:14px;top:142px;z-index:8;display:none;font-size:12px;padding:4px 9px;border-radius:9px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
+body.hands #htInfo{display:block}
 #handCam.seen{border-color:#3ecf8e;box-shadow:0 0 0 3px rgba(62,207,142,.5)}
 #palmBtn2{right:calc(env(safe-area-inset-right) + 322px);bottom:calc(env(safe-area-inset-bottom) + 164px);width:62px;height:62px;font-size:26px}
 body.onehand #stickR{display:none}
@@ -212,7 +214,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.5';
+const APP_VERSION='3.1.6';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -1261,6 +1263,8 @@ $('palmBtn2').addEventListener('pointerdown',()=>{ AU.init(); togglePalmMenu(); 
 
 // ---- カメラで手を認識（右手：人さし指＝カーソル、親指とつまむ、手のひら＝メニュー） ----
 const HT={on:false,rec:null,video:null,last:-1,gap:66,avg:null,pin:false,palmT:0,palmFired:false,sx:null,sy:null,seen:0};
+function htInfo(dist){ let e=$('htInfo'); if(!e){ e=h('div',''); e.id='htInfo'; document.body.appendChild(e); }
+  e.textContent=dist==null?L('✋ 手が見えません','✋ No hand'):(HT.pin?L('🤏 つまみ中','🤏 Pinching'):L('✋ 手が見えてる','✋ Hand found'))+'　'+L('指のすき間 ','gap ')+dist; }
 async function startHands(){
   if(HT.on) return; toastW('手の認識を準備しています…');
   try{
@@ -1284,20 +1288,28 @@ FRAME.push(()=>{
   // 前カメラは鏡にしていないので、ラベルの Left が自分の右手
   const base=HT.back?'Right':'Left', want=CFG.swapHand?(base==='Right'?'Left':'Right'):base; let idx=-1;
   if(r.landmarks&&r.landmarks.length) idx=0;
-  $('handCam').classList.toggle('seen',idx>=0);
-  if(idx<0){ HT.seen=0; HT.lost=(HT.lost||0)+1; if(HT.pin&&HT.lost>6){ HT.pin=false; pinchUp(); } return; }
+  $('handCam').classList.toggle('seen',idx>=0); HT.found=idx>=0;
+  if(idx<0){ htInfo(null); HT.seen=0; HT.lost=(HT.lost||0)+1; if(HT.pin&&HT.lost>6){ HT.pin=false; pinchUp(); } return; }
   HT.lost=0;
   HT.seen++;
-  const L=r.landmarks[idx], g=(r.gestures[idx]&&r.gestures[idx][0])||{};
+  const LM=r.landmarks[idx], g=(r.gestures[idx]&&r.gestures[idx][0])||{};
   // 手のひら → メニュー
   if(g.categoryName==='Open_Palm'&&g.score>.6){ HT.palmT+=.033; if(HT.palmT>.6&&!HT.palmFired){ HT.palmFired=true; togglePalmMenu(true); AU.tone(990,.12,'sine',.1); } }
   else{ HT.palmT=0; HT.palmFired=false; }
   // カーソルの位置：人さし指の付け根と「親指と人さし指のまん中」を使う
   // （指先だとつまむ瞬間にカーソルが右下へズレるので）
-  const tip=L[8], th=L[4], w=L[0], mm=L[9], mcp=L[5];
+  const tip=LM[8], th=LM[4], w=LM[0], mm=LM[9], mcp=LM[5];
   const ax=mcp.x*.5+(tip.x+th.x)/4, ay=mcp.y*.5+(tip.y+th.y)/4;
   const nx=clamp(((HT.back?ax:1-ax)-.2)/.6,0,1), ny=clamp((ay-.2)/.55,0,1);
-  const size=Math.hypot(w.x-mm.x,w.y-mm.y)||.1, d=Math.hypot(tip.x-th.x,tip.y-th.y)/size;
+  // 親指と人さし指のすき間：3D（メートル）で測る。角度や距離に左右されにくい
+  const WL=r.worldLandmarks&&r.worldLandmarks[idx];
+  let d, cm=null;
+  if(WL&&WL[4]&&WL[8]){ cm=Math.hypot(WL[4].x-WL[8].x,WL[4].y-WL[8].y,(WL[4].z-WL[8].z))*100;
+    // cm を今までの目安（手の大きさ比）に合わせる：2.5cm→.45 / 4cm→.7
+    d=cm/5.5; }
+  else{ const size=Math.hypot(w.x-mm.x,w.y-mm.y)||.1; d=Math.hypot(tip.x-th.x,tip.y-th.y)/size; }
+  // すき間が縮んでいる途中か
+  const closing=HT.pd!=null&&d<HT.pd-.015; HT.pd=d;
   let tx=nx*S.W, ty=ny*S.H;
   // つまんでいる間：つまむ直前の位置を起点に、そこからの手の動きだけ反映
   if(HT.pin){
@@ -1305,22 +1317,23 @@ FRAME.push(()=>{
     else{ if(HT.rx==null){ HT.rx=tx; HT.ry=ty; } tx=HT.ox+(tx-HT.rx); ty=HT.oy+(ty-HT.ry); }
   }
   // 指を近づけているあいだは、カーソルをほとんど動かさない
-  const k=HT.pin?(now<HT.lock?1:.4):d<.8?.08:.45;
+  const k=HT.pin?(now<HT.lock?1:.4):(d<.75&&closing)?.12:d<.6?.25:.45;
   HT.sx=HT.sx==null?tx:lerp(HT.sx,tx,k); HT.sy=HT.sy==null?ty:lerp(HT.sy,ty,k);
-  HT.close=HT.pin?1:clamp((1.05-d)/(1.05-.5),0,1);
+  HT.close=HT.pin?1:clamp((.95-d)/(.95-.45),0,1);
   // 指が開いていたときの位置を覚えておく（つまんだらそこに戻す）
-  if(d>.85&&!HT.pin){ HT.ox=HT.sx; HT.oy=HT.sy; HT.ot=now; }
+  if(d>.7&&!HT.pin){ HT.ox=HT.sx; HT.oy=HT.sy; HT.ot=now; }
+  htInfo(cm!=null?cm.toFixed(1)+'cm':d.toFixed(2));
   const frozen=now<(HT.freeze||0);
   if(HT.seen>2&&!frozen){ S.cx=clamp(HT.sx,0,S.W); S.cy=clamp(HT.sy,0,S.H); IN.mouse=false; if(S.pinch) pinchMove(); }
   // つまむ／はなす（ゆるめに判定）
-  if(!HT.pin&&d<.5&&g.categoryName!=='Open_Palm'){
+  if(!HT.pin&&d<.45&&g.categoryName!=='Open_Palm'){
     HT.pin=true; HT.lock=now+200; HT.rx=null;
     if(HT.ox==null||now-HT.ot>800){ HT.ox=HT.sx; HT.oy=HT.sy; }
     HT.sx=HT.ox; HT.sy=HT.oy; S.cx=clamp(HT.ox,0,S.W); S.cy=clamp(HT.oy,0,S.H);
     updateHover(); pinchDown(); if(DRAG){ DRAG.hand=true; DRAG.tol=34; }
     AU.tone(1100,.03,'sine',.05); HT.dwellT=0;
   }
-  else if(HT.pin&&d>.7){ HT.pin=false; pinchUp(); HT.freeze=now+250; HT.ox=null; }
+  else if(HT.pin&&d>.65){ HT.pin=false; pinchUp(); HT.freeze=now+250; HT.ox=null; }
   // 止めてクリック（オプション）
   if(CFG.dwell&&!HT.pin&&HT.seen>2){
     if(HT.dx==null||Math.hypot(S.cx-HT.dx,S.cy-HT.dy)>16||!HOV){ HT.dx=S.cx; HT.dy=S.cy; HT.dwellT=0; }
