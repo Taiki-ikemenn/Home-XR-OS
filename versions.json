@@ -1,6 +1,12 @@
 {
-  "latest": "3.1.4",
+  "latest": "3.1.5",
   "versions": [
+    {
+      "v": "3.1.5",
+      "date": "2026-11-20",
+      "notes_ja": "つまむときにカーソルがズレなくなりました（指を近づけると止まる・つまむ前の場所でつまむ）。つまみ具合がカーソルのまわりに出ます。「止めてクリック」を追加。",
+      "notes_en": "Cursor no longer slips when pinching. Pinch progress ring around the cursor. Added Dwell to click."
+    },
     {
       "v": "3.1.4",
       "date": "2026-11-19",

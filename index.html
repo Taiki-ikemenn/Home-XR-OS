@@ -212,7 +212,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.4';
+const APP_VERSION='3.1.5';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -419,7 +419,7 @@ function pinchDown(){
 }
 function pinchMove(){
   if(!DRAG) return; const dx=S.cx-DRAG.lx, dy=S.cy-DRAG.ly; DRAG.lx=S.cx; DRAG.ly=S.cy;
-  if(!DRAG.moved&&Math.hypot(S.cx-DRAG.x0,S.cy-DRAG.y0)>9){ DRAG.moved=true;
+  if(!DRAG.moved&&Math.hypot(S.cx-DRAG.x0,S.cy-DRAG.y0)>(DRAG.tol||9)){ DRAG.moved=true;
     if(DRAG.kind==='press'){ const sp=scrollParent(DRAG.el); if(sp){ DRAG.kind='scroll'; DRAG.sp=sp; } } }
   if(DRAG.kind==='grab'){ const o=DRAG.o; o.yaw+=deg(Math.atan(dx/S.P)); o.y=clamp(o.y+dy*(o.d*S.DB/S.P),-900,700); o.place(); }
   else if(DRAG.kind==='slider') sliderSet(DRAG.a);
@@ -432,7 +432,7 @@ function pinchUp(){
   if(D.a) D.a.classList.remove('drag');
   if(D.kind==='canvas'){ D.a._xr&&D.a._xr.up&&D.a._xr.up(); return; }
   if(D.kind==='grab'){ STORE.set('winpos_'+(D.o.el.dataset.app||''),{yaw:angDiff(D.o.yaw,0),y:D.o.y}); return; }
-  if(D.kind==='press'&&!D.moved&&D.a){ const now=actionable(hitEl()); if(now===D.a){ D.a.classList.add('pressed'); setTimeout(()=>D.a.classList.remove('pressed'),150); AU.click(); D.a.click(); } }
+  if(D.kind==='press'&&!D.moved&&D.a){ const now=D.hand?D.a:actionable(hitEl()); if(now===D.a){ D.a.classList.add('pressed'); setTimeout(()=>D.a.classList.remove('pressed'),150); AU.click(); D.a.click(); } }
 }
 function sliderSet(a){ const p=localPos(a); const v=clamp(p.x,0,1); a._v=v; drawSlider(a); a.dispatchEvent(new CustomEvent('xrinput',{detail:v})); }
 function makeSlider(v,on){ const s=h('div','slider','<div class="tr"></div><div class="fi"></div><div class="kn"></div>'); s._v=v; drawSlider(s); s.addEventListener('xrinput',e=>on(e.detail)); return s; }
@@ -1292,15 +1292,48 @@ FRAME.push(()=>{
   // 手のひら → メニュー
   if(g.categoryName==='Open_Palm'&&g.score>.6){ HT.palmT+=.033; if(HT.palmT>.6&&!HT.palmFired){ HT.palmFired=true; togglePalmMenu(true); AU.tone(990,.12,'sine',.1); } }
   else{ HT.palmT=0; HT.palmFired=false; }
-  // 人さし指の先 → カーソル（鏡写しにして、真ん中の範囲を画面全体に広げる）
-  const tip=L[8], th=L[4], w=L[0], mm=L[9];
-  const nx=clamp(((HT.back?tip.x:1-tip.x)-.18)/.64,0,1), ny=clamp((tip.y-.15)/.6,0,1);
-  const tx=nx*S.W, ty=ny*S.H; HT.sx=HT.sx==null?tx:lerp(HT.sx,tx,.45); HT.sy=HT.sy==null?ty:lerp(HT.sy,ty,.45);
-  if(HT.seen>2){ S.cx=HT.sx; S.cy=HT.sy; IN.mouse=false; if(S.pinch) pinchMove(); }
-  // つまむ（親指と人さし指の距離を手の大きさで割る）
+  // カーソルの位置：人さし指の付け根と「親指と人さし指のまん中」を使う
+  // （指先だとつまむ瞬間にカーソルが右下へズレるので）
+  const tip=L[8], th=L[4], w=L[0], mm=L[9], mcp=L[5];
+  const ax=mcp.x*.5+(tip.x+th.x)/4, ay=mcp.y*.5+(tip.y+th.y)/4;
+  const nx=clamp(((HT.back?ax:1-ax)-.2)/.6,0,1), ny=clamp((ay-.2)/.55,0,1);
   const size=Math.hypot(w.x-mm.x,w.y-mm.y)||.1, d=Math.hypot(tip.x-th.x,tip.y-th.y)/size;
-  if(!HT.pin&&d<.42&&g.categoryName!=='Open_Palm'){ HT.pin=true; pinchDown(); AU.tone(1100,.03,'sine',.05); }
-  else if(HT.pin&&d>.62){ HT.pin=false; pinchUp(); }
+  let tx=nx*S.W, ty=ny*S.H;
+  // つまんでいる間：つまむ直前の位置を起点に、そこからの手の動きだけ反映
+  if(HT.pin){
+    if(now<HT.lock){ tx=HT.ox; ty=HT.oy; }
+    else{ if(HT.rx==null){ HT.rx=tx; HT.ry=ty; } tx=HT.ox+(tx-HT.rx); ty=HT.oy+(ty-HT.ry); }
+  }
+  // 指を近づけているあいだは、カーソルをほとんど動かさない
+  const k=HT.pin?(now<HT.lock?1:.4):d<.8?.08:.45;
+  HT.sx=HT.sx==null?tx:lerp(HT.sx,tx,k); HT.sy=HT.sy==null?ty:lerp(HT.sy,ty,k);
+  HT.close=HT.pin?1:clamp((1.05-d)/(1.05-.5),0,1);
+  // 指が開いていたときの位置を覚えておく（つまんだらそこに戻す）
+  if(d>.85&&!HT.pin){ HT.ox=HT.sx; HT.oy=HT.sy; HT.ot=now; }
+  const frozen=now<(HT.freeze||0);
+  if(HT.seen>2&&!frozen){ S.cx=clamp(HT.sx,0,S.W); S.cy=clamp(HT.sy,0,S.H); IN.mouse=false; if(S.pinch) pinchMove(); }
+  // つまむ／はなす（ゆるめに判定）
+  if(!HT.pin&&d<.5&&g.categoryName!=='Open_Palm'){
+    HT.pin=true; HT.lock=now+200; HT.rx=null;
+    if(HT.ox==null||now-HT.ot>800){ HT.ox=HT.sx; HT.oy=HT.sy; }
+    HT.sx=HT.ox; HT.sy=HT.oy; S.cx=clamp(HT.ox,0,S.W); S.cy=clamp(HT.oy,0,S.H);
+    updateHover(); pinchDown(); if(DRAG){ DRAG.hand=true; DRAG.tol=34; }
+    AU.tone(1100,.03,'sine',.05); HT.dwellT=0;
+  }
+  else if(HT.pin&&d>.7){ HT.pin=false; pinchUp(); HT.freeze=now+250; HT.ox=null; }
+  // 止めてクリック（オプション）
+  if(CFG.dwell&&!HT.pin&&HT.seen>2){
+    if(HT.dx==null||Math.hypot(S.cx-HT.dx,S.cy-HT.dy)>16||!HOV){ HT.dx=S.cx; HT.dy=S.cy; HT.dwellT=0; }
+    else{ HT.dwellT=(HT.dwellT||0)+(now-(HT.dlast||now)); if(HT.dwellT>1100){ HT.dwellT=-900; pinchDown(); if(DRAG){ DRAG.hand=true; DRAG.tol=34; } pinchUp(); } }
+    HT.dlast=now;
+  } else { HT.dwellT=0; HT.dlast=now; }
+});
+// カーソルのまわりに「どれくらいつまめているか」を表示
+HUDHOOK.push(x=>{
+  if(!HT.on||!HT.seen) return;
+  const c=S.pinch?1:(HT.close||0), dw=CFG.dwell&&HT.dwellT>0?Math.min(1,HT.dwellT/1100):0;
+  if(c>.05&&!S.pinch){ x.beginPath(); x.arc(S.cx,S.cy,24,-Math.PI/2,-Math.PI/2+c*TAU); x.lineWidth=4; x.strokeStyle=c>.85?'rgba(120,230,150,.95)':'rgba(255,255,255,.7)'; x.stroke(); }
+  if(dw>0){ x.beginPath(); x.arc(S.cx,S.cy,31,-Math.PI/2,-Math.PI/2+dw*TAU); x.lineWidth=4; x.strokeStyle='rgba(90,170,255,.95)'; x.stroke(); }
 });
 
 // ---- YouTube ----
@@ -1345,6 +1378,7 @@ buildQuick=function(el){ _bq(el); const r=el.querySelector('.row:last-child');
   el.insertBefore(qrow('カメラで手を認識（右手）',makeToggle(HT.on,v=>v?startHands():stopHands())),r);
   const cs=h('div','seg'); for(const [k,n] of [['back',L('外カメラ','Back')],['front',L('内カメラ','Front')]]){ const b=h('button',(CFG.handCam||'back')===k?'on':'',n); b.onclick=()=>{ CFG.handCam=k; saveCfg(); cs.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); if(HT.on){ stopHands(); startHands(); } }; cs.appendChild(b); }
   el.insertBefore(qrow(L('手を見るカメラ','Camera for hands'),cs),r);
+  el.insertBefore(qrow(L('止めてクリック（手で操作）','Dwell to click (hands)'),makeToggle(!!CFG.dwell,v=>{ CFG.dwell=v; saveCfg(); })),r);
   el.insertBefore(qrow('右手だけで操作',makeToggle(!!CFG.oneHand,v=>{ CFG.oneHand=v; saveCfg(); applyOneHand(); })),r); };
 
 // ---- ようこそ／おかえりなさい ----
