@@ -1,6 +1,12 @@
 {
-  "latest": "3.1.3",
+  "latest": "3.1.4",
   "versions": [
+    {
+      "v": "3.1.4",
+      "date": "2026-11-19",
+      "notes_ja": "手が反応しやすくなりました（少しはなれても認識・見えたら緑の枠）。端末のキーボードと貼り付けに対応（YouTubeは「貼り付けて再生」、ブラウザは📋ボタン）。",
+      "notes_en": "Better hand detection (works farther away, green frame when seen). Device keyboard and paste support (YouTube: Paste & play, Browser: 📋)."
+    },
     {
       "v": "3.1.3",
       "date": "2026-11-19",

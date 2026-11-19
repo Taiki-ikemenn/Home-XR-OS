@@ -157,6 +157,7 @@ body.nopad #pads{display:none}
 }
 #handCam{position:fixed;left:14px;top:14px;width:160px;border-radius:14px;transform:scaleX(-1);z-index:8;opacity:.8;display:none;border:2px solid rgba(255,255,255,.4)}
 body.hands #handCam{display:block}
+#handCam.seen{border-color:#3ecf8e;box-shadow:0 0 0 3px rgba(62,207,142,.5)}
 #palmBtn2{right:calc(env(safe-area-inset-right) + 322px);bottom:calc(env(safe-area-inset-bottom) + 164px);width:62px;height:62px;font-size:26px}
 body.onehand #stickR{display:none}
 body.onehand #stickL{left:auto;right:calc(env(safe-area-inset-right) + 26px)}
@@ -211,7 +212,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.3';
+const APP_VERSION='3.1.4';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -1263,11 +1264,11 @@ const HT={on:false,rec:null,video:null,last:-1,gap:66,avg:null,pin:false,palmT:0
 async function startHands(){
   if(HT.on) return; toastW('手の認識を準備しています…');
   try{
-    const v=$('handCam'); const back=CFG.handCam!=='front'; const st=await openCam(back?'environment':'user',{width:{ideal:320},height:{ideal:240},frameRate:{ideal:30}}); HT.back=back; v.style.transform=back?'none':'scaleX(-1)'; v.srcObject=st; await v.play(); HT.video=v;
+    const v=$('handCam'); const back=CFG.handCam!=='front'; const st=await openCam(back?'environment':'user',{width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}}); HT.back=back; v.style.transform=back?'none':'scaleX(-1)'; v.srcObject=st; await v.play(); HT.video=v;
     const V='0.10.14';
     const mp=await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/vision_bundle.mjs`);
     const fs=await mp.FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/wasm`);
-    const opt=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',delegate:d},runningMode:'VIDEO',numHands:1});
+    const opt=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',delegate:d},runningMode:'VIDEO',numHands:1,minHandDetectionConfidence:.3,minHandPresenceConfidence:.3,minTrackingConfidence:.3});
     try{ HT.rec=await mp.GestureRecognizer.createFromOptions(fs,opt('GPU')); }catch(e){ HT.rec=await mp.GestureRecognizer.createFromOptions(fs,opt('CPU')); }
     HT.on=true; document.body.classList.add('hands'); CFG.hands=true; saveCfg(); toastW('右手の人さし指でカーソル、親指とくっつけてつまむ。手のひらでメニュー');
   }catch(e){ console.warn(e); stopHands(); toastW('手の認識を始められませんでした（カメラとネットが必要です）'); }
@@ -1282,8 +1283,10 @@ FRAME.push(()=>{
   if(HT.avg>180){ HT.slow=(HT.slow||0)+1; if(HT.slow>20){ stopHands(); toastW(L('この端末では手の認識が重すぎるので、オフにしました','Hand tracking was too slow on this device and was turned off')); return; } } else HT.slow=0;
   // 前カメラは鏡にしていないので、ラベルの Left が自分の右手
   const base=HT.back?'Right':'Left', want=CFG.swapHand?(base==='Right'?'Left':'Right'):base; let idx=-1;
-  (r.handednesses||[]).forEach((hd,i)=>{ if(hd[0]&&hd[0].categoryName===want) idx=i; });
-  if(idx<0){ HT.seen=0; if(HT.pin){ HT.pin=false; pinchUp(); } return; }
+  if(r.landmarks&&r.landmarks.length) idx=0;
+  $('handCam').classList.toggle('seen',idx>=0);
+  if(idx<0){ HT.seen=0; HT.lost=(HT.lost||0)+1; if(HT.pin&&HT.lost>6){ HT.pin=false; pinchUp(); } return; }
+  HT.lost=0;
   HT.seen++;
   const L=r.landmarks[idx], g=(r.gestures[idx]&&r.gestures[idx][0])||{};
   // 手のひら → メニュー
@@ -1296,8 +1299,8 @@ FRAME.push(()=>{
   if(HT.seen>2){ S.cx=HT.sx; S.cy=HT.sy; IN.mouse=false; if(S.pinch) pinchMove(); }
   // つまむ（親指と人さし指の距離を手の大きさで割る）
   const size=Math.hypot(w.x-mm.x,w.y-mm.y)||.1, d=Math.hypot(tip.x-th.x,tip.y-th.y)/size;
-  if(!HT.pin&&d<.32&&g.categoryName!=='Open_Palm'){ HT.pin=true; pinchDown(); }
-  else if(HT.pin&&d>.5){ HT.pin=false; pinchUp(); }
+  if(!HT.pin&&d<.42&&g.categoryName!=='Open_Palm'){ HT.pin=true; pinchDown(); AU.tone(1100,.03,'sine',.05); }
+  else if(HT.pin&&d>.62){ HT.pin=false; pinchUp(); }
 });
 
 // ---- YouTube ----
@@ -2429,6 +2432,52 @@ buildProfile=function(el){
   const h4=el.querySelector('h4 span'); if(h4) h4.textContent=L('プロフィール','Profile');
 };
 if(FB_CONFIG) fbInit().catch(()=>{});
+
+
+/* ================= 端末のキーボード・貼り付け ================= */
+const RK=(()=>{ const box=h('div',''); box.id='realKB'; box.hidden=true; box.style.cssText='position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translateX(-50%);z-index:30;width:min(720px,92vw);display:flex;gap:8px;background:rgba(24,24,28,.96);padding:10px;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.5)';
+  const inp=document.createElement('input'); inp.type='text'; inp.autocomplete='off'; inp.setAttribute('autocapitalize','off'); inp.style.cssText='flex:1;min-width:0;font:inherit;font-size:18px;color:#fff;background:rgba(255,255,255,.1);border:2px solid var(--acc);border-radius:12px;padding:10px 12px;outline:none';
+  const ok=document.createElement('button'); ok.className='btn pri'; ok.textContent=L('決定','Done'); const cl=document.createElement('button'); cl.className='btn'; cl.textContent='✕'; cl.setAttribute('aria-label',L('閉じる','Close'));
+  box.append(inp,ok,cl); document.body.appendChild(box);
+  const sync=()=>{ if(!KB.opts) return; KB.text=inp.value; KB.opts.onInput(inp.value); };
+  inp.addEventListener('input',sync);
+  const done=()=>{ sync(); const o=KB.opts; box.hidden=true; inp.blur(); if(o&&o.onEnter) o.onEnter(KB.text); };
+  inp.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); done(); } });
+  inp.addEventListener('keyup',e=>e.stopPropagation());
+  ok.onclick=done; cl.onclick=()=>{ box.hidden=true; inp.blur(); };
+  return {box,inp,open(){ inp.value=KB.text||''; inp.placeholder=L('ここに入力・長押しで貼り付け','Type or long-press to paste'); box.hidden=false; inp.focus(); try{ inp.setSelectionRange(inp.value.length,inp.value.length); }catch(e){} }};
+})();
+async function readClip(){
+  try{ if(navigator.clipboard&&navigator.clipboard.readText){ const t=await navigator.clipboard.readText(); if(t) return t.trim(); } }catch(e){}
+  return null;
+}
+async function kbPaste(){
+  const t=await readClip();
+  if(t!=null){ KB.text+=t; KB.opts&&KB.opts.onInput(KB.text); toastW(L('貼り付けました','Pasted')); }
+  else{ RK.open(); toastW(L('入力欄を長押しして「ペースト」してね','Long-press the box and choose Paste')); }
+}
+// 空間キーボードに「端末のキーボード」「貼り付け」を追加
+const _drawKB2=drawKB;
+drawKB=function(){ _drawKB2(); const row=h('div','kbr');
+  const a=h('button','key xw','⌨️ '+L('端末のキーボードで入力','Use device keyboard')); a.onclick=()=>RK.open();
+  const b=h('button','key w','📋 '+L('貼り付け','Paste')); b.onclick=kbPaste;
+  row.append(a,b); KB.wo.el.insertBefore(row,KB.wo.el.firstChild); };
+const _hideKB=hideKB;
+hideKB=function(){ RK.box.hidden=true; _hideKB(); };
+// 物理キーボード（Bluetoothなど）でもそのまま打てるように
+addEventListener('keydown',e=>{
+  if(!KB.wo||!KB.wo.shown||!KB.opts||!RK.box.hidden) return;
+  if((e.metaKey||e.ctrlKey)&&e.key==='v'){ kbPaste(); e.preventDefault(); return; }
+  if(e.key==='Backspace'){ KB.text=[...KB.text].slice(0,-1).join(''); KB.opts.onInput(KB.text); e.preventDefault(); e.stopImmediatePropagation(); }
+  else if(e.key==='Enter'){ if(KB.opts.onEnter) KB.opts.onEnter(KB.text); e.preventDefault(); e.stopImmediatePropagation(); }
+  else if(e.key.length===1&&!e.metaKey&&!e.ctrlKey){ kbType(e.key); e.preventDefault(); e.stopImmediatePropagation(); }
+},true);
+// YouTube・ブラウザに「貼り付けて開く」ボタン
+function pasteInto(field,submit){ return async()=>{ const t=await readClip(); field.click(); if(t){ KB.text=t; KB.opts.onInput(t); if(submit) KB.opts.onEnter(t); } else { RK.open(); toastW(L('入力欄を長押しして「ペースト」してね','Long-press the box and choose Paste')); } }; }
+const _yt=APPIMPL.youtube;
+APPIMPL.youtube=(body,w)=>{ _yt(body,w); const f=body.querySelector('.field'); const b=btn('📋 '+L('貼り付けて再生','Paste & play'),pasteInto(f,true)); f.after(b); };
+const _br=APPIMPL.browser;
+APPIMPL.browser=(body,w)=>{ _br(body,w); const f=body.querySelector('.field'); const b=h('button','wbtn','📋'); b.setAttribute('aria-label',L('貼り付けて開く','Paste & go')); b.onclick=pasteInto(f,true); f.after(b); };
 
 </script>
 </body>
