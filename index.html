@@ -157,6 +157,13 @@ body.nopad #pads{display:none}
 }
 #handCam{position:fixed;left:14px;top:14px;width:160px;border-radius:14px;transform:scaleX(-1);z-index:8;opacity:.8;display:none;border:2px solid rgba(255,255,255,.4)}
 body.hands #handCam{display:block}
+#directView{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;background:#111;color:#fff}
+#directView .dvBar{display:flex;gap:8px;align-items:center;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));background:#1c1c22}
+#directView .dvBtn{background:#2e2e38;border-radius:12px;padding:10px 14px;font-size:16px;white-space:nowrap}
+#directView .dvUrl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000;border-radius:12px;padding:10px 14px;font-size:15px;opacity:.85}
+#directView iframe{flex:1;border:0;width:100%;background:#fff}
+#directView .dvTip{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(0,0,0,.8);padding:10px 16px;border-radius:12px;font-size:14px;max-width:90%;text-align:center;pointer-events:none}
+body.direct #pads,body.direct #hud{display:none}
 #htInfo{position:fixed;left:14px;top:142px;z-index:8;display:none;font-size:12px;padding:4px 9px;border-radius:9px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
 body.hands #htInfo{display:block}
 #handCam.seen{border-color:#3ecf8e;box-shadow:0 0 0 3px rgba(62,207,142,.5)}
@@ -214,7 +221,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.6';
+const APP_VERSION='3.1.7';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -2525,6 +2532,48 @@ const _yt=APPIMPL.youtube;
 APPIMPL.youtube=(body,w)=>{ _yt(body,w); const f=body.querySelector('.field'); const b=btn('📋 '+L('貼り付けて再生','Paste & play'),pasteInto(f,true)); f.after(b); };
 const _br=APPIMPL.browser;
 APPIMPL.browser=(body,w)=>{ _br(body,w); const f=body.querySelector('.field'); const b=h('button','wbtn','📋'); b.setAttribute('aria-label',L('貼り付けて開く','Paste & go')); b.onclick=pasteInto(f,true); f.after(b); };
+
+
+/* ================= ブラウザ：さわって操作（サイトを直接タッチ） ================= */
+// 空間の中のサイトは、ほかのサイトなのでカーソルのクリックを届けられない。
+// 平らな画面で開いて、指で直接さわれるようにする。
+const DV={el:null};
+function openDirect(url){
+  closeDirect();
+  const o=h('div',''); o.id='directView'; o.setAttribute('role','dialog'); o.setAttribute('aria-label',L('さわって操作','Touch mode'));
+  const bar=h('div','dvBar');
+  const back=h('button','dvBtn','✕ '+L('もどる','Back')); back.onclick=closeDirect;
+  const u=h('div','dvUrl'); u.textContent=url.replace(/^https?:\/\//,'');
+  const rl=h('button','dvBtn','⟳'); rl.setAttribute('aria-label',L('再読み込み','Reload'));
+  const ext=h('button','dvBtn','↗ '+L('新しいタブ','New tab')); ext.onclick=()=>window.open(url,'_blank','noopener');
+  bar.append(back,u,rl,ext);
+  const fr=document.createElement('iframe'); fr.src=url; fr.title=url; fr.referrerPolicy='no-referrer';
+  fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals');
+  fr.setAttribute('allow','autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture');
+  rl.onclick=()=>{ fr.src='about:blank'; setTimeout(()=>fr.src=url,50); };
+  const tip=h('div','dvTip',L('指で直接さわって操作できます（カーソル・手では中を操作できません）。表示されないサイトは「新しいタブ」で開いてね','Touch the page directly. If it stays blank, use New tab.'));
+  setTimeout(()=>tip.remove(),5000);
+  o.append(bar,fr,tip); document.body.appendChild(o); DV.el=o; document.body.classList.add('direct');
+  AU.click&&AU.click();
+}
+function closeDirect(){ if(DV.el){ DV.el.remove(); DV.el=null; } document.body.classList.remove('direct'); }
+addEventListener('keydown',e=>{ if(DV.el&&e.key==='Escape') closeDirect(); },true);
+
+const _br14=APPIMPL.browser;
+APPIMPL.browser=(body,w)=>{
+  _br14(body,w);
+  const f=body.querySelector('.field');
+  const dbtn=h('button','wbtn','👆'); dbtn.setAttribute('aria-label',L('さわって操作','Touch mode'));
+  dbtn.onclick=()=>{ const fr=body.querySelector('iframe'); if(fr&&fr.src&&!/^about:/.test(fr.src)) openDirect(fr.src); else toastW(L('このページはそのまま操作できます','This page already works here')); };
+  (f.nextSibling||f).after(dbtn);
+  // サイトを開いたら、大きな「さわって操作」ボタンを出す
+  const mo=new MutationObserver(()=>{ const fr=body.querySelector('iframe'); if(!fr||fr._dv) return; fr._dv=1;
+    const b=btn('👆 '+L('さわって操作する','Touch to use this site'),()=>openDirect(fr.src),'pri');
+    b.style.cssText='position:absolute;top:12px;right:12px;z-index:2;font-size:18px;padding:12px 18px';
+    fr.parentElement.appendChild(b); });
+  mo.observe(body,{childList:true,subtree:true});
+  onCloseAdd(w,()=>{ mo.disconnect(); closeDirect(); });
+};
 
 </script>
 </body>

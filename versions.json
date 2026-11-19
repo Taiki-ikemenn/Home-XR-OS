@@ -1,6 +1,12 @@
 {
-  "latest": "3.1.6",
+  "latest": "3.1.7",
   "versions": [
+    {
+      "v": "3.1.7",
+      "date": "2026-11-20",
+      "notes_ja": "ブラウザに「👆 さわって操作」を追加。サイトを平らな画面で開いて、指で直接クリック・スクロール・入力できます。",
+      "notes_en": "Browser: added Touch mode to use sites directly with your fingers."
+    },
     {
       "v": "3.1.6",
       "date": "2026-11-20",
