@@ -211,7 +211,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.2';
+const APP_VERSION='3.1.3';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -276,6 +276,14 @@ function buildEnv(){
     STRIPS.push({el:col,a:th,off:null});
   }
   setDim(CFG.dim,true); applyCam();
+}
+async function openCam(facing,extra={}){
+  const md=navigator.mediaDevices; if(!md||!md.getUserMedia) throw new Error('no camera');
+  try{ return await md.getUserMedia({video:{facingMode:{exact:facing},...extra},audio:false}); }
+  catch(e){ if(e&&e.name==='NotAllowedError') throw e; }
+  // exact で開けないとき：カメラの名前から探す
+  try{ const devs=(await md.enumerateDevices()).filter(d=>d.kind==='videoinput'); const re=facing==='environment'?/back|rear|environment|背面|後/i:/front|user|前面|前/i; const d=devs.find(x=>re.test(x.label)); if(d) return await md.getUserMedia({video:{deviceId:{exact:d.deviceId},...extra},audio:false}); }catch(e){}
+  return await md.getUserMedia({video:{facingMode:facing,...extra},audio:false});
 }
 function setDim(v,temp){ if(!temp) CFG.dim=v; $('dimmer').style.opacity=v; }
 const TAU=Math.PI*2;
@@ -744,7 +752,7 @@ function setEnv(k){
   stopPass(); CFG.env=k; saveCfg(); buildEnv();
 }
 async function startPass(){
-  try{ const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); $('pass').srcObject=st; document.body.classList.add('passthru'); toastW('パススルー：カメラの映像を表示しています'); }
+  try{ const st=await openCam('environment'); $('pass').srcObject=st; document.body.classList.add('passthru'); toastW('パススルー：カメラの映像を表示しています'); }
   catch(e){ toastW('カメラを使えませんでした'); }
 }
 function stopPass(){ const v=$('pass'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } document.body.classList.remove('passthru'); }
@@ -1255,7 +1263,7 @@ const HT={on:false,rec:null,video:null,last:-1,gap:66,avg:null,pin:false,palmT:0
 async function startHands(){
   if(HT.on) return; toastW('手の認識を準備しています…');
   try{
-    const v=$('handCam'); const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:320},height:{ideal:240},frameRate:{ideal:30}},audio:false}); v.srcObject=st; await v.play(); HT.video=v;
+    const v=$('handCam'); const back=CFG.handCam!=='front'; const st=await openCam(back?'environment':'user',{width:{ideal:320},height:{ideal:240},frameRate:{ideal:30}}); HT.back=back; v.style.transform=back?'none':'scaleX(-1)'; v.srcObject=st; await v.play(); HT.video=v;
     const V='0.10.14';
     const mp=await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/vision_bundle.mjs`);
     const fs=await mp.FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/wasm`);
@@ -1273,7 +1281,7 @@ FRAME.push(()=>{
   const took=performance.now()-t0; HT.avg=HT.avg==null?took:HT.avg*.9+took*.1; HT.gap=clamp(HT.avg*3,50,250);
   if(HT.avg>180){ HT.slow=(HT.slow||0)+1; if(HT.slow>20){ stopHands(); toastW(L('この端末では手の認識が重すぎるので、オフにしました','Hand tracking was too slow on this device and was turned off')); return; } } else HT.slow=0;
   // 前カメラは鏡にしていないので、ラベルの Left が自分の右手
-  const want=CFG.swapHand?'Right':'Left'; let idx=-1;
+  const base=HT.back?'Right':'Left', want=CFG.swapHand?(base==='Right'?'Left':'Right'):base; let idx=-1;
   (r.handednesses||[]).forEach((hd,i)=>{ if(hd[0]&&hd[0].categoryName===want) idx=i; });
   if(idx<0){ HT.seen=0; if(HT.pin){ HT.pin=false; pinchUp(); } return; }
   HT.seen++;
@@ -1283,7 +1291,7 @@ FRAME.push(()=>{
   else{ HT.palmT=0; HT.palmFired=false; }
   // 人さし指の先 → カーソル（鏡写しにして、真ん中の範囲を画面全体に広げる）
   const tip=L[8], th=L[4], w=L[0], mm=L[9];
-  const nx=clamp(((1-tip.x)-.18)/.64,0,1), ny=clamp((tip.y-.15)/.6,0,1);
+  const nx=clamp(((HT.back?tip.x:1-tip.x)-.18)/.64,0,1), ny=clamp((tip.y-.15)/.6,0,1);
   const tx=nx*S.W, ty=ny*S.H; HT.sx=HT.sx==null?tx:lerp(HT.sx,tx,.45); HT.sy=HT.sy==null?ty:lerp(HT.sy,ty,.45);
   if(HT.seen>2){ S.cx=HT.sx; S.cy=HT.sy; IN.mouse=false; if(S.pinch) pinchMove(); }
   // つまむ（親指と人さし指の距離を手の大きさで割る）
@@ -1332,6 +1340,8 @@ if(!INST.includes('youtube')){ INST.splice(8,0,'youtube'); STORE.set('inst',INST
 const _bq=buildQuick;
 buildQuick=function(el){ _bq(el); const r=el.querySelector('.row:last-child');
   el.insertBefore(qrow('カメラで手を認識（右手）',makeToggle(HT.on,v=>v?startHands():stopHands())),r);
+  const cs=h('div','seg'); for(const [k,n] of [['back',L('外カメラ','Back')],['front',L('内カメラ','Front')]]){ const b=h('button',(CFG.handCam||'back')===k?'on':'',n); b.onclick=()=>{ CFG.handCam=k; saveCfg(); cs.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); if(HT.on){ stopHands(); startHands(); } }; cs.appendChild(b); }
+  el.insertBefore(qrow(L('手を見るカメラ','Camera for hands'),cs),r);
   el.insertBefore(qrow('右手だけで操作',makeToggle(!!CFG.oneHand,v=>{ CFG.oneHand=v; saveCfg(); applyOneHand(); })),r); };
 
 // ---- ようこそ／おかえりなさい ----
@@ -1777,10 +1787,13 @@ regApp('camera',{name:'カメラ',en:'Camera',emoji:'📷',bg:G1+'#64748b,#1e293
   const bar=h('div','row'); bar.style.cssText='padding:14px;justify-content:center'; const shots=h('div','row'); shots.style.cssText='padding:0 14px 14px;gap:8px;overflow:hidden;flex-wrap:nowrap'; body.append(v,bar,shots);
   let filt='none'; const F=[['none',L('ふつう','Normal')],['grayscale(1)',L('モノクロ','Mono')],['sepia(.8)',L('セピア','Sepia')],['saturate(2)',L('あざやか','Vivid')],['hue-rotate(180deg)',L('ふしぎ','Funky')]];
   const seg=h('div','seg'); F.forEach(([f,n])=>{ const b=h('button',f===filt?'on':'',n); b.onclick=()=>{ filt=f; v.style.filter=f; seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); }; seg.appendChild(b); });
-  const snap=btn('📸 '+L('とる','Snap'),()=>{ if(!v.videoWidth) return; const c=cv(v.videoWidth,v.videoHeight); const g=c.getContext('2d'); g.filter=filt; g.translate(c.width,0); g.scale(-1,1); g.drawImage(v,0,0); const fl=h('div',''); fl.style.cssText='position:absolute;inset:0;background:#fff;opacity:.8;transition:opacity .4s'; body.appendChild(fl); requestAnimationFrame(()=>fl.style.opacity=0); setTimeout(()=>fl.remove(),400); AU.noise(.08,.3,3000);
+  const snap=btn('📸 '+L('とる','Snap'),()=>{ if(!v.videoWidth) return; const c=cv(v.videoWidth,v.videoHeight); const g=c.getContext('2d'); g.filter=filt; if(v.style.transform.includes('-1')){ g.translate(c.width,0); g.scale(-1,1); } g.drawImage(v,0,0); const fl=h('div',''); fl.style.cssText='position:absolute;inset:0;background:#fff;opacity:.8;transition:opacity .4s'; body.appendChild(fl); requestAnimationFrame(()=>fl.style.opacity=0); setTimeout(()=>fl.remove(),400); AU.noise(.08,.3,3000);
     const img=document.createElement('img'); img.src=c.toDataURL('image/jpeg',.85); img.alt=L('とった写真','Photo'); img.style.cssText='height:80px;border-radius:10px'; const a=h('button',''); a.appendChild(img); a.setAttribute('aria-label',L('写真を保存','Save photo')); a.onclick=()=>{ const l=document.createElement('a'); l.href=img.src; l.download='home-xr-photo.jpg'; l.click(); }; shots.prepend(a); },'pri');
   bar.append(seg,snap);
-  navigator.mediaDevices&&navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false}).then(s=>{ v.srcObject=s; onCloseAdd(w,()=>s.getTracks().forEach(t=>t.stop())); }).catch(()=>{ v.replaceWith(h('div','pad',`<b>${L('カメラを使えませんでした','Camera unavailable')}</b><p class="sub">${L('ブラウザでカメラを許可してください。','Please allow camera access.')}</p>`)); }); }});
+  let facing='environment', stream=null;
+  const start=()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); openCam(facing).then(s=>{ stream=s; v.srcObject=s; v.style.transform=facing==='user'?'scaleX(-1)':'none'; }).catch(()=>{ toastW(L('カメラを使えませんでした（ブラウザでカメラを許可してください）','Camera unavailable. Please allow camera access.')); }); };
+  bar.appendChild(btn('🔄 '+L('カメラ切りかえ','Flip camera'),()=>{ facing=facing==='user'?'environment':'user'; start(); }));
+  onCloseAdd(w,()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); }); start(); }});
 // ボイスレコーダー
 regApp('recorder',{name:'ボイスレコーダー',en:'Voice Recorder',emoji:'🎙️',bg:G1+'#fda4af,#be123c)',cat:'tool',w:760,h:620,desc:'声を録音して、あとで聞けます。',den:'Record and play voice memos.',
  impl(body,w){ paneCenter(body); let rec=null, chunks=[], t0=0, stream=null; const d=bigNum('0:00'); const lvl=cv(500,80); lvl.style.width='420px'; const list=h('div','scroll'); list.style.cssText='width:100%;max-height:200px';
@@ -2232,16 +2245,22 @@ renderLib();
 const UPD={base:'',manifest:null,checked:false};
 (function(){ const p=location.pathname; const i=p.indexOf('/versions/'); UPD.base=i>=0?p.slice(0,i+1):p.replace(/[^/]*$/,''); })();
 const vcmp=(a,b)=>{ const x=String(a).split('.').map(Number), y=String(b).split('.').map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)-(y[i]||0); } return 0; };
-const verURL=v=>UPD.manifest&&v===UPD.manifest.latest?UPD.base:UPD.base+'versions/'+v+'/';
+const verURL=v=>UPD.base+'versions/'+v+'/';
 async function fetchManifest(){
   if(location.protocol==='file:') throw new Error(L('ファイルから開いているので確認できません','Opened from a file'));
   const c=new AbortController(); const t=setTimeout(()=>c.abort(),5000);
   try{ const r=await fetch(UPD.base+'versions.json?t='+Date.now(),{cache:'no-store',signal:c.signal}); if(!r.ok) throw new Error('HTTP '+r.status); UPD.manifest=await r.json(); UPD.checked=true; return UPD.manifest; }
   finally{ clearTimeout(t); }
 }
-function goVersion(v,why){
-  const url=verURL(v); STORE.set('pinVer',v===UPD.manifest.latest?null:v);
-  toastW(why||L(`v${v} に切りかえます…`,`Switching to v${v}…`)); setTimeout(()=>{ location.href=url; },900);
+// 同じ移動をくり返さない（古いページがキャッシュに残っていても止まる）
+function canJump(v){ try{ const k='xr_jump_'+v, n=+(sessionStorage.getItem(k)||0); if(n>=2) return false; sessionStorage.setItem(k,n+1); }catch(e){} return true; }
+function goVersion(v,why,now){
+  STORE.set('pinVer',v===UPD.manifest.latest?null:v);
+  if(v===APP_VERSION) return;
+  if(!canJump(v)){ toastW(L('切りかえられませんでした。少し待ってから開き直してください','Could not switch. Please reload later.')); return; }
+  const url=verURL(v)+'?v='+v;
+  if(now){ location.replace(url); return; }
+  toastW(why||L(`v${v} に切りかえます…`,`Switching to v${v}…`)); setTimeout(()=>{ location.href=url; },700);
 }
 // 起動したとき：固定したバージョン・自動アップデート
 (async function bootUpdate(){
@@ -2250,8 +2269,9 @@ function goVersion(v,why){
   try{ await fetchManifest(); }catch(e){ return; }
   const m=UPD.manifest, pin=STORE.get('pinVer',null);
   const exists=v=>m.versions.some(x=>x.v===v);
-  if(pin&&exists(pin)&&pin!==APP_VERSION){ location.replace(verURL(pin)); return; }
-  if(!pin&&CFG.autoUpdate&&vcmp(m.latest,APP_VERSION)>0){ setTimeout(()=>goVersion(m.latest,L(`新しいバージョン v${m.latest} にアップデートしています…`,`Updating to v${m.latest}…`)),1500); return; }
+  const started=!$('start');
+  if(pin&&exists(pin)&&pin!==APP_VERSION){ goVersion(pin,null,!started); return; }
+  if(!pin&&CFG.autoUpdate&&vcmp(m.latest,APP_VERSION)>0){ goVersion(m.latest,L(`新しいバージョン v${m.latest} にアップデートしています…`,`Updating to v${m.latest}…`),!started); return; }
   if(!pin&&vcmp(m.latest,APP_VERSION)>0){ setTimeout(()=>toastW(L(`新しいバージョン v${m.latest} があります（設定 → アップデート）`,`v${m.latest} is available (Settings → Updates)`)),2500); }
 })();
 // 設定アプリに「アップデート」を追加
