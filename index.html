@@ -211,10 +211,10 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.1';
+const APP_VERSION='3.1.2';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
-const angDiff=(a,b)=>{let d=a-b;while(d>180)d-=360;while(d<-180)d+=360;return d};
+const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
 const STORE={get(k,d){try{const v=localStorage.getItem('xr_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('xr_'+k,JSON.stringify(v))}catch(e){}}};
 const DEFCFG={env:'living',dim:.15,cur:1,look:1,pad:true,hand:true,vol:.6,gyro:false,sound:true};
 let CFG={...DEFCFG,...STORE.get('cfg',{})};
@@ -476,13 +476,15 @@ async function setGyro(on){
   else{ removeEventListener('deviceorientation',onGyro); GY=null; }
 }
 function onGyro(e){
-  if(!GY||e.alpha==null) return;
-  const a=rad(e.alpha),b=rad(e.beta),g=rad(e.gamma||0); const ca=Math.cos(a),sa=Math.sin(a),cb=Math.cos(b),sb=Math.sin(b),cg=Math.cos(g),sg=Math.sin(g);
+  if(!GY||e.alpha==null||e.beta==null||!isFinite(e.alpha)||!isFinite(e.beta)) return;
+  const a=rad(e.alpha),b=rad(e.beta),g=rad(isFinite(e.gamma)?e.gamma:0); const ca=Math.cos(a),sa=Math.sin(a),cb=Math.cos(b),sb=Math.sin(b),cg=Math.cos(g),sg=Math.sin(g);
   const fx=-(ca*sg+sa*sb*cg), fy=-(sa*sg-ca*sb*cg), fz=-(cb*cg);
   const yaw=deg(Math.atan2(fx,fy)), pitch=deg(Math.asin(clamp(fz,-1,1)));
+  if(!isFinite(yaw)||!isFinite(pitch)) return;
   if(!GY.ref){ GY.ref={yaw,pitch}; GY.base={yaw:S.yaw,pitch:S.pitch}; }
   GY.yaw=GY.base.yaw+angDiff(yaw,GY.ref.yaw); GY.pitch=clamp(GY.base.pitch+(pitch-GY.ref.pitch),-28,28);
 }
+
 function pollInput(dt){
   // ゲームパッド
   const gps=navigator.getGamepads?navigator.getGamepads():[]; let gp=null; for(const g of gps) if(g){gp=g;break}
@@ -499,7 +501,9 @@ function pollInput(dt){
   if(lx||ly){ IN.mouse=false; const sp=820*CFG.cur*(Math.min(S.W,S.H)/800); const m=Math.min(1,Math.hypot(lx,ly)); const cur=Math.pow(m,1.6)/Math.max(m,1e-6);
     S.cx=clamp(S.cx+lx*cur*sp*dt,0,S.W); S.cy=clamp(S.cy+ly*cur*sp*dt,0,S.H); if(S.pinch) pinchMove(); }
   if(rx||ry){ S.yaw+=rx*95*CFG.look*dt; S.pitch=clamp(S.pitch-ry*70*CFG.look*dt,-28,28); }
-  if(GY&&GY.yaw!=null){ S.yaw=lerp(S.yaw,S.yaw+angDiff(GY.yaw,S.yaw),.25); S.pitch=lerp(S.pitch,GY.pitch,.25); }
+  if(GY&&isFinite(GY.yaw)&&isFinite(GY.pitch)){ S.yaw=lerp(S.yaw,S.yaw+angDiff(GY.yaw,S.yaw),.25); S.pitch=lerp(S.pitch,GY.pitch,.25); }
+  if(!isFinite(S.yaw)) S.yaw=0; if(!isFinite(S.pitch)) S.pitch=0; if(Math.abs(S.yaw)>1e5) S.yaw=angDiff(S.yaw,0);
+  if(!isFinite(S.cx)||!isFinite(S.cy)){ S.cx=S.W/2; S.cy=S.H/2; }
   if(S.recenterT){ const t=Math.min(1,(S.t-S.recenterT.t0)/.35), e=t*t*(3-2*t); S.yaw=S.recenterT.y0+angDiff(S.recenterT.to,S.recenterT.y0)*e; S.pitch=S.recenterT.p0*(1-e); if(t>=1) S.recenterT=null; }
 }
 function turnTo(yaw){ S.recenterT={t0:S.t,y0:S.yaw,p0:S.pitch,to:yaw}; if(GY){GY.ref=null;} }
@@ -1247,23 +1251,27 @@ function togglePalmMenu(show){
 $('palmBtn2').addEventListener('pointerdown',()=>{ AU.init(); togglePalmMenu(); });
 
 // ---- カメラで手を認識（右手：人さし指＝カーソル、親指とつまむ、手のひら＝メニュー） ----
-const HT={on:false,rec:null,video:null,last:-1,pin:false,palmT:0,palmFired:false,sx:null,sy:null,seen:0};
+const HT={on:false,rec:null,video:null,last:-1,gap:66,avg:null,pin:false,palmT:0,palmFired:false,sx:null,sy:null,seen:0};
 async function startHands(){
   if(HT.on) return; toastW('手の認識を準備しています…');
   try{
-    const v=$('handCam'); const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false}); v.srcObject=st; await v.play(); HT.video=v;
+    const v=$('handCam'); const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:320},height:{ideal:240},frameRate:{ideal:30}},audio:false}); v.srcObject=st; await v.play(); HT.video=v;
     const V='0.10.14';
     const mp=await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/vision_bundle.mjs`);
     const fs=await mp.FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/wasm`);
-    HT.rec=await mp.GestureRecognizer.createFromOptions(fs,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',delegate:'GPU'},runningMode:'VIDEO',numHands:2});
+    const opt=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',delegate:d},runningMode:'VIDEO',numHands:1});
+    try{ HT.rec=await mp.GestureRecognizer.createFromOptions(fs,opt('GPU')); }catch(e){ HT.rec=await mp.GestureRecognizer.createFromOptions(fs,opt('CPU')); }
     HT.on=true; document.body.classList.add('hands'); CFG.hands=true; saveCfg(); toastW('右手の人さし指でカーソル、親指とくっつけてつまむ。手のひらでメニュー');
   }catch(e){ console.warn(e); stopHands(); toastW('手の認識を始められませんでした（カメラとネットが必要です）'); }
 }
 function stopHands(){ HT.on=false; CFG.hands=false; saveCfg(); document.body.classList.remove('hands'); const v=$('handCam'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } if(HT.pin){ HT.pin=false; pinchUp(); } }
 FRAME.push(()=>{
   if(!HT.on||!HT.rec||!HT.video||HT.video.readyState<2) return;
-  const now=performance.now(); if(now-HT.last<33) return; HT.last=now;
-  let r; try{ r=HT.rec.recognizeForVideo(HT.video,now); }catch(e){ return; }
+  const now=performance.now(); if(now-HT.last<HT.gap) return; HT.last=now;
+  let r; const t0=performance.now(); try{ r=HT.rec.recognizeForVideo(HT.video,now); }catch(e){ return; }
+  // 重い端末では、認識する回数を自動で減らす
+  const took=performance.now()-t0; HT.avg=HT.avg==null?took:HT.avg*.9+took*.1; HT.gap=clamp(HT.avg*3,50,250);
+  if(HT.avg>180){ HT.slow=(HT.slow||0)+1; if(HT.slow>20){ stopHands(); toastW(L('この端末では手の認識が重すぎるので、オフにしました','Hand tracking was too slow on this device and was turned off')); return; } } else HT.slow=0;
   // 前カメラは鏡にしていないので、ラベルの Left が自分の右手
   const want=CFG.swapHand?'Right':'Left'; let idx=-1;
   (r.handednesses||[]).forEach((hd,i)=>{ if(hd[0]&&hd[0].categoryName===want) idx=i; });
@@ -1331,7 +1339,7 @@ buildQuick=function(el){ _bq(el); const r=el.querySelector('.row:last-child');
   const back=STORE.get('visited',false);
   $('wTitle').textContent=back?'おかえりなさい':'ようこそ';
   $('wSub').textContent=back?'Home XR OS へおかえりなさい。操作の説明を見ますか？':'Home XR OS へようこそ。はじめに操作の説明を見ますか？';
-  const go=guide=>{ STORE.set('visited',true); AU.init(); $('start').classList.add('hide'); setTimeout(()=>$('start').remove(),500); if(CFG.gyro) setGyro(true); if(CFG.hands) startHands();
+  const go=guide=>{ STORE.set('visited',true); AU.init(); $('start').classList.add('hide'); setTimeout(()=>$('start').remove(),500); if(CFG.gyro) setGyro(true); if(CFG.hands){ CFG.hands=false; saveCfg(); }
     if(guide){ setTimeout(()=>openApp('help'),500); } else setTimeout(()=>toastW(back?'おかえりなさい！':'ようこそ！'),500); };
   $('startBtn').onclick=()=>go(true); $('startBtn2').onclick=()=>go(false);
 })();

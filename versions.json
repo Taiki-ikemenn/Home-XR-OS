@@ -1,6 +1,12 @@
 {
-  "latest": "3.1.1",
+  "latest": "3.1.2",
   "versions": [
+    {
+      "v": "3.1.2",
+      "date": "2026-11-19",
+      "notes_ja": "ジャイロと手の認識をオンにすると固まることがあった問題を修正。手の認識を軽くしました",
+      "notes_en": "Fixed a freeze with gyro and hand tracking; hand tracking is lighter"
+    },
     {
       "v": "3.1.1",
       "date": "2026-11-19",
