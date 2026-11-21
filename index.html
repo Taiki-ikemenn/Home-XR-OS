@@ -481,7 +481,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.11.2';
+const APP_VERSION='3.12.0';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -1638,10 +1638,16 @@ FRAME.push(()=>{
   // 親指と人さし指のすき間：3D（メートル）で測る。角度や距離に左右されにくい
   const WL=r.worldLandmarks&&r.worldLandmarks[idx];
   let d, cm=null;
-  if(WL&&WL[4]&&WL[8]){ cm=Math.hypot(WL[4].x-WL[8].x,WL[4].y-WL[8].y,(WL[4].z-WL[8].z))*100;
+  // 2D（画面上）のすき間：手の大きさで割る。指先どうし＋親指と人さし指の第1関節の近いほう
+  const size2=Math.hypot(w.x-mm.x,w.y-mm.y)||.1, dip=LM[7];
+  const d2=Math.min(Math.hypot(tip.x-th.x,tip.y-th.y),dip?Math.hypot(dip.x-th.x,dip.y-th.y)*1.15:9)/size2;
+  if(WL&&WL[4]&&WL[8]){ const c8=Math.hypot(WL[4].x-WL[8].x,WL[4].y-WL[8].y,(WL[4].z-WL[8].z))*100, c7=WL[7]?Math.hypot(WL[4].x-WL[7].x,WL[4].y-WL[7].y,(WL[4].z-WL[7].z))*100*1.15:99;
+    cm=Math.min(c8,c7);
     // cm を今までの目安（手の大きさ比）に合わせる：2.5cm→.45 / 4cm→.7
-    d=cm/5.5; }
-  else{ const size=Math.hypot(w.x-mm.x,w.y-mm.y)||.1; d=Math.hypot(tip.x-th.x,tip.y-th.y)/size; }
+    d=cm/5.5;
+    // 横むき・ななめで奥行きの推定がずれるときは、画面上でくっついていれば「ついた」とみなす
+    if(d<.85&&d2<d) d=Math.max(d2,d*.55); }
+  else d=d2;
   // すき間が縮んでいる途中か
   const closing=HT.pd!=null&&d<HT.pd-.015; HT.pd=d;
   let tx=nx*S.W, ty=ny*S.H;
@@ -1653,7 +1659,7 @@ FRAME.push(()=>{
   // 指を近づけているあいだは、カーソルをほとんど動かさない
   const k=HT.pin?(now<HT.lock?1:.4):(d<.75&&closing)?.12:d<.6?.25:.45;
   HT.sx=HT.sx==null?tx:lerp(HT.sx,tx,k); HT.sy=HT.sy==null?ty:lerp(HT.sy,ty,k);
-  HT.close=HT.pin?1:clamp((.95-d)/(.95-.45),0,1);
+  HT.close=HT.pin?1:clamp((.95-d)/(.95-.5),0,1);
   // 指が開いていたときの位置を覚えておく（つまんだらそこに戻す）
   if(d>.7&&!HT.pin){ HT.ox=HT.sx; HT.oy=HT.sy; HT.ot=now; }
   { const sz=Math.hypot(w.x-mm.x,w.y-mm.y); let hint='';
@@ -1663,14 +1669,14 @@ FRAME.push(()=>{
   const frozen=now<(HT.freeze||0);
   if(HT.seen>2&&!frozen){ S.cx=clamp(HT.sx,0,S.W); S.cy=clamp(HT.sy,0,S.H); IN.mouse=false; if(S.pinch) pinchMove(); }
   // つまむ／はなす（ゆるめに判定）
-  if(!HT.pin&&d<.45&&g.categoryName!=='Open_Palm'){
+  if(!HT.pin&&d<.5&&g.categoryName!=='Open_Palm'){
     HT.pin=true; HT.lock=now+200; HT.rx=null;
     if(HT.ox==null||now-HT.ot>800){ HT.ox=HT.sx; HT.oy=HT.sy; }
     HT.sx=HT.ox; HT.sy=HT.oy; S.cx=clamp(HT.ox,0,S.W); S.cy=clamp(HT.oy,0,S.H);
     updateHover(); pinchDown(); if(DRAG){ DRAG.hand=true; DRAG.tol=34; }
     AU.tone(1100,.03,'sine',.05); HT.dwellT=0;
   }
-  else if(HT.pin&&d>.65){ HT.pin=false; pinchUp(); HT.freeze=now+250; HT.ox=null; }
+  else if(HT.pin&&d>.7){ HT.pin=false; pinchUp(); HT.freeze=now+250; HT.ox=null; }
   // 止めてクリック（オプション）
   if(CFG.dwell&&!HT.pin&&HT.seen>2){
     if(HT.dx==null||Math.hypot(S.cx-HT.dx,S.cy-HT.dy)>16||!HOV){ HT.dx=S.cx; HT.dy=S.cy; HT.dwellT=0; }
@@ -6166,6 +6172,141 @@ SWGENRE.splice(0,SWGENRE.length,
   ['party','パーティ・カジュアル','Party & casual','party-popper'],['puzzle','パズル','Puzzle','puzzle'],['quiz','クイズ・あたま','Quiz & brain','brain'],['rpg','RPG','RPG','swords'],
   ['roleplay','ロールプレイ','Roleplay','drama'],['sim','シミュレーション','Simulation','sprout'],['shop','ショッピング','Shopping','shopping-bag'],
   ['survival','サバイバル','Survival','flame'],['escape','なぞとき・脱出','Escape','key-round'],['sport','スポーツ','Sports','volleyball']);
+
+
+/* ================= サバイバルゲーム追加 ================= */
+(function(){
+const {B,S,T,I,R,HUD,START,PRE,W,id,reset}=SWK; const G={};
+const TX=(name,x,y,w,h,text,size=20,fg='#ffffff',bg='#000000',op=50)=>({id:'u_'+name,name,t:'text',x,y,w,h,text,fg,bg,op,size,r:14,align:'center'});
+const BAR=(name,x,y,w,val,col)=>({...uiDef('bar'),id:'u_'+name,name,x,y,w,h:3.6,val,bg:col});
+const LBL=(name,x,y,text)=>TX(name,x,y,12,4,text,13,'#ffffff','',0);
+const pick=(r,a)=>a[(r()*a.length)|0];
+// 生きのこり共通：SEC秒たえたらクリア
+const SURV=(sec,extra)=>PRE(0,`const SEC = ${sec}; let t0 = 0
+const alive = () => world.time - t0
+function win (msg) { score = SEC; end(msg || ('いきのこった！ ' + SEC + ' 秒クリア')) }
+function lose (msg) { score = Math.floor(alive()); end((msg || 'アウト！') + '　' + score + ' 秒 たえた') }
+world.on('tick', () => { if (playing && alive() >= SEC) win() })
+${extra}`);
+// ===== いんせきサバイバル =====
+G.meteor=(th)=>{ reset(); const r=R(th.seed); const o=[S('cyl',[0,.05,-6],[34,.1,34],th.floor,{solid:0})];
+  for(let i=0;i<10;i++){ const a=r()*6.28, d=6+r()*10; o.push(I('rock_'+(i%2),[Math.cos(a)*d,0,Math.sin(a)*d-6],r()*360)); }
+  o.push(B([0,.2,12],[4,.4,4],'#64748b'),...START([1.2,.9,12.6]),T([0,3,10.5],th.title,'#fde68a',4,{op:{billboard:1}}));
+  return W({sky:th.sky,ground:th.ground,spawn:[0,.5,13],objs:o,ui:[TX('スコア',2,2,46,8,'スタートを押してね。赤い丸からにげて！',18),BAR('ライフ',2,11,24,100,'#ef4444')],script:SURV(th.sec,`const M = []; let lives = 3, inv = 0
+hudText = () => playing ? ('いきのこり ' + alive().toFixed(0) + ' / ' + SEC + ' 秒　ライフ ' + lives) : ('スタートを押してね' + (best ? '　ベスト ' + best + ' 秒' : ''))
+onBegin = () => { t0 = world.time; lives = 3; ui.get('ライフ').setValue(100); world.teleport(0, 0.2, -6) }
+onEnd = () => { M.forEach(m => { if (m.alive) { m.w.remove(); m.r.remove() } }); M.length = 0; world.teleport(0, 0.6, 13) }
+world.every(${th.rate}, () => { if (!playing) return; const p = world.player.pos; const n = 1 + Math.floor(alive() / 20)
+  for (let k = 0; k < n; k++) { const x = Math.max(-15, Math.min(15, p[0] + world.random(-7, 7))), z = Math.max(-21, Math.min(9, p[2] + world.random(-7, 7))), rr = world.random(1.2, 2.3)
+    const w = world.spawn({ type: 'cyl', pos: [x, 0.08, z], scale: [rr * 2, 0.04, rr * 2], color: '#ef4444', glow: true }); const m = world.spawn({ type: 'sphere', pos: [x, 26, z], scale: [rr, rr, rr], color: '${th.rock}', glow: true }); if (!w || !m) continue
+    M.push({ w, r: m, x, z, rr, t: ${th.fall}, alive: true }) } })
+world.on('tick', dt => { inv -= dt; for (let i = M.length - 1; i >= 0; i--) { const m = M[i]; if (!m.alive) { M.splice(i, 1); continue } m.t -= dt; m.r.setPos(m.x, Math.max(m.rr / 2, 26 * m.t / ${th.fall}), m.z); m.w.setColor(Math.floor(m.t * 8) % 2 ? '#ef4444' : '#fca5a5')
+  if (m.t <= 0) { m.alive = false; world.sound(80, 0.35); const p = world.player.pos; if (playing && Math.hypot(p[0] - m.x, p[2] - m.z) < m.rr + 0.3 && p[1] < 2.5 && inv <= 0) { lives--; inv = 1.2; ui.get('ライフ').setValue(lives / 3 * 100); world.say('いんせきがあたった！ のこりライフ ' + lives); if (lives <= 0) lose('いんせきにやられた！') } m.w.remove(); const rk = m.r; world.after(0.5, () => rk.remove()) } } })`)}); };
+// ===== こうずいサバイバル =====
+G.flood=(th)=>{ reset(); const r=R(th.seed); const o=[B([0,.05,-8],[50,.1,50],th.floor,{solid:0})];
+  for(let i=0;i<14;i++){ const x=(r()-.5)*36, z=-8+(r()-.5)*36, h=1.5+r()*5, w=3+r()*3; if(Math.hypot(x,z+8)<4) continue; o.push(B([x,h/2,z],[w,h,w],pick(r,th.cols)));
+    for(let k=1;k<=Math.ceil(h/.8);k++){ const sy=Math.min(h,k*.8); o.push(B([x+w/2+.6,sy/2,z-w/2+k*.7-.3],[1.2,sy,.7],'#a8a29e')); } }
+  o.push(B([0,4,-8],[3,8,3],'#64748b'),B([0,8.15,-8],[4,.3,4],'#facc15'),T([0,10,-8],'いちばん高い とう','#ffffff',3,{op:{billboard:1}}));
+  for(let k=1;k<=10;k++) o.push(B([1.5+.5,k*.8/2,-8+1.5+k*.75],[1,k*.8,.75],'#a8a29e'));
+  o.push(B([0,-.4,-8],[60,.8,60],'#0ea5e9',{name:'みず',solid:0,glass:1}),...START([4,.5,8]));
+  return W({sky:th.sky,ground:th.ground,spawn:[0,0,10],objs:o,ui:[TX('スコア',2,2,46,8,'スタートを押すと大雨！高いところへにげよう',17),LBL('ラベル',2,11,'いき'),BAR('いき',14,11.4,22,100,'#38bdf8')],script:SURV(th.sec,`const water = world.get('みず'); let lv = -0.8, air = 100
+hudText = () => playing ? ('みずの高さ ' + Math.max(0, lv).toFixed(1) + ' m　のこり ' + Math.max(0, SEC - alive()).toFixed(0) + ' 秒') : ('スタートを押してね' + (best ? '　ベスト ' + best + ' 秒' : ''))
+onBegin = () => { t0 = world.time; lv = -0.8; air = 100; world.setSky('${th.storm}') }
+onEnd = () => { lv = -0.8; water.setPos(0, -0.4, -8); world.setSky('${th.sky}'); ui.get('いき').setValue(100) }
+world.every(0.25, () => { if (playing) world.sound(world.random(1800, 2600), 0.02) })
+world.on('tick', dt => { if (!playing) return; if (alive() > 5) lv = Math.min(${th.max}, lv + ${th.rise} * dt); water.setPos(0, lv - 0.4, -8)
+  const p = world.player.pos; if (p[1] + 1.3 < lv) { air -= 22 * dt } else air = Math.min(100, air + 40 * dt); ui.get('いき').setValue(air); if (air <= 0) lose('おぼれちゃった！') })`)}); };
+// ===== にげろ！大群サバイバル =====
+G.swarm=(th)=>{ reset(); const r=R(th.seed); const o=[S('cyl',[0,.05,-6],[40,.1,40],th.floor,{solid:0})];
+  for(let i=0;i<12;i++){ const a=r()*6.28, d=5+r()*13; o.push(B([Math.cos(a)*d,1,Math.sin(a)*d-6],[1.6+r(),2,1.6+r()],th.box)); }
+  for(let i=0;i<20;i++){ const a=i/20*6.28; o.push(S('tree',[Math.cos(a)*22,0,Math.sin(a)*22-6],[1,1.3,1],th.tree)); }
+  o.push(...START([0,.5,-6]));
+  return W({sky:th.sky,ground:th.ground,spawn:[0,0,-2],objs:o,ui:[TX('スコア',2,2,46,8,'スタートを押してね。タップでふっとばせる！',17),LBL('ラベル',2,11,'HP'),BAR('HP',14,11.4,22,100,'#22c55e')],script:SURV(th.sec,`const E = []; let hp = 100, inv = 0
+hudText = () => playing ? ('いきのこり ' + alive().toFixed(0) + ' / ' + SEC + ' 秒　${th.enemy} ' + E.length) : ('スタートを押してね' + (best ? '　ベスト ' + best + ' 秒' : ''))
+onBegin = () => { t0 = world.time; hp = 100; ui.get('HP').setValue(100) }
+onEnd = () => { E.forEach(e => e.o.remove()); E.length = 0 }
+world.every(${th.rate}, () => { if (!playing || E.length > 30) return; const a = world.random(0, 6.28); const s = world.random(0.8, 1.2)
+  const o = world.spawn({ type: 'sphere', pos: [Math.cos(a) * 19, s / 2, Math.sin(a) * 19 - 6], scale: [s, s * 0.85, s], color: world.pick(${JSON.stringify(th.ecol)}), glow: ${th.glow ? 'true' : 'false'} }); if (!o) return
+  const e = { o, sp: world.random(${th.sp[0]}, ${th.sp[1]}) + alive() * 0.02, stun: 0 }; E.push(e)
+  o.onClick(() => { if (!playing || o.distanceToPlayer() > 6) return; const p = world.player.pos, q = o.pos; const dx = q[0] - p[0], dz = q[2] - p[2], l = Math.hypot(dx, dz) || 1; o.setPos(q[0] + dx / l * 4, q[1], q[2] + dz / l * 4); e.stun = 1; world.sound(300, 0.06) }) })
+world.on('tick', dt => { inv -= dt; if (!playing) return; const p = world.player.pos
+  E.forEach(e => { e.stun -= dt; if (e.stun > 0) return; e.o.moveToward(p[0], e.o.pos[1], p[2], e.sp * dt); if (e.o.distanceToPlayer() < 1.1 && inv <= 0) { inv = 0.7; hp -= 15; ui.get('HP').setValue(hp); world.sound(140, 0.15); if (hp <= 0) lose('${th.enemy}につかまった！') } }) })`)}); };
+// ===== ころがる大岩 =====
+G.boulder=(th)=>{ reset(); const L=th.len, o=[B([0,.05,-L/2],[8,.1,L+8],th.floor,{solid:0}),B([-4.2,1.5,-L/2],[.4,3,L+8],th.wall),B([4.2,1.5,-L/2],[.4,3,L+8],th.wall)];
+  for(let z=-12;z>-L+4;z-=12){ const s=z%24===0?-1:1; o.push(B([s*5.2,1.5,z],[2,3,.3],th.wall),B([s*5.2,1.5,z-2.6],[2,3,.3],th.wall),B([s*6.2,1.5,z-1.3],[.3,3,2.9],th.wall),B([s*4.2,1.5,z-1.3],[.4,3,2.5],th.floor,{solid:0,hide:1}),B([s*5.2,.05,z-1.3],[2,.1,2.6],'#22c55e',{solid:0}),T([s*5.2,2.7,z-1.3],'かくれば','#bbf7d0',1.4,{op:{billboard:1}})); }
+  o.push(B([0,.3,-L],[8,.6,3],'#facc15'),T([0,3,-L],'ゴール','#facc15',3),...START([2.5,.5,3]));
+  return W({sky:th.sky,ground:th.ground,spawn:[0,0,4],objs:o,ui:HUD('スタートを押すと大岩がころがってくる！かくればでよけよう'),script:PRE(0,`const BO = []; let t0 = 0, hits = 0
+hudText = () => playing ? ('タイム ' + (world.time - t0).toFixed(1) + '　あたった回数 ' + hits) : ('スタートを押してね' + (best ? '　ベスト ' + best + ' 秒' : ''))
+onBegin = () => { t0 = world.time; hits = 0; world.teleport(0, 0.2, 2) }
+onEnd = () => { BO.forEach(b => b.o.remove()); BO.length = 0 }
+world.every(${th.rate}, () => { if (!playing) return; const s = world.random(1.6, 2.6); const o = world.spawn({ type: 'sphere', pos: [world.random(-2.6, 2.6), s / 2, ${-th.len}], scale: [s, s, s], color: world.pick(['#78716c', '#57534e', '#a8a29e']) }); if (o) BO.push({ o, s, v: world.random(${th.v[0]}, ${th.v[1]}), rot: 0 }) })
+world.on('tick', dt => { if (!playing) return; const p = world.player.pos
+  for (let i = BO.length - 1; i >= 0; i--) { const b = BO[i]; b.rot += b.v * dt * 60; b.o.move(0, 0, b.v * dt); b.o.setRot(-b.rot, 0, 0); if (b.o.pos[2] > 6) { b.o.remove(); BO.splice(i, 1); continue }
+    if (Math.abs(p[0]) < 4.1 && b.o.distanceToPlayer() < b.s / 2 + 0.5) { hits++; world.say('ゴロゴロ…ドーン！スタートへ'); world.sound(70, 0.4); world.teleport(0, 0.2, 2) } }
+  if (p[2] < ${-th.len + 1}) { score = Math.round((world.time - t0) * 10) / 10; playing = false; best = best ? Math.min(best, score) : score; world.say('ゴール！ ' + score + ' 秒（あたった ' + hits + ' 回）'); hud() } })`)}); };
+// ===== スイーパー（回るバーをジャンプでよけろ）=====
+G.sweeper=(th)=>{ reset(); const o=[S('cyl',[0,-.1,-6],[20,.4,20],th.floor),B([0,-.1,4],[3,.4,4],th.floor),S('cyl',[0,.6,-6],[1.4,1.2,1.4],'#1f2937')];
+  for(let k=0;k<th.bars;k++) o.push(B([4.6,.45,-6],[9,.4,.5],th.bar,{name:'バー'+k,solid:0,glow:1}));
+  o.push(B([0,-.2,8],[4,.4,4],'#64748b'),...START([1.2,.5,8.6]),B([0,-8,-6],[80,.2,80],'#0f172a'));
+  return W({sky:th.sky,ground:'none',spawn:[0,.2,9],objs:o,ui:[TX('スコア',2,2,46,8,'スタートを押してね。バーをジャンプでよけろ！',17),BAR('ライフ',2,11,24,100,'#ef4444')],script:SURV(th.sec,`const BR = []; for (let k = 0; k < ${th.bars}; k++) BR.push(world.get('バー' + k)); let ang = 0, sp = ${th.sp}, lives = 3, inv = 0
+hudText = () => playing ? ('いきのこり ' + alive().toFixed(0) + ' / ' + SEC + ' 秒　ライフ ' + lives) : ('スタートを押してね' + (best ? '　ベスト ' + best + ' 秒' : ''))
+onBegin = () => { t0 = world.time; lives = 3; inv = 2; sp = ${th.sp}; ui.get('ライフ').setValue(100); world.teleport(0, 0.3, 2) }
+onEnd = () => world.teleport(0, 0.3, 9)
+world.on('tick', dt => { inv -= dt; if (playing) sp += ${th.acc} * dt; ang += (playing ? sp : 0.6) * dt
+  BR.forEach((b, k) => { const a = ang + k * Math.PI * 2 / BR.length; b.setPos(Math.cos(a) * 4.6, 0.45, Math.sin(a) * 4.6 - 6); b.setRot(0, -a * 180 / Math.PI, 0)
+    if (!playing || inv > 0) return; const p = world.player.pos; const x = p[0], z = p[2] + 6; const along = x * Math.cos(a) + z * Math.sin(a), perp = Math.abs(-x * Math.sin(a) + z * Math.cos(a))
+    if (along > 0.6 && along < 9.4 && perp < 0.55 && p[1] < 0.55) { inv = 1; lives--; ui.get('ライフ').setValue(lives / 3 * 100); world.sound(160, 0.3); world.say('バーにあたった！ のこり ' + lives); if (lives <= 0) lose('バーにふっとばされた！') } })
+  if (playing && world.player.pos[1] < -3) { world.teleport(0, 0.3, -1); lives--; ui.get('ライフ').setValue(lives / 3 * 100); if (lives <= 0) lose('おっこちた！') } })`)}); };
+// ===== さむさサバイバル（たきびであたたまる）=====
+G.cold=(th)=>{ reset(); const r=R(th.seed); const o=[B([0,.05,-6],[44,.1,44],'#f8fafc',{solid:0})]; const F=[[-10,-14],[10,-14],[-12,2],[12,2],[0,-20]];
+  F.forEach(([x,z],i)=>o.push(S('cyl',[x,.15,z],[1.6,.3,1.6],'#57534e',{name:'たきび'+i}),S('cone',[x,.9,z],[1,1.2,1],'#f97316',{name:'ほのお'+i,glow:1,solid:0}),T([x,2.2,z],'たきび','#fed7aa',1.4,{op:{billboard:1}})));
+  for(let i=0;i<16;i++) o.push(S('tree',[(r()-.5)*44,0,-6+(r()-.5)*44],[1,1.2,1],'#e2e8f0'));
+  for(let i=0;i<4;i++) o.push(I('snowman_0',[(r()-.5)*30,0,-6+(r()-.5)*30]));
+  o.push(...START([0,.5,6]));
+  return W({sky:th.sky,ground:'#f8fafc',spawn:[0,0,8],objs:o,ui:[TX('スコア',2,2,46,8,'スタートを押してね。たきびであたたまろう',17),LBL('ラベル',2,11,'たいおん'),BAR('たいおん',14,11.4,22,100,'#f97316'),TX('まき',2,16,22,6,'まき 0 こ',15)],script:SURV(th.sec,`const N = 5, FI = []; for (let i = 0; i < N; i++) FI.push({ b: world.get('たきび' + i), f: world.get('ほのお' + i), on: false, life: 0 }); let temp = 100, wood = 0; const WD = []
+hudText = () => playing ? ('いきのこり ' + alive().toFixed(0) + ' / ' + SEC + ' 秒　ふぶき！') : ('スタートを押してね' + (best ? '　ベスト ' + best + ' 秒' : ''))
+const showW = () => ui.get('まき').setText('まき ' + wood + ' こ（きえたたきびをタップでつける）')
+const light = (x, t) => { x.on = true; x.life = t; x.f.show(); x.f.setScale(1, 1.2, 1) }
+const out = x => { x.on = false; x.f.hide() }
+onBegin = () => { t0 = world.time; temp = 100; wood = 0; showW(); FI.forEach(out); light(FI[world.randInt(0, N - 1)], 15); world.setSky('${th.storm}') }
+onEnd = () => { WD.forEach(w => w.o.remove()); WD.length = 0; FI.forEach(x => light(x, 999)); world.setSky('${th.sky}') }
+FI.forEach(x => { x.b.onClick(() => { if (!playing || x.on) return; if (wood < 1) { world.say('まきがないよ！森でひろおう'); return } wood--; showW(); light(x, ${th.burn}); world.sound(520, 0.1); world.say('ボッ！たきびがついた') }) })
+world.every(2.5, () => { if (!playing || WD.length > 5) return; const o = world.spawn({ type: 'cyl', pos: [world.random(-18, 18), 0.15, world.random(-26, 12)], scale: [0.25, 1, 0.25], rot: [90, world.random(0, 180), 0], color: '#92400e', name: 'まき' }); if (!o) return; const w = { o }; WD.push(w)
+  o.onClick(() => { if (!playing || o.distanceToPlayer() > 4) { world.say('もっと近づいて'); return } wood++; showW(); o.remove(); WD.splice(WD.indexOf(w), 1); world.sound(700, 0.05) }) })
+world.on('tick', dt => { if (!playing) return; let warm = false
+  FI.forEach(x => { if (!x.on) return; x.life -= dt; x.f.setScale(Math.max(0.3, Math.min(1, x.life / 6)), Math.max(0.3, Math.min(1.2, x.life / 5)), Math.max(0.3, Math.min(1, x.life / 6))); if (x.life <= 0) { out(x); world.say('たきびがきえた…') } if (x.b.distanceToPlayer() < 3.2) warm = true })
+  if (!FI.some(x => x.on) && Math.random() < 0.01) light(FI[world.randInt(0, N - 1)], 10)
+  temp = Math.max(0, Math.min(100, temp + (warm ? 14 : -${th.chill}) * dt)); ui.get('たいおん').setValue(temp); if (temp <= 0) lose('こごえちゃった！') })`)}); };
+// ===== むじんとうサバイバル =====
+G.island=(th)=>{ reset(); const r=R(th.seed); const o=[S('cyl',[0,-.4,-6],[36,1,36],'#fde68a'),S('cyl',[0,-.2,-6],[26,1,26],'#86efac'),B([0,-.6,-6],[200,.2,200],'#0ea5e9',{solid:0,glass:1})];
+  const TR=[]; for(let i=0;i<8;i++){ const a=i/8*6.28+r(), d=5+r()*6; const x=Math.cos(a)*d, z=Math.sin(a)*d-6; TR.push([x,z]); o.push(S('cyl',[x,1.8,z],[.4,3.6,.4],'#92400e'),S('sphere',[x,3.8,z],[2.6,1.2,2.6],'#16a34a',{solid:0})); }
+  o.push(S('cyl',[-11,.1,-6],[2.4,.3,2.4],'#38bdf8',{name:'わきみず',glow:1}),T([-11,1.6,-6],'わきみず','#bae6fd',1.6,{op:{billboard:1}}),B([11,.5,-6],[2.5,1,2.5],'#a16207',{name:'ひのこ'}),T([11,1.8,-6],'のろし（タップ）','#fed7aa',2,{op:{billboard:1}}),...START([0,.5,-6]));
+  return W({sky:th.sky,ground:'none',spawn:[0,.4,-3],objs:o,ui:[TX('スコア',2,2,46,8,'スタートを押してね。たすけが来るまで生きのこれ！',16),LBL('l1',2,11,'おなか'),BAR('おなか',14,11.4,22,100,'#f97316'),LBL('l2',2,16,'のど'),BAR('のど',14,16.4,22,100,'#38bdf8')],script:SURV(th.sec,`const TR = ${JSON.stringify(TR)}, FR = []; let food = 100, water = 100, smoke = 0
+hudText = () => playing ? ('たすけまで ' + Math.max(0, SEC - alive() - smoke).toFixed(0) + ' 秒') : ('スタートを押してね' + (best ? '　ベスト ' + best + ' 秒' : ''))
+onBegin = () => { t0 = world.time; food = 100; water = 100; smoke = 0 }
+onEnd = () => { FR.forEach(f => f.o.remove()); FR.length = 0 }
+world.get('わきみず').onClick(() => { if (!playing) return; if (world.get('わきみず').distanceToPlayer() > 4) { world.say('もっと近づいて'); return } water = Math.min(100, water + 35); world.sound(1100, 0.08); world.say('ごくごく！') })
+world.get('ひのこ').onClick(() => { if (!playing) return; if (food < 30) { world.say('おなかがすいてちからが出ない…'); return } food -= 15; smoke += 6; world.say('のろしをあげた！たすけが6秒早くなる'); world.sound(400, 0.2) })
+world.every(${th.drop}, () => { if (!playing || FR.length > 8) return; const t = world.pick(TR); const o = world.spawn({ type: 'sphere', pos: [t[0] + world.random(-1, 1), 3, t[1] + world.random(-1, 1)], scale: [0.45, 0.45, 0.45], color: world.pick(['#ef4444', '#facc15', '#a855f7']), name: 'きのみ' }); if (!o) return; const f = { o, y: 3 }; FR.push(f)
+  o.onClick(() => { if (!playing) return; if (o.distanceToPlayer() > 4) { world.say('もっと近づいて'); return } food = Math.min(100, food + 25); o.remove(); FR.splice(FR.indexOf(f), 1); world.sound(900, 0.06); world.say('もぐもぐ！') }) })
+world.on('tick', dt => { FR.forEach(f => { if (f.y > 0.25) { f.y = Math.max(0.25, f.y - 3 * dt); f.o.setPos(f.o.pos[0], f.y, f.o.pos[2]) } }); if (!playing) return
+  food -= ${th.hunger} * dt; water -= ${th.thirst} * dt; ui.get('おなか').setValue(food); ui.get('のど').setValue(water)
+  if (alive() + smoke >= SEC) { score = SEC; end('ヘリコプターがたすけに来た！だっしゅつ成功！') }
+  if (food <= 0) lose('おなかがすいてたおれた…'); else if (water <= 0) lose('のどがカラカラでたおれた…')
+  if (world.player.pos[1] < -1.5) { world.teleport(0, 0.5, -6); world.say('うみにおちた！') } })`)}); };
+const add=(ja,en,desc,f)=>SWLIST.push({cat:'game',genre:'survival',ja,en,desc,f});
+add('いんせきサバイバル','Meteor survival','赤い丸に、いんせきがおちてくる！60秒にげきれ',()=>G.meteor({seed:1,sec:60,rate:1.4,fall:2.2,sky:'#fdba74',ground:'#a8a29e',floor:'#78716c',rock:'#7c2d12',title:'いんせきサバイバル'}));
+add('いんせきサバイバル：はげしい','Meteor storm','いんせきがどしゃぶり！90秒',()=>G.meteor({seed:2,sec:90,rate:.8,fall:1.6,sky:'#450a0a',ground:'#292524',floor:'#44403c',rock:'#f97316',title:'いんせきのあらし'}));
+add('こうずいサバイバル','Flood survival','大雨で水がどんどん上がる！高いところへにげて90秒',()=>G.flood({seed:3,sec:90,rise:.085,max:7.2,sky:'#94a3b8',storm:'#475569',ground:'#4ade80',floor:'#86efac',cols:['#fca5a5','#fde68a','#bfdbfe','#d9f99d']}));
+add('スライムの大群からにげろ','Slime swarm','どんどんふえるスライムから60秒にげきれ。タップでふっとばせる',()=>G.swarm({seed:4,sec:60,rate:1.2,sp:[1.8,2.6],enemy:'スライム',ecol:['#22c55e','#84cc16','#3b82f6'],glow:0,sky:'#8ec5ff',ground:'#4ade80',floor:'#86efac',box:'#a16207',tree:'#16a34a'}));
+add('よるのおばけから生きのこれ','Night of ghosts','夜の森でおばけから90秒にげきれ',()=>G.swarm({seed:5,sec:90,rate:1,sp:[2.2,3],enemy:'おばけ',ecol:['#e0e7ff','#c4b5fd','#f5d0fe'],glow:1,sky:'#0b1026',ground:'#14532d',floor:'#1e293b',box:'#334155',tree:'#14532d'}));
+add('ころがる大岩','Rolling boulders','大岩をかくればでよけながらゴールへ',()=>G.boulder({len:84,rate:1.6,v:[6,9],sky:'#fde68a',ground:'#d6a86c',floor:'#d6a86c',wall:'#a16207'}));
+add('ころがる大岩：どうくつ','Boulder cave','くらいどうくつで、はやい大岩が来る！',()=>G.boulder({len:100,rate:1.1,v:[8,12],sky:'#1c1917',ground:'#292524',floor:'#44403c',wall:'#57534e'}));
+add('スイーパー','Sweeper','回るバーをジャンプでよけて60秒',()=>G.sweeper({sec:60,bars:1,sp:1.1,acc:.025,sky:'#bae6fd',floor:'#f8fafc',bar:'#ef4444'}));
+add('ダブルスイーパー','Double sweeper','バーが2本！だんだんはやくなる',()=>G.sweeper({sec:60,bars:2,sp:.9,acc:.02,sky:'#1e1b4b',floor:'#312e81',bar:'#e879f9'}));
+add('さむさサバイバル','Blizzard survival','ふぶきの中、たきびであたたまって90秒。まきをひろってたきびをつけよう',()=>G.cold({seed:6,sec:90,burn:18,chill:4.5,sky:'#e2e8f0',storm:'#94a3b8'}));
+add('むじんとうサバイバル','Desert island','きのみ・わきみずで生きのびて、たすけを待とう',()=>G.island({seed:7,sec:120,drop:2.2,hunger:2.2,thirst:2.8,sky:'#7dd3fc'}));
+})();
 
 </script>
 </body>
