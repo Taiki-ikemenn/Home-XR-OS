@@ -1,6 +1,12 @@
 {
-  "latest": "3.7.0",
+  "latest": "3.8.0",
   "versions": [
+    {
+      "v": "3.8.0",
+      "date": "2026-11-21",
+      "notes_ja": "ワールド：スクラッチみたいなブロックでコードを作れるように（コードの命令はぜんぶブロック化＋もし・くり返し・変数・計算・リスト・関数）。UIエディタ：画面にボタン・文字・パネル・ゲージ・アイコン・入力欄を置いて、ブロックやコードで動かせます。",
+      "notes_en": "Worlds: Scratch-like block coding covering the whole API plus logic/loops/variables/functions. UI editor for buttons, text, panels, gauges, icons and inputs."
+    },
     {
       "v": "3.7.0",
       "date": "2026-11-21",

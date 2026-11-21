@@ -11,3 +11,4 @@
 ## ライセンス表記
 - アイコン：Lucide（ISC License） https://lucide.dev
 - 3D：three.js（MIT License） https://threejs.org
+- ブロック：Blockly（Apache License 2.0） https://developers.google.com/blockly
