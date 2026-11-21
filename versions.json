@@ -1,6 +1,12 @@
 {
-  "latest": "3.4.0",
+  "latest": "3.5.0",
   "versions": [
+    {
+      "v": "3.5.0",
+      "date": "2026-11-21",
+      "notes_ja": "AIアシスタントを追加（アプリと下のバーのボタン）。文字や声で話しかけると答えて、アプリを開く・天気・タイマー・景色・ウィジェットなどの操作もできます。Geminiのキーを入れると何でもお話しできます。",
+      "notes_en": "New AI Assistant (app + dock button). Chat by text or voice; it can open apps, show weather, set timers, change scenery and more. Add a Gemini key for full chat."
+    },
     {
       "v": "3.4.0",
       "date": "2026-11-21",
