@@ -28,5 +28,17 @@ service cloud.firestore {
           && (room == 'plaza' || request.auth.uid in room.split('_'));
       }
     }
+    // Home XR OS：いっしょの部屋（コードを知っている人だけが入れる）
+    match /xr_spaces/{code} {
+      allow get: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.host == request.auth.uid && code.size() == 6;
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['video','env','envAt']);
+      allow delete: if request.auth != null && resource.data.host == request.auth.uid;
+      match /members/{uid} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
   }
 }

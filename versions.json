@@ -1,6 +1,12 @@
 {
-  "latest": "3.2.1",
+  "latest": "3.3.0",
   "versions": [
+    {
+      "v": "3.3.0",
+      "date": "2026-11-21",
+      "notes_ja": "絵文字をやめて線のアイコンに統一。空間ウィジェット（時計・天気・カレンダー・メモ・写真・タイマー）。新しい景色（森・夜の街・雪山・オーロラ）と、自分の写真・360°写真の背景。友だちと同じ部屋に入れる「いっしょの部屋」（アバター・いっしょにYouTube・リアクション）。",
+      "notes_en": "Line icons instead of emoji. Spatial widgets. New sceneries plus your own photo / 360° photo backgrounds. Together: share a room with friends (avatars, watch YouTube together, reactions)."
+    },
     {
       "v": "3.2.1",
       "date": "2026-11-21",
