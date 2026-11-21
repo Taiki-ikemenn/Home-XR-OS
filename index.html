@@ -462,7 +462,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.9.0';
+const APP_VERSION='3.9.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -5451,6 +5451,83 @@ APPIMPL.worlds=(body,w)=>{ _worldsImpl30(body,w); const root=body.querySelector(
       const g=h('div','swGrid'); SWLIST.forEach((s,i)=>{ if(cat!=='all'&&s.cat!==cat) return; const c=h('div','card swCard'); c.innerHTML=`<div class="swNo">${i+1}</div><b>${esc(L(s.ja,s.en))}</b><div class="sub">${esc(s.desc)}</div>`; const r=h('div','row'); r.style.cssText='gap:6px;margin-top:8px;flex-wrap:nowrap';
         r.append(btn(IC('play')+L('入る','Enter'),()=>{ const d=s.f(); d.name=L(s.ja,s.en); w3Open('sample'+i,{data:d}); },'pri'),btn(IC('copy')+L('コピーしてつくる','Remix'),()=>{ const d=s.f(); d.name=L(s.ja,s.en); d.createdAt=Date.now(); const m=MYW(); const nid=wid(); m[nid]=d; if(saveMYW(m)){ toastW(L('マイワールドにコピーしました','Copied to My worlds')); box.remove(); } }));
         c.appendChild(r); g.appendChild(c); }); box.appendChild(g); }; draw(); }; };
+
+
+/* ================= いないいないBAR ================= */
+SW.inaibar=()=>{ let N=0; const id=()=>'ib'+(++N);
+  const B=(p,s,c,x={})=>({id:id(),t:'box',p,r:[0,0,0],s,c,solid:1,...x});
+  const S=(t,p,s,c,x={})=>({id:id(),t,p,r:[0,0,0],s,c,solid:1,...x});
+  const T=(p,txt,c,w,x={})=>({id:id(),t:'text',p,r:[0,0,0],s:[w,1,1],c,txt,solid:0,...x});
+  const I=(item,p,ry=0,x={})=>{ const o=w3ItemObj(item); return {...o,id:id(),p,r:[0,ry,0],...x,op:{...(o.op||{}),...(x.op||{})}}; };
+  const WOOD='#7a4b2c', DARK='#3a2216', o=[];
+  // へや
+  o.push(B([0,.05,-7],[16,.1,14],'#5b3a24',{solid:0}),B([0,3.7,-7],[16,.2,14],DARK));
+  o.push(B([0,1.85,-14],[16,3.7,.2],WOOD),B([-8,1.85,-7],[.2,3.7,14],WOOD),B([8,1.85,-7],[.2,3.7,14],WOOD));
+  o.push(B([-4.9,1.85,0],[6.2,3.7,.2],WOOD),B([4.9,1.85,0],[6.2,3.7,.2],WOOD),B([0,3.2,0],[3.6,1,.2],WOOD));
+  o.push(B([0,2.66,.12],[3.6,.1,.1],'#f472b6',{glow:1,solid:0}),T([0,3.25,.15],'いないいないBAR','#fde68a',3.4));
+  // カウンター
+  o.push(B([-1,.55,-11],[9,1.1,.8],'#7c4a2a',{pat:'wood'}),B([-1,1.13,-11],[9.3,.06,1.1],DARK),B([-1,.08,-10.55],[9,.16,.1],'#f59e0b',{glow:1,solid:0}));
+  o.push(B([-1,1.5,-13.75],[9,.08,.5],DARK),B([-1,2.3,-13.75],[9,.08,.5],DARK),B([-1,1.9,-13.86],[9,1.6,.05],'#1e293b',{solid:0}));
+  ['bottle_0','bottle_2','bottle_4','bottle_6','bottle_8','bottle_10','bottle_12','bottle_14','milkbottle_1','milkbottle_3','juice_2','juice_5','carton_1','bottle_1'].forEach((b,i)=>o.push(I(b,[-5+i*.62,i%2?2.34:1.54,-13.7],0,{solid:0})));
+  for(let i=0;i<7;i++) o.push(I('stool_'+(i%3),[-4.6+i*1.2,0,-10.2]));
+  o.push(T([-1,3.3,-13.85],'いないいないBAR','#f472b6',5,{glow:1}),T([4.4,2.6,-13.85],'メニュー','#fde68a',2));
+  o.push(T([4.4,2.1,-13.85],'コーヒー牛乳','#ffffff',2.2),T([4.4,1.75,-13.85],'いちごミルク','#ffffff',2.2),T([4.4,1.4,-13.85],'メロンソーダ','#ffffff',2.2),T([4.4,1.05,-13.85],'タピオカ','#ffffff',2.2));
+  // マスター（いないいない…ばあ！）
+  o.push(S('sphere',[-1,1.6,-12.3],[1,1.15,.9],'#f5f5f4',{name:'マスター',solid:0}),S('sphere',[-1.18,1.82,-11.88],[.13,.17,.08],'#111827',{name:'マスター目L',solid:0}),S('sphere',[-.82,1.82,-11.88],[.13,.17,.08],'#111827',{name:'マスター目R',solid:0}));
+  o.push(S('sphere',[-1.32,1.62,-11.92],[.12,.07,.04],'#fda4af',{solid:0}),S('sphere',[-.68,1.62,-11.92],[.12,.07,.04],'#fda4af',{solid:0}));
+  o.push(B([-1,1.3,-11.9],[.36,.14,.06],'#dc2626',{solid:0}),S('sphere',[-1.62,1.45,-12.1],[.3,.3,.3],'#f5f5f4',{name:'マスター手L',solid:0}),S('sphere',[-.38,1.45,-12.1],[.3,.3,.3],'#f5f5f4',{name:'マスター手R',solid:0}));
+  o.push(T([-1,2.4,-12],'ベルをならしてね','#ffffff',2.4,{name:'ふきだし',op:{billboard:1}}));
+  o.push(S('cyl',[1.2,1.22,-10.75],[.3,.14,.3],'#facc15',{name:'ベル',glow:1}),T([1.2,1.55,-10.7],'ベル','#facc15',.8,{op:{billboard:1}}));
+  // テーブル席
+  for(const [x,z] of [[-5.5,-6.5],[-5.5,-3],[5.5,-6.5],[5.5,-3]]){ o.push(I('table_2',[x,0,z]),I('candle_0',[x,.75,z]),I('sofa_'+(x<0?6:3),[x+(x<0?-1.5:1.5),0,z],x<0?90:-90)); }
+  for(const x of [-4.5,-1,2.5]) o.push(S('sphere',[x,3.35,-10.8],[.45,.45,.45],'#fde68a',{glow:1,solid:0}),B([x,3.6,-10.8],[.04,.4,.04],'#111827',{solid:0}));
+  o.push(I('plant_3',[-7.4,0,-13.3]),I('plant_1',[7.4,0,-.6]),I('floorlamp_2',[-7.4,0,-.6]),I('neon_1',[-7.85,1.2,-9],90),I('neon_4',[7.85,1.2,-9],-90),I('rug_4',[0,.01,-5]));
+  o.push(B([6.6,.9,-12.8],[1.2,1.8,.8],'#7c3aed',{name:'ジュークボックス',glow:1}),T([6.6,1.95,-12.35],'ジュークボックス','#e9d5ff',1.6,{op:{billboard:1}}));
+  o.push(B([-7.85,1.3,-1.2],[.1,.4,.3],'#f8fafc',{name:'でんき'}),T([-7.8,1.75,-1.2],'でんき','#ffffff',.9,{r:[0,90,0]}));
+  // かくれオバケ 8ぴき
+  [[-6.9,.3,-6.5],[-6.9,.3,-3],[6.9,.3,-3],[3.6,.3,-11.6],[-5.9,.3,-11.6],[7.2,.4,-12],[-7.2,.4,-13],[6.9,.3,-6.5]].forEach((p,i)=>o.push(S('sphere',p,[.5,.55,.5],'#e0f2fe',{name:'オバケ'+(i+1),glow:1,solid:0})));
+  const script=`const say = t => { const f = world.get('ふきだし'); if (f) f.setText(t) }
+const m = world.get('マスター'), eL = world.get('マスター目L'), eR = world.get('マスター目R'), hL = world.get('マスター手L'), hR = world.get('マスター手R')
+const drinks = [['milkbottle_1', 'コーヒー牛乳'], ['milkbottle_2', 'いちごミルク'], ['float_0', 'メロンソーダ'], ['boba_0', 'タピオカ'], ['juice_1', 'オレンジジュース'], ['coffee_2', 'ホットココア']]
+let busy = false, served = []
+const hands = (cover) => { if (cover) { hL.setPos(-1.18, 1.82, -11.75); hR.setPos(-0.82, 1.82, -11.75) } else { hL.setPos(-1.62, 1.45, -12.1); hR.setPos(-0.38, 1.45, -12.1) } }
+const peekaboo = (after) => {
+  if (busy) return; busy = true
+  say('いないいない…'); hands(true); world.sound(392, 0.25)
+  world.after(0.7, () => { say('いないいない……'); world.sound(349, 0.25) })
+  world.after(1.4, () => { hands(false); m.setScale(1.25, 1.4, 1.1); say('ばあ！！'); world.sound(784, 0.15); world.after(0.12, () => world.sound(1046, 0.25)); if (after) after() })
+  world.after(1.8, () => { m.setScale(1, 1.15, 0.9) })
+  world.after(3.2, () => { say('ベルをならしてね'); busy = false })
+}
+const bell = world.get('ベル')
+if (bell) bell.onClick(() => { world.sound(1318, 0.3); peekaboo(() => {
+  const d = world.pick(drinks); const x = world.random(-4, 2)
+  served.push(world.item(d[0], { pos: [x, 1.16, -10.75] })); if (served.length > 8) { const old = served.shift(); if (old) old.remove() }
+  world.say(d[1] + ' おまたせ！') }) })
+if (m) m.onClick(() => peekaboo())
+// オバケさがし
+const G = []; for (let i = 1; i <= 8; i++) { const g = world.get('オバケ' + i); if (g) G.push({ g, base: g.pos, up: false, found: false }) }
+let found = 0
+const hud = () => ui.get('オバケ') && ui.get('オバケ').setText('みつけたオバケ ' + found + ' / ' + G.length)
+G.forEach(b => { b.g.hide(); b.g.onClick(() => {
+  if (b.found || !b.up) return
+  b.found = true; found++; b.g.setColor('#fde68a'); b.g.setPos(b.base[0], b.base[1] + 1.1, b.base[2]); world.sound(880, 0.2); world.say('ばあ！みつかっちゃった（' + found + '/' + G.length + '）'); hud()
+  if (found === G.length) world.after(0.8, () => { world.say('ぜんぶみつけた！マスターからごほうび！'); peekaboo(() => world.item('trophy_0', { pos: [-1, 1.16, -10.75] })) }) }) })
+world.every(1.1, () => G.forEach(b => { if (b.found) return; if (Math.random() < 0.3) { b.up = !b.up; if (b.up) { b.g.show(); b.g.setPos(b.base[0], b.base[1] + 0.6, b.base[2]) } else { b.g.setPos(b.base[0], b.base[1], b.base[2]); b.g.hide() } } }))
+hud()
+// ジュークボックス
+const song = [523, 659, 784, 659, 698, 880, 784, 0, 659, 587, 523, 587, 659, 523]
+const jb = world.get('ジュークボックス'); let playing = false
+if (jb) jb.onClick(() => { if (playing) return; playing = true; song.forEach((f, i) => world.after(i * 0.28, () => { if (f) world.sound(f, 0.24); jb.setColor(i % 2 ? '#7c3aed' : '#f472b6') })); world.after(song.length * 0.28, () => { playing = false; jb.setColor('#7c3aed') }) })
+// でんき
+let dark = true; const sw = world.get('でんき')
+if (sw) sw.onClick(() => { dark = !dark; world.setSky(dark ? '#1a0f0a' : '#fcd9a8'); world.say(dark ? 'ムーディーモード' : 'あかるいモード') })
+world.say('いないいないBARへようこそ！')`;
+  return {v:1,name:'いないいないBAR',desc:'',sky:'#1a0f0a',ground:'#1a0f0a',fog:false,grav:1,spawn:[0,0,-3],objs:o,script,
+    ui:[{id:'uob',name:'オバケ',t:'text',x:2,y:2,w:30,h:7,text:'みつけたオバケ 0 / 8',fg:'#fde68a',bg:'#2a1810',op:75,size:22,r:14,align:'center'},
+        {id:'uhelp',name:'あそびかた',t:'text',x:62,y:2,w:36,h:13,text:'ベル：のみものをたのむ\nマスター：いないいないばあ\nかくれオバケを8ぴきさがそう',fg:'#ffffff',bg:'#000000',op:45,size:15,r:14}]};
+};
+SWLIST.unshift({cat:'shop',ja:'いないいないBAR',en:'Peekaboo BAR',desc:'ベルを鳴らすとマスターが「いないいない…ばあ！」で飲み物を出してくれるバー。かくれオバケ8ぴきさがし・ジュークボックスつき',f:()=>SW.inaibar()});
 
 </script>
 </body>

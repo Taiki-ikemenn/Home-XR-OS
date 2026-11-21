@@ -1,6 +1,12 @@
 {
- "latest": "3.9.0",
+ "latest": "3.9.1",
  "versions": [
+  {
+   "v": "3.9.1",
+   "date": "2026-11-21",
+   "notes_ja": "新ワールド「いないいないBAR」追加：ベルでマスターが「いないいない…ばあ！」して飲み物を出してくれる・かくれオバケ8ぴきさがし・ジュークボックス・でんきスイッチ",
+   "notes_en": "New world \"Peekaboo BAR\": ring the bell and the master does peekaboo and serves a drink, plus a hide-and-seek ghost hunt, jukebox and light switch."
+  },
   {
    "v": "3.9.0",
    "date": "2026-11-21",
