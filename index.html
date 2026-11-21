@@ -168,6 +168,7 @@ body.direct #pads,body.direct #hud{display:none}
 body.hands #handDbg{display:block}
 #handCam{transition:width .2s}
 #handCam.big{width:min(420px,60vw)}
+body.framehole #world iframe{pointer-events:auto}
 #htInfo{position:fixed;left:14px;top:142px;z-index:8;display:none;font-size:12px;padding:4px 9px;border-radius:9px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
 body.hands #htInfo{display:block}
 #handCam.seen{border-color:#3ecf8e;box-shadow:0 0 0 3px rgba(62,207,142,.5)}
@@ -225,7 +226,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.8';
+const APP_VERSION='3.1.9';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -2584,11 +2585,59 @@ APPIMPL.browser=(body,w)=>{
   (f.nextSibling||f).after(dbtn);
   // サイトを開いたら、大きな「さわって操作」ボタンを出す
   const mo=new MutationObserver(()=>{ const fr=body.querySelector('iframe'); if(!fr||fr._dv) return; fr._dv=1;
-    const b=btn('👆 '+L('さわって操作する','Touch to use this site'),()=>openDirect(fr.src),'pri');
-    b.style.cssText='position:absolute;top:12px;right:12px;z-index:2;font-size:18px;padding:12px 18px';
+    const b=btn('⛶ '+L('全画面','Full screen'),()=>openDirect(fr.src),'pri');
+    b.style.cssText='position:absolute;top:10px;right:10px;z-index:2;font-size:15px;padding:8px 12px;opacity:.85';
     fr.parentElement.appendChild(b); });
   mo.observe(body,{childList:true,subtree:true});
   onCloseAdd(w,()=>{ mo.disconnect(); closeDirect(); });
+};
+
+/* ================= 空間のウィンドウのままサイトをさわる ================= */
+// 操作用の透明な層（#input）に、サイトの部分だけ「穴」をあける。
+// 穴の部分を指でさわると、その下のサイトに直接とどく。
+const HOLE={t:0,last:''};
+function frameOK(fr){
+  if(!fr.isConnected) return null; const w=fr.closest('.wo'); if(w&&getComputedStyle(w).visibility==='hidden') return null;
+  const r=fr.getBoundingClientRect(); if(r.width<80||r.height<80||r.right<0||r.bottom<0||r.left>S.W||r.top>S.H) return null;
+  // ほかのものが前に重なっていないか（まん中と4すみで確認）
+  const pts=[[.5,.5],[.2,.25],[.8,.25],[.2,.75],[.8,.75]];
+  for(const [px,py] of pts){ const x=r.left+r.width*px, y=r.top+r.height*py; if(x<0||y<0||x>S.W||y>S.H) continue;
+    const top=document.elementsFromPoint(x,y).find(e=>e.id!=='input'&&e.id!=='hud'&&!e.closest('#pads'));
+    if(top!==fr) return null; }
+  return r;
+}
+FRAME.push(()=>{
+  if(++HOLE.t%4) return;
+  let d='';
+  if(!DV.el&&!(KB.wo&&KB.wo.shown)&&!$('start')){
+    for(const fr of document.querySelectorAll('#world iframe')){ const r=frameOK(fr); if(!r) continue;
+      const x=Math.max(0,r.left+2), y=Math.max(0,r.top+2), x2=Math.min(S.W,r.right-2), y2=Math.min(S.H,r.bottom-2);
+      d+=` M${x|0} ${y|0} H${x2|0} V${y2|0} H${x|0} Z`; }
+  }
+  const cp=d?`path(evenodd,"M0 0 H${S.W|0} V${S.H|0} H0 Z${d}")`:'none';
+  if(cp!==HOLE.last){ HOLE.last=cp; inp.style.clipPath=inp.style.webkitClipPath=cp; document.body.classList.toggle('framehole',!!d); }
+});
+
+/* ---- サイトの中で移動したら、アドレスバーと「もどる・すすむ」も合わせる ---- */
+// ほかのサイトのURLは安全のため読めないので、移動したことだけ分かる。
+// もどる・すすむは、ブラウザ本体の履歴を使ってサイトの中で動かす。
+const _br14b=APPIMPL.browser;
+APPIMPL.browser=(body,w)=>{
+  _br14b(body,w);
+  const f=body.querySelector('.field'); const [bk,fw]=body.querySelectorAll('.wbtn');
+  let fr=null, n=0, fwd=0, expect=0, told=false;
+  const host=u=>{ try{ return new URL(u).host; }catch(e){ return u; } };
+  const show=()=>{ if(!fr) return; f.set(n>0?host(fr.src)+L(' …（サイト内のページ）',' … (page inside the site)'):fr.src); };
+  const hook=()=>{ const x=body.querySelector('iframe'); if(x===fr) return; fr=x; n=0; fwd=0; expect=0; if(!fr) return;
+    let first=true;
+    fr.addEventListener('load',()=>{ if(first){ first=false; return; }
+      if(expect<0){ n--; fwd++; expect=0; } else if(expect>0){ n++; fwd--; expect=0; } else { n++; fwd=0; }
+      show();
+      if(n===1&&!told){ told=true; toastW(L('サイトの中で移動しました。ほかのサイトのURLは安全のため表示できないので、サイト名だけ出します','Moved inside the site. Only the site name can be shown.')); } }); };
+  new MutationObserver(hook).observe(body,{childList:true,subtree:true});
+  // サイトを表示しているときの「もどる・すすむ」
+  bk.addEventListener('click',e=>{ if(fr&&fr.isConnected&&n>0){ e.stopImmediatePropagation(); expect=-1; history.back(); } },true);
+  fw.addEventListener('click',e=>{ if(fr&&fr.isConnected&&fwd>0){ e.stopImmediatePropagation(); expect=1; history.forward(); } },true);
 };
 
 </script>

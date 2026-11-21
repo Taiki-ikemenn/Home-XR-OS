@@ -1,6 +1,12 @@
 {
-  "latest": "3.1.8",
+  "latest": "3.1.9",
   "versions": [
+    {
+      "v": "3.1.9",
+      "date": "2026-11-21",
+      "notes_ja": "ブラウザのサイトを、空間のウィンドウのまま指でさわって操作できるようになりました。サイト内で移動するとアドレスバーが変わり、もどる・すすむも使えます。",
+      "notes_en": "Touch websites directly inside the floating browser window. Address bar and back/forward follow in-site navigation."
+    },
     {
       "v": "3.1.8",
       "date": "2026-11-21",
