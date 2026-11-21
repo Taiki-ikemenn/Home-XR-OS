@@ -1,6 +1,12 @@
 {
-  "latest": "3.8.0",
+  "latest": "3.8.1",
   "versions": [
+    {
+      "v": "3.8.1",
+      "date": "2026-11-21",
+      "notes_ja": "キーボードが見えないことがあったのを修正（画面の下に平らに出るように）。アバターの着せかえ（体・顔・目・髪・帽子・服・くつ・アクセをこまかく変更、ワールドで友だちにも見える、歩く・手をふる）。",
+      "notes_en": "Fixed invisible keyboard (now a flat bottom keyboard). Detailed avatar customization, visible to friends in Worlds."
+    },
     {
       "v": "3.8.0",
       "date": "2026-11-21",
