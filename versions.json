@@ -1,6 +1,12 @@
 {
-  "latest": "3.2.0",
+  "latest": "3.2.1",
   "versions": [
+    {
+      "v": "3.2.1",
+      "date": "2026-11-21",
+      "notes_ja": "マイアプリに「🚀 アプリを起動」を追加。Roblox・Minecraft・YouTube・Discord・LINE・Spotifyなど、iPadに入っているアプリをライブラリから開けます。",
+      "notes_en": "My Apps: new Launch type to open installed apps (Roblox, Minecraft, YouTube, Discord, LINE, Spotify…) from the library."
+    },
     {
       "v": "3.2.0",
       "date": "2026-11-21",

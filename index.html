@@ -227,7 +227,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.2.0';
+const APP_VERSION='3.2.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -2692,6 +2692,15 @@ function myAdd(m){ m.id='my_'+Date.now().toString(36); m.bg=m.bg||MYCOLORS[MYAPP
   myRegister(m); INST.push(m.id); STORE.set('inst',INST); renderLib(); AU.tone(784,.12,'sine',.12); toastW(L(`「${m.name}」をライブラリに追加しました`,`Added "${m.name}"`)); return true; }
 function myRemove(id){ MYAPPS=MYAPPS.filter(x=>x.id!==id); mySave(); INST=INST.filter(x=>x!==id); STORE.set('inst',INST); const w=WINS.find(x=>x.id===id); if(w) closeWin(id); delete APPS[id]; delete APPIMPL[id]; renderLib(); }
 MYAPPS.forEach(myRegister);
+const LAUNCH_PRESETS=[['Roblox','🎮','roblox://'],['Minecraft','⛏️','minecraft://'],['YouTube','▶️','youtube://'],['Discord','💬','discord://'],['LINE','🟩','line://'],['Spotify','🎵','spotify://']];
+function myLaunch(m){
+  AU.click&&AU.click(); toastW(L(`「${m.name}」を開いています…`,`Opening ${m.name}…`));
+  let left=false; const hid=()=>{ if(document.hidden) left=true; }; document.addEventListener('visibilitychange',hid);
+  try{ location.href=m.url; }catch(e){}
+  setTimeout(()=>{ document.removeEventListener('visibilitychange',hid); if(!left&&!document.hidden) toastW(L(`「${m.name}」が開かないときは、アプリが入っているか確認してね（確認の画面が出たら「開く」を押してね）`,`If ${m.name} did not open, check that it is installed.`)); },2500);
+}
+const _openApp15=openApp;
+openApp=function(id){ const m=MYAPPS.find(x=>x.id===id); if(m&&m.type==='launch'){ closePanels(); myLaunch(m); return null; } return _openApp15.apply(this,arguments); };
 
 regApp('myapps',{name:'マイアプリ',en:'My Apps',emoji:'🧩',bg:'linear-gradient(160deg,#a7f3d0,#0d9488)',cat:'tool',w:900,h:660,
   desc:'好きなウェブサイトやHTMLファイルを、自分のアプリとして追加できます。',den:'Add websites or HTML files as your own apps.',
@@ -2701,13 +2710,21 @@ regApp('myapps',{name:'マイアプリ',en:'My Apps',emoji:'🧩',bg:'linear-gra
     let emoji='🧩', type='url';
     const draw=()=>{ sc.innerHTML='';
       sc.appendChild(h('h2','',L('アプリを追加','Add an app'))).style.marginBottom='12px';
-      const seg=h('div','seg'); for(const [k,n] of [['url',L('🌐 URL（ウェブアプリ）','🌐 URL')],['html',L('📄 HTMLファイル','📄 HTML file')]]){ const b=h('button',type===k?'on':'',n); b.onclick=()=>{ type=k; draw(); }; seg.appendChild(b); } sc.appendChild(seg);
+      const seg=h('div','seg'); for(const [k,n] of [['url',L('🌐 URL（ウェブアプリ）','🌐 URL')],['html',L('📄 HTMLファイル','📄 HTML file')],['launch',L('🚀 アプリを起動','🚀 Launch an app')]]){ const b=h('button',type===k?'on':'',n); b.onclick=()=>{ type=k; draw(); }; seg.appendChild(b); } sc.appendChild(seg);
       const card=h('div','card'); card.style.margin='14px 0';
       const name=inputField(w,L('アプリの名前','App name'),{mode:'kana',enter:L('決定','OK'),onEnter:()=>hideKB()}); name.style.cssText+=';width:100%;margin-bottom:10px';
       card.appendChild(name);
       let url=null, file=null;
+      let scheme=null;
+      if(type==='launch'){
+        const pr=h('div','row'); pr.style.cssText='gap:8px;flex-wrap:wrap;margin-bottom:10px';
+        for(const [n,e,u] of LAUNCH_PRESETS){ const b=btn(e+' '+n,()=>{ name.set(n); scheme.set(u); emoji=e; er.querySelectorAll('.btn').forEach(x=>x.classList.toggle('pri',x.textContent===e)); }); pr.appendChild(b); }
+        card.append(h('div','sub',L('よく使うアプリ（押すと入力されます）','Presets')),pr);
+        scheme=inputField(w,L('アプリのURL（例：roblox://）','App link (e.g. roblox://)'),{mode:'abc',enter:L('決定','OK'),onEnter:()=>hideKB()}); scheme.style.cssText+=';width:100%;margin-bottom:6px'; card.appendChild(scheme);
+        card.appendChild(h('p','sub',L('押すと、iPadに入っているそのアプリが開きます（Home XR OSの中では動きません）。入っていないアプリは開きません。','Opens the app installed on your device.')));
+      }
       if(type==='url'){ url=inputField(w,'https://…',{mode:'abc',enter:L('決定','OK'),onEnter:()=>hideKB()}); url.style.cssText+=';width:100%;margin-bottom:10px'; card.appendChild(url); }
-      else{
+      else if(type==='html'){
         file=document.createElement('input'); file.type='file'; file.accept='.html,.htm,text/html'; file.style.display='none'; card.appendChild(file);
         const fl=h('div','sub',L('まだ選んでいません','No file yet')); fl.style.margin='6px 0 10px';
         const pick=btn('📂 '+L('HTMLファイルを選ぶ','Choose an HTML file'),()=>file.click());
@@ -2722,6 +2739,10 @@ regApp('myapps',{name:'マイアプリ',en:'My Apps',emoji:'🧩',bg:'linear-gra
         if(type==='url'){ let u=(url.get()||'').trim(); if(!u){ toastW(L('URLを入れてね','Enter a URL')); return; } if(!/^https?:\/\//i.test(u)) u='https://'+u;
           try{ u=new URL(u).href; }catch(e){ toastW(L('URLが正しくないみたい','That URL looks wrong')); return; }
           if(!nm) nm=new URL(u).host; if(myAdd({name:nm,emoji,type:'url',url:u})) draw(); }
+        else if(type==='launch'){ let u=(scheme.get()||'').trim(); if(!u){ toastW(L('アプリのURLを入れてね','Enter the app link')); return; }
+          if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u=u.replace(/:?\/*$/,'')+'://';
+          if(/^(javascript|data|file|blob):/i.test(u)){ toastW(L('そのURLは使えません','That link is not allowed')); return; }
+          if(!nm) nm=u.split(':')[0]; if(myAdd({name:nm,emoji,type:'launch',url:u})) draw(); }
         else{ const f=file.files&&file.files[0]; if(!f){ toastW(L('HTMLファイルを選んでね','Choose an HTML file')); return; }
           if(f.size>2.5e6){ toastW(L('ファイルが大きすぎます（2.5MBまで）','File too large (max 2.5MB)')); return; }
           const html=await f.text(); if(!nm) nm=f.name.replace(/\.html?$/i,''); if(myAdd({name:nm,emoji,type:'html',html})) draw(); }
@@ -2730,7 +2751,7 @@ regApp('myapps',{name:'マイアプリ',en:'My Apps',emoji:'🧩',bg:'linear-gra
       sc.appendChild(h('h3','',L('追加したアプリ','Your apps'))).style.margin='18px 0 8px';
       if(!MYAPPS.length) sc.appendChild(h('p','sub',L('まだありません','None yet')));
       for(const m of MYAPPS){ const r=h('div','row'); r.style.cssText='padding:10px 0;border-top:1px solid var(--line);flex-wrap:nowrap;align-items:center;gap:12px';
-        r.appendChild(iconEl(m.id,48)); const t=h('div',''); t.style.flex='1'; t.innerHTML=`<b>${esc(m.name)}</b><div class="sub">${esc(m.type==='url'?m.url:L('HTMLファイル','HTML file'))}</div>`; r.appendChild(t);
+        r.appendChild(iconEl(m.id,48)); const t=h('div',''); t.style.flex='1'; t.innerHTML=`<b>${esc(m.name)}</b><div class="sub">${esc(m.type==='html'?L('HTMLファイル','HTML file'):(m.type==='launch'?'🚀 '+m.url:m.url))}</div>`; r.appendChild(t);
         r.append(btn(L('開く','Open'),()=>openApp(m.id)),btn(L('削除','Delete'),()=>{ myRemove(m.id); draw(); }));
         sc.appendChild(r); }
       sc.appendChild(h('p','sub',L('※ exe などのパソコン用プログラムは、ブラウザの中では動かせません。ウェブアプリ（URL）か HTML ファイルなら使えます。','Note: .exe and other desktop programs cannot run in a browser. Web apps (URL) and HTML files work.'))).style.marginTop='16px';
