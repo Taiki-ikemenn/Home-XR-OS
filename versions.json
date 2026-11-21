@@ -1,6 +1,12 @@
 {
- "latest": "3.12.0",
+ "latest": "3.13.0",
  "versions": [
+  {
+   "v": "3.13.0",
+   "date": "2026-11-21",
+   "notes_ja": "ワールドのランキング（公式・公開ワールドのベスト記録をみんなで競える）。ボイスチャット（ワールドといっしょの部屋で声で話せる）。ペット8しゅるい（ついてくる）と、のりもの5しゅるい（はやく動ける）。ほかの人のペット・のりものも見える",
+   "notes_en": "World rankings, voice chat in worlds and Together rooms, 8 pets that follow you and 5 rides that make you faster (visible to others)."
+  },
   {
    "v": "3.12.0",
    "date": "2026-11-21",
