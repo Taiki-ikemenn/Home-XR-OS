@@ -282,6 +282,10 @@ body.hands .htRe{display:inline-flex}
 .w3right{position:absolute;right:24px;bottom:calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;align-items:center}
 .w3big{width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.35);display:grid;place-items:center;touch-action:none}
 .w3big svg{width:34px;height:34px}
+.w3big.w3jump{order:9;width:132px;height:132px;background:rgba(79,140,255,.55);border:3px solid rgba(255,255,255,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:800;font-size:15px;color:#fff}
+.w3big.w3jump svg{width:58px;height:58px}
+.w3big.w3jump:active{transform:scale(.94);background:rgba(79,140,255,.8)}
+@media (max-height:520px){.w3big.w3jump{width:104px;height:104px}.w3big.w3jump svg{width:46px;height:46px}}
 .w3sayBox{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:none;gap:8px;width:min(520px,70vw)}
 .w3sayBox.on{display:flex}
 .w3in,.w3input{flex:1;min-width:0;border-radius:14px;border:0;padding:12px 14px;font-size:17px;background:rgba(255,255,255,.95);color:#111;width:100%;box-sizing:border-box}
@@ -475,7 +479,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.11.0';
+const APP_VERSION='3.11.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -3831,7 +3835,7 @@ async function w3Open(id,opts={}){
    <button class="w3b w3view" aria-label="${L('視点を切りかえ','Switch view')}">${svg('eye')}</button><button class="w3b w3editB" aria-label="${L('ワールドをつくる','Edit world')}">${svg('square-pen')}</button></div>
    <div class="w3log"></div><div class="w3hint"></div>
    <div class="w3stick"><div class="w3knob"></div></div>
-   <div class="w3right"><button class="w3big w3jump" aria-label="${L('ジャンプ','Jump')}">${svg('chevrons-up')}</button><button class="w3big w3hi" aria-label="${L('ヤッホー','Hi!')}">${svg('hand')}</button><button class="w3big w3chat" aria-label="${L('ひとこと','Say')}">${svg('message-circle')}</button></div>
+   <div class="w3right"><button class="w3big w3jump" aria-label="${L('ジャンプ','Jump')}">${svg('chevrons-up')}<span>${L('ジャンプ','Jump')}</span></button><button class="w3big w3hi" aria-label="${L('ヤッホー','Hi!')}">${svg('hand')}</button><button class="w3big w3chat" aria-label="${L('ひとこと','Say')}">${svg('message-circle')}</button></div>
    <div class="w3sayBox"><input class="w3in" maxlength="60" placeholder="${L('ひとこと（Enterで送る）','Say something')}"><button class="w3b w3send">${svg('send')}</button></div>
    <div class="w3panel"></div>`;
   document.body.appendChild(ov); document.body.classList.add('w3on'); W3.ov=ov; W3.on=true; W3.edit=false; W3.sel=null; W3.carry=null; W3.log=[];
@@ -3886,7 +3890,8 @@ function w3Bind(){ const ov=W3.ov;
   const st=ov.querySelector('.w3stick'), kn=ov.querySelector('.w3knob'); let sid=null;
   const setS=e=>{ const r=st.getBoundingClientRect(); let x=(e.clientX-r.left-r.width/2)/(r.width/2), y=(e.clientY-r.top-r.height/2)/(r.height/2); const l=Math.hypot(x,y); if(l>1){ x/=l; y/=l; } W3.stick.x=x; W3.stick.y=y; kn.style.transform=`translate(${x*40}px,${y*40}px)`; };
   st.onpointerdown=e=>{ sid=e.pointerId; st.setPointerCapture(sid); setS(e); }; st.onpointermove=e=>{ if(e.pointerId===sid) setS(e); };
-  st.onpointerup=st.onpointercancel=e=>{ if(e.pointerId!==sid) return; sid=null; W3.stick.x=W3.stick.y=0; kn.style.transform=''; };
+  st.onpointerup=st.onpointercancel=st.onlostpointercapture=e=>{ if(e.pointerId!==sid) return; sid=null; W3.stick.x=W3.stick.y=0; kn.style.transform=''; };
+  addEventListener('blur',()=>{ sid=null; W3.stick.x=W3.stick.y=0; kn.style.transform=''; W3.keys&&W3.keys.clear(); });
   // 見回す・タップ
   const cv=ov.querySelector('.w3c'); const ptrs=new Map();
   cv.onpointerdown=e=>{ cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,t:performance.now()}); };
@@ -3913,14 +3918,14 @@ function w3Collide(axis){ const p=W3.pos; for(const b of (W3.mboxes&&W3.mboxes.l
     else { const a=p.z-(b.min.z+b.max.z)/2; p.z=a>0?b.max.z+W3R+.001:b.min.z-W3R-.001; } } }
 function w3Loop(now){ if(!W3.on) return; W3.raf=requestAnimationFrame(w3Loop); const dt=Math.min(.05,(now-W3.last)/1000); W3.last=now; const T=W3.T;
   // 入力
-  let mx=W3.stick.x, mz=W3.stick.y; const K=W3.keys; if(K.has('KeyW')||K.has('ArrowUp')) mz=-1; if(K.has('KeyS')||K.has('ArrowDown')) mz=1; if(K.has('KeyA')) mx=-1; if(K.has('KeyD')) mx=1;
+  let mx=W3.stick.x, mz=W3.stick.y; { const l=Math.hypot(mx,mz); if(l<.14){ mx=mz=0; } else { const k=Math.min(1,(l-.14)/.86)/l; mx*=k; mz*=k; } } const K=W3.keys; if(K.has('KeyW')||K.has('ArrowUp')) mz=-1; if(K.has('KeyS')||K.has('ArrowDown')) mz=1; if(K.has('KeyA')) mx=-1; if(K.has('KeyD')) mx=1;
   if(K.has('ArrowLeft')) W3.yaw+=dt*2; if(K.has('ArrowRight')) W3.yaw-=dt*2;
   const MOD=W3.mod||(W3.mod={});
   const sp=(K.has('ShiftLeft')?7:4.2)*(MOD.speed||1), s=Math.sin(W3.yaw), c=Math.cos(W3.yaw);
   let dx=(mx*c+mz*s)*sp*dt, dz=(-mx*s+mz*c)*sp*dt; W3.moving=Math.hypot(mx,mz)>.1;
   if(W3.sit){ if(W3.moving){ W3.sit=null; w3Hint(L('立ち上がった','Stood up')); } else { dx=dz=0; } }
   // 氷：すべる
-  W3.hv=W3.hv||{x:0,z:0}; if(MOD.ice){ W3.hv.x+=(dx/dt-W3.hv.x)*Math.min(1,dt*1.2); W3.hv.z+=(dz/dt-W3.hv.z)*Math.min(1,dt*1.2); dx=W3.hv.x*dt; dz=W3.hv.z*dt; } else { W3.hv.x=dx/dt; W3.hv.z=dz/dt; }
+  W3.hv={x:dx/dt,z:dz/dt}; // すべらない：手をはなしたらすぐ止まる
   if(MOD.conv){ dx+=MOD.conv[0]*dt; dz+=MOD.conv[1]*dt; }
   if(W3.ride){ dx+=W3.ride[0]; dz+=W3.ride[2]; }
   const p=W3.pos; p.x+=dx; w3Collide('x'); p.z+=dz; w3Collide('z'); if(W3.ride){ p.y+=W3.ride[1]; W3.ride=null; }
@@ -4266,7 +4271,7 @@ const W3DIRECT=new Set(['solid','glow','glass','phys','bounce']);
 const W3OPTS=[
   ['look','見た目','Look',[['glow','光る','Glow'],['glass','すける（ガラス）','Glass'],['noshadow','影なし','No shadow'],['rainbow','虹色に変わる','Rainbow'],['blink','点滅する','Blink'],['sparkle','きらきら','Sparkle'],['label','名前を表示','Show name'],['billboard','いつもこっちを向く','Face me'],['hidden','見えない（あそぶとき）','Invisible'],['pulse','ドクドク大きさが変わる','Pulse']]],
   ['move','うごき','Motion',[['spin','回る','Spin'],['float','ふわふわ浮く','Float'],['swing','ゆらゆら','Swing'],['moveX','左右に動く','Move sideways'],['moveY','上下に動く','Move up/down'],['moveZ','前後に動く','Move forward/back'],['orbit','円をえがく','Orbit'],['chase','追いかけてくる','Chase me'],['flee','にげる','Run away'],['lookat','こっちを見る','Look at me']]],
-  ['phys','物理','Physics',[['solid','ぶつかる・乗れる','Solid'],['phys','重力で落ちる','Gravity'],['bounce','はねる','Bouncy'],['push','押せる','Pushable'],['ice','すべる床（氷）','Ice'],['tramp','トランポリン','Trampoline'],['jumppad','ジャンプ台','Jump pad'],['speed','スピードアップ床','Speed boost'],['conveyor','ベルトコンベア','Conveyor'],['ladder','はしご（登れる）','Ladder'],['water','水（泳げる）','Water']]],
+  ['phys','物理','Physics',[['solid','ぶつかる・乗れる','Solid'],['phys','重力で落ちる','Gravity'],['bounce','はねる','Bouncy'],['push','押せる','Pushable'],['ice','氷の床（見た目）','Ice look'],['tramp','トランポリン','Trampoline'],['jumppad','ジャンプ台','Jump pad'],['speed','スピードアップ床','Speed boost'],['conveyor','ベルトコンベア','Conveyor'],['ladder','はしご（登れる）','Ladder'],['water','水（泳げる）','Water']]],
   ['hold','持つ・使う','Hold / use',[['hold','持てる','Holdable'],['throw','投げられる','Throwable'],['eat','食べる・飲める','Edible'],['sit','すわれる','Seat'],['bag','バックパックに入る','Fits in backpack'],['respawn','落ちたら元の場所にもどる','Respawn']]],
   ['tap','タップしたら','On tap',[['tapSound','音が鳴る','Sound'],['tapColor','色が変わる','Change color'],['tapHide','消える（3秒でもどる）','Disappear'],['tapGrow','大きくなる','Grow'],['door','開く（ドア）','Open (door)'],['tapLight','ライトをつける・けす','Toggle light'],['tapMusic','メロディが鳴る','Melody'],['info','説明を出す','Show info']]],
   ['touch','さわったら','On touch',[['warp','ワープ','Warp'],['coin','集める（コイン）','Collect (coin)'],['checkpoint','チェックポイント','Checkpoint'],['goal','ゴール','Goal'],['damage','ダメージ（もどされる）','Damage']]],
@@ -5443,12 +5448,12 @@ const SWLIST=(()=>{ const L2=[]; const add=(cat,ja,en,desc,f)=>L2.push({cat,ja,e
   [['コンビニ','Convenience store',{name:'コンビニ',sign:'#16a34a',shelf:'#e5e7eb',items:[...DR,...FD]}],['ドリンク専門店','Drink shop',{name:'ドリンク',sign:'#2563eb',shelf:'#dbeafe',items:DR.concat(['bottle_0','bottle_2','bottle_4','can_5','can_7'])}],['ケーキ屋','Cake shop',{name:'ケーキ屋さん',sign:'#db2777',shelf:'#fce7f3',items:['cake_0','cake_1','cake_2','cake_3','cupcake_0','cupcake_1','donut_2']}],['おかし屋','Sweets shop',{name:'おかし',sign:'#ea580c',shelf:'#ffedd5',items:['candy_0','candy_2','candy_4','donut_0','donut_4','icecream_6']}],['雑貨屋','Variety shop',{name:'ざっかや',sign:'#7c3aed',shelf:'#ede9fe',items:['mug_3','teddy_0','duck_0','present_1','lantern_2','vase_0','book_3']}]].forEach(([ja,en,th],i)=>add('shop',ja,en,'たなの商品は持ったり飲んだりできるよ。じはんきもあるよ',()=>SW.shop(600+i,th)));
   [['春の公園','Spring park',{sky:'#fbcfe8',ground:'#86efac',leaf:['#f9a8d4','#fbcfe8','#fda4af']}],['夏の公園','Summer park',{sky:'#7dd3fc',ground:'#4ade80',leaf:['#16a34a','#22c55e'],extra:['icecream_4','float_4','beachball_2']}],['秋の公園','Autumn park',{sky:'#fed7aa',ground:'#d9a066',leaf:['#f97316','#dc2626','#facc15']}],['冬の公園','Winter park',{sky:'#e2e8f0',ground:'#f8fafc',leaf:['#e2e8f0','#cbd5e1'],extra:['snowman_0','snowman_0']}],['夜の公園','Night park',{sky:'#0b1026',ground:'#14532d',leaf:['#14532d','#166534'],extra:['lantern_0','lantern_3','candle_0']}],['花の公園','Flower park',{sky:'#fdf4ff',ground:'#bbf7d0',leaf:['#a78bfa','#f472b6','#fde68a']}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'噴水と木とベンチの公園。のんびりおさんぽしよう',()=>SW.park(700+i,th)));
   [['宇宙ステーション','Space station',{grav:.17,cols:['#94a3b8','#64748b','#a78bfa'],planet:'#f97316'}],['月面きち','Moon base',{grav:.17,cols:['#e5e7eb','#9ca3af'],planet:'#60a5fa'}],['ネオン宇宙','Neon space',{grav:.3,cols:['#22d3ee','#e879f9','#a3e635'],planet:'#e879f9'}],['火星','Mars',{grav:.38,cols:['#b45309','#c2410c','#9a3412'],planet:'#fde68a'}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'重力がよわくて、ふわふわジャンプできるよ',()=>SW.space(800+i,th)));
-  [['雪の町','Snow town',{sky:'#e2e8f0'}],['夜の雪の町','Snowy night',{sky:'#0f172a'}],['クリスマスの町','Christmas town',{sky:'#7f1d1d'}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'雪がふる町。こおりの道はつるつるすべるよ',()=>SW.snow(900+i,th)));
+  [['雪の町','Snow town',{sky:'#e2e8f0'}],['夜の雪の町','Snowy night',{sky:'#0f172a'}],['クリスマスの町','Christmas town',{sky:'#7f1d1d'}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'雪がふる町。こおりの道や雪だるまをおさんぽしよう',()=>SW.snow(900+i,th)));
   [['遊園地','Amusement park',{sky:'#bae6fd',ground:'#a7f3d0',a:'#f472b6',name:'ゆうえんち'}],['夜の遊園地','Night carnival',{sky:'#1e1b4b',ground:'#312e81',a:'#facc15',name:'ナイトパーク'}],['おかしの国','Candy land',{sky:'#fce7f3',ground:'#fbcfe8',a:'#a16207',name:'おかしの国'}],['お祭り','Festival',{sky:'#fdba74',ground:'#d6a86c',a:'#dc2626',name:'おまつり'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'回る台・トランポリン・動く床・風船がいっぱい',()=>SW.fun(1000+i,th)));
   [['コンサートホール','Concert hall',{wall:'#1f2937',floor:'#111827',name:'ステージ',k1:'#1f2937',k2:'#f8fafc'}],['にじいろ音楽室','Rainbow music room',{wall:'#fdf4ff',floor:'#e9d5ff',name:'おんがくしつ',k1:'#a78bfa',k2:'#f9a8d4'}],['ジャズバー','Jazz bar',{wall:'#451a03',floor:'#292524',name:'JAZZ',k1:'#78350f',k2:'#fde68a'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'床のピアノを歩くと音が鳴るよ。楽器もさわれる',()=>SW.music(1100+i,th)));
   [['らせんタワー','Spiral tower',{n:30,sky:'#8ec5ff',ground:'#7cc47f',a:'#f97316',b:'#38bdf8',core:'#e5e7eb'}],['高い高いタワー','Very tall tower',{n:50,sky:'#bae6fd',ground:'#a7f3d0',a:'#ef4444',b:'#facc15',core:'#f8fafc'}],['夜のタワー','Night tower',{n:35,sky:'#0b1026',ground:'#1e293b',a:'#22d3ee',b:'#e879f9',core:'#334155'}],['おかしのタワー','Candy tower',{n:30,sky:'#fce7f3',ground:'#fbcfe8',a:'#f9a8d4',b:'#fde68a',core:'#a16207'}]].forEach(([ja,en,th],i)=>add('game',ja,en,'ぐるぐる回りながらてっぺんをめざそう',()=>SW.tower(1200+i,th)));
   [['トランポリンパーク','Trampoline park',{sky:'#fbcfe8',ground:'#e9d5ff'}],['ふわふわトランポリン','Floaty trampolines',{sky:'#e0f2fe',ground:'#bae6fd',grav:.5}],['夜のトランポリン','Night trampolines',{sky:'#1e1b4b',ground:'#312e81'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'トランポリンでどこまで高くとべるかな',()=>SW.bounce(1300+i,th)));
-  [['スケートリンク','Ice rink',{sky:'#e0f2fe'}],['夜のスケート','Night skating',{sky:'#0f172a'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'つるつるの氷の上ですべろう',()=>SW.ice(1400+i,th)));
+  [['スケートリンク','Ice rink',{sky:'#e0f2fe'}],['夜のスケート','Night skating',{sky:'#0f172a'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'氷のリンクをおさんぽ。コーンのあいだをぬけよう',()=>SW.ice(1400+i,th)));
   [['宝さがし：森','Treasure: forest',{sky:'#bbf7d0',ground:'#4ade80',leaf:['#16a34a','#15803d']}],['宝さがし：砂ばく','Treasure: desert',{sky:'#fde68a',ground:'#e7d3a8',leaf:['#65a30d']}],['宝さがし：夜','Treasure: night',{sky:'#0b1026',ground:'#14532d',leaf:['#166534']}]].forEach(([ja,en,th],i)=>add('game',ja,en,'ヒントをたよりに、かくれた宝箱をさがそう',()=>SW.treasure(1500+i,th)));
   [['ふってくる箱をよけろ','Dodge the boxes',{sky:'#8ec5ff',ground:'#7cc47f',floor:'#e5e7eb',rate:1,box:'#ef4444'}],['ハードモード：よけろ','Dodge: hard',{sky:'#450a0a',ground:'#7f1d1d',floor:'#1f2937',rate:.45,box:'#facc15'}]].forEach(([ja,en,th],i)=>add('game',ja,en,'空から箱がふってくる！どれだけよけられるかな',()=>SW.dodge(1600+i,th)));
   [['おにごっこ','Tag',{sky:'#8ec5ff',ground:'#7cc47f',cols:['#f97316','#38bdf8','#facc15'],speed:2.4}],['はやいおにごっこ','Fast tag',{sky:'#1e1b4b',ground:'#312e81',cols:['#a78bfa','#f472b6'],speed:3.6}]].forEach(([ja,en,th],i)=>add('game',ja,en,'おにが追いかけてくる。箱のかげにかくれてにげよう',()=>SW.tag(1700+i,th)));
@@ -6099,7 +6104,7 @@ add('race','レース：山道','Race: Mountain road','くねくねの山道を3
 add('race','レース：夜のサーキット','Race: Night circuit','ネオンが光る夜のコース',()=>G.race({pts:wobble(24,13,-17,20,11,.25),w:5,road:'#111827',edge:'#22d3ee',pad:3,laps:3,sp:[4.6,5,5.4],seed:4,deco:12,rx:24,rz:13,cz:-17,leaf:['#1e1b4b'],sky:'#020617',ground:'#0f172a',title:'ナイトサーキット'}));
 // 障害物アスレ
 add('obstacle','障害物アスレ：レッド','Obstacle course: Red','動くかべ・ハンマー・ベルトコンベア！',()=>G.obst({seed:1,secs:['walls','conveyor','jump','hammers','moving','crush'],wide:5,f:'#f1f5f9',b:'#38bdf8',sky:'#bae6fd',void:'#ef4444',title:'しょうがいぶつ レッド'}));
-add('obstacle','障害物アスレ：ブルー','Obstacle course: Blue','すべる氷とつぶしブロック',()=>G.obst({seed:2,secs:['ice','crush','moving','walls','stairs','hammers','jump','conveyor'],wide:5,f:'#e0e7ff',b:'#f472b6',sky:'#c7d2fe',void:'#1d4ed8',title:'しょうがいぶつ ブルー'}));
+add('obstacle','障害物アスレ：ブルー','Obstacle course: Blue','氷のコースとつぶしブロック',()=>G.obst({seed:2,secs:['ice','crush','moving','walls','stairs','hammers','jump','conveyor'],wide:5,f:'#e0e7ff',b:'#f472b6',sky:'#c7d2fe',void:'#1d4ed8',title:'しょうがいぶつ ブルー'}));
 add('obstacle','障害物アスレ：ハード','Obstacle course: Hard','ぜんぶのしかけがつまったさいきょうコース',()=>G.obst({seed:3,secs:['walls','hammers','ice','crush','moving','jump','conveyor','walls','hammers','stairs','crush','moving'],wide:4,f:'#fef3c7',b:'#f97316',sky:'#fdba74',void:'#7f1d1d',title:'しょうがいぶつ ハード'}));
 // フリーランニング
 add('freerun','フリーランニング：ひるの街','Free running: Day city','屋上から屋上へ！フラッグ8こ集めよう',()=>G.freerun({seed:3,n:5,h0:6,hv:4,cols:['#cbd5e1','#e2e8f0','#94a3b8','#fde68a'],roof:'#64748b',win:'#bae6fd',sky:'#8ec5ff',ground:'#6b7280',title:'ひるのまち'}));

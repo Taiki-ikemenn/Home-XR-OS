@@ -1,6 +1,12 @@
 {
- "latest": "3.11.0",
+ "latest": "3.11.1",
  "versions": [
+  {
+   "v": "3.11.1",
+   "date": "2026-11-21",
+   "notes_ja": "ワールドのジャンプボタンを大きく（青・文字つき・右下）。すべる動きをなくした（氷の床でもすべらない・スティックをはなすとすぐ止まる・スティックのあそびを追加）",
+   "notes_en": "Bigger jump button in worlds. Removed sliding: ice no longer slips, you stop as soon as you release the stick, and the stick has a small dead zone."
+  },
   {
    "v": "3.11.0",
    "date": "2026-11-21",
