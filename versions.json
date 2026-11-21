@@ -1,6 +1,12 @@
 {
- "latest": "3.13.0",
+ "latest": "3.14.0",
  "versions": [
+  {
+   "v": "3.14.0",
+   "date": "2026-11-21",
+   "notes_ja": "XRコイン（ゴール・きろく・毎日ボーナス）。ワールドで「おしごと」4しゅるい。XRショップ（家具・ペット・のりもの）。マイホーム（家具をかってかざる・友だちが遊びにこれる）。フレンド（フレンドコード・いまいる場所・ワープ・招待）。ワールドのカメラ（じどり・フィルター8しゅるい・アルバム・かべがみ）",
+   "notes_en": "XR coins, jobs, XR shop, My Home, Friends (codes, warp, invites) and an in-world camera with filters and album."
+  },
   {
    "v": "3.13.0",
    "date": "2026-11-21",
