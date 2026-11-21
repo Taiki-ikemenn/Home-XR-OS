@@ -164,6 +164,10 @@ body.hands #handCam{display:block}
 #directView iframe{flex:1;border:0;width:100%;background:#fff}
 #directView .dvTip{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(0,0,0,.8);padding:10px 16px;border-radius:12px;font-size:14px;max-width:90%;text-align:center;pointer-events:none}
 body.direct #pads,body.direct #hud{display:none}
+#handDbg{position:fixed;z-index:9;pointer-events:none;display:none}
+body.hands #handDbg{display:block}
+#handCam{transition:width .2s}
+#handCam.big{width:min(420px,60vw)}
 #htInfo{position:fixed;left:14px;top:142px;z-index:8;display:none;font-size:12px;padding:4px 9px;border-radius:9px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
 body.hands #htInfo{display:block}
 #handCam.seen{border-color:#3ecf8e;box-shadow:0 0 0 3px rgba(62,207,142,.5)}
@@ -221,7 +225,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.7';
+const APP_VERSION='3.1.8';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -1270,8 +1274,17 @@ $('palmBtn2').addEventListener('pointerdown',()=>{ AU.init(); togglePalmMenu(); 
 
 // ---- カメラで手を認識（右手：人さし指＝カーソル、親指とつまむ、手のひら＝メニュー） ----
 const HT={on:false,rec:null,video:null,last:-1,gap:66,avg:null,pin:false,palmT:0,palmFired:false,sx:null,sy:null,seen:0};
-function htInfo(dist){ let e=$('htInfo'); if(!e){ e=h('div',''); e.id='htInfo'; document.body.appendChild(e); }
-  e.textContent=dist==null?L('✋ 手が見えません','✋ No hand'):(HT.pin?L('🤏 つまみ中','🤏 Pinching'):L('✋ 手が見えてる','✋ Hand found'))+'　'+L('指のすき間 ','gap ')+dist; }
+function htInfo(dist,hint){ let e=$('htInfo'); if(!e){ e=h('div',''); e.id='htInfo'; document.body.appendChild(e); }
+  e.textContent=dist==null?L('✋ 手が見えません','✋ No hand'):(HT.pin?L('🤏 つまみ中','🤏 Pinching'):L('✋ 手が見えてる','✋ Hand found'))+'　'+L('すき間 ','gap ')+dist+(hint?'　'+hint:''); }
+// カメラの映像に、見つけた手の骨組みを描く（タップで大きく）
+const HBONES=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[0,17],[17,18],[18,19],[19,20]];
+function htDraw(LM){ let c=$('handDbg'); if(!c){ c=h('canvas',''); c.id='handDbg'; document.body.appendChild(c); }
+  const v=$('handCam'), r=v.getBoundingClientRect(); c.style.left=r.left+'px'; c.style.top=r.top+'px'; c.style.width=r.width+'px'; c.style.height=r.height+'px';
+  const W=Math.round(r.width), H=Math.round(r.height); if(c.width!==W) c.width=W; if(c.height!==H) c.height=H; c.style.transform=v.style.transform; const inf=$('htInfo'); if(inf) inf.style.top=(r.bottom+6)+'px';
+  const x=c.getContext('2d'); x.clearRect(0,0,W,H); if(!LM) return;
+  x.lineWidth=2.5; x.strokeStyle=HT.pin?'#ffd84a':'#3ecf8e'; x.beginPath(); for(const [a,b] of HBONES){ x.moveTo(LM[a].x*W,LM[a].y*H); x.lineTo(LM[b].x*W,LM[b].y*H); } x.stroke();
+  x.fillStyle='#fff'; for(const i of [4,8]){ x.beginPath(); x.arc(LM[i].x*W,LM[i].y*H,4,0,TAU); x.fill(); } }
+document.addEventListener('click',e=>{ if(e.target&&(e.target.id==='handCam'||e.target.id==='handDbg')) $('handCam').classList.toggle('big'); },true);
 async function startHands(){
   if(HT.on) return; toastW('手の認識を準備しています…');
   try{
@@ -1290,13 +1303,13 @@ FRAME.push(()=>{
   const now=performance.now(); if(now-HT.last<HT.gap) return; HT.last=now;
   let r; const t0=performance.now(); try{ r=HT.rec.recognizeForVideo(HT.video,now); }catch(e){ return; }
   // 重い端末では、認識する回数を自動で減らす
-  const took=performance.now()-t0; HT.avg=HT.avg==null?took:HT.avg*.9+took*.1; HT.gap=clamp(HT.avg*3,50,250);
+  const took=performance.now()-t0; HT.avg=HT.avg==null?took:HT.avg*.9+took*.1; HT.gap=clamp(HT.avg*1.4,30,200);
   if(HT.avg>180){ HT.slow=(HT.slow||0)+1; if(HT.slow>20){ stopHands(); toastW(L('この端末では手の認識が重すぎるので、オフにしました','Hand tracking was too slow on this device and was turned off')); return; } } else HT.slow=0;
   // 前カメラは鏡にしていないので、ラベルの Left が自分の右手
   const base=HT.back?'Right':'Left', want=CFG.swapHand?(base==='Right'?'Left':'Right'):base; let idx=-1;
   if(r.landmarks&&r.landmarks.length) idx=0;
   $('handCam').classList.toggle('seen',idx>=0); HT.found=idx>=0;
-  if(idx<0){ htInfo(null); HT.seen=0; HT.lost=(HT.lost||0)+1; if(HT.pin&&HT.lost>6){ HT.pin=false; pinchUp(); } return; }
+  if(idx<0){ htInfo(null); htDraw(null); HT.seen=0; HT.lost=(HT.lost||0)+1; if(HT.pin&&HT.lost>6){ HT.pin=false; pinchUp(); } return; }
   HT.lost=0;
   HT.seen++;
   const LM=r.landmarks[idx], g=(r.gestures[idx]&&r.gestures[idx][0])||{};
@@ -1329,7 +1342,10 @@ FRAME.push(()=>{
   HT.close=HT.pin?1:clamp((.95-d)/(.95-.45),0,1);
   // 指が開いていたときの位置を覚えておく（つまんだらそこに戻す）
   if(d>.7&&!HT.pin){ HT.ox=HT.sx; HT.oy=HT.sy; HT.ot=now; }
-  htInfo(cm!=null?cm.toFixed(1)+'cm':d.toFixed(2));
+  { const sz=Math.hypot(w.x-mm.x,w.y-mm.y); let hint='';
+    if(sz>.3) hint=L('↔ もう少しはなして','move back'); else if(sz<.07) hint=L('↔ もう少し近づけて','move closer');
+    else if(w.x<.06||w.x>.94||w.y>.97||tip.y<.03) hint=L('◎ 真ん中へ','center your hand');
+    htInfo(cm!=null?cm.toFixed(1)+'cm':d.toFixed(2),hint); htDraw(LM); }
   const frozen=now<(HT.freeze||0);
   if(HT.seen>2&&!frozen){ S.cx=clamp(HT.sx,0,S.W); S.cy=clamp(HT.sy,0,S.H); IN.mouse=false; if(S.pinch) pinchMove(); }
   // つまむ／はなす（ゆるめに判定）

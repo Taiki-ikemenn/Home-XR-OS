@@ -1,6 +1,12 @@
 {
-  "latest": "3.1.7",
+  "latest": "3.1.8",
   "versions": [
+    {
+      "v": "3.1.8",
+      "date": "2026-11-21",
+      "notes_ja": "手の認識を約2〜3倍の回数で行うようにして、見失いにくくしました。カメラ映像に手の骨組みを表示（タップで大きく）。近すぎ・遠すぎ・はみ出しをお知らせ。",
+      "notes_en": "Hand tracking runs 2-3x more often, hand skeleton on the camera preview (tap to enlarge), distance/position hints."
+    },
     {
       "v": "3.1.7",
       "date": "2026-11-20",
