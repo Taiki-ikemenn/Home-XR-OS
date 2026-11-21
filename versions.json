@@ -1,6 +1,12 @@
 {
- "latest": "3.9.2",
+ "latest": "3.9.3",
  "versions": [
+  {
+   "v": "3.9.3",
+   "date": "2026-11-21",
+   "notes_ja": "設定のアップデート一覧をページ分け（1ページ10こ・まえ/つぎ・ページ番号）",
+   "notes_en": "Update list in Settings is now paged (10 per page with prev/next and page numbers)."
+  },
   {
    "v": "3.9.2",
    "date": "2026-11-21",

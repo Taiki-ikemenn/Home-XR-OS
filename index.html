@@ -399,6 +399,7 @@ body.w3on #pads,body.w3on #hud,body.w3on #handCam,body.w3on #htInfo,body.w3on .h
 #kbDock.on{display:block}
 #kbDock .kb{position:static;visibility:visible!important}
 #kbDock .wo.off{visibility:visible}
+.btn:disabled{opacity:.35;pointer-events:none}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -467,7 +468,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.9.2';
+const APP_VERSION='3.9.3';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -2650,15 +2651,22 @@ APPIMPL.settings=(body,w)=>{
   c.appendChild(h('b','',L('アップデート','Updates')));
   const st=h('div','sub',L(`いまのバージョン：v${APP_VERSION}`,`Current version: v${APP_VERSION}`)); st.style.margin='8px 0'; c.appendChild(st);
   c.appendChild(qrow(L('自動アップデート（オンラインのとき）','Auto-update when online'),makeToggle(!!CFG.autoUpdate,v=>{ CFG.autoUpdate=v; saveCfg(); if(v) STORE.set('pinVer',null); })));
-  const list=h('div',''); c.appendChild(list);
+  const list=h('div',''); c.appendChild(list); let page=0; const PER=10;
   const draw=()=>{ list.innerHTML=''; const m=UPD.manifest; if(!m) return; const pin=STORE.get('pinVer',null);
     st.textContent=L(`いまのバージョン：v${APP_VERSION}　最新：v${m.latest}`,`Current: v${APP_VERSION}   Latest: v${m.latest}`)+(pin?L(`（v${pin} に固定中）`,` (pinned to v${pin})`):'');
     if(vcmp(m.latest,APP_VERSION)>0){ const u=btn(IC('refresh-cw')+L(`v${m.latest} にアップデート`,`Update to v${m.latest}`),()=>goVersion(m.latest),'pri'); u.style.margin='6px 0 10px'; list.appendChild(u); }
-    for(const x of m.versions){ const r=h('div','row'); r.style.cssText='padding:10px 0;border-top:1px solid var(--line);flex-wrap:nowrap;align-items:flex-start';
+    const pages=Math.max(1,Math.ceil(m.versions.length/PER)); page=Math.min(Math.max(0,page),pages-1);
+    for(const x of m.versions.slice(page*PER,page*PER+PER)){ const r=h('div','row'); r.style.cssText='padding:10px 0;border-top:1px solid var(--line);flex-wrap:nowrap;align-items:flex-start';
       const tx=h('div',''); tx.style.flex='1'; tx.innerHTML=`<b>v${esc(x.v)}</b> ${x.v===m.latest?`<span class="sub">${L('最新','latest')}</span>`:''} <span class="sub">${esc(x.date||'')}</span><div class="sub" style="margin-top:4px;line-height:1.6">${esc(CFG.lang==='en'?(x.notes_en||x.notes_ja||''):(x.notes_ja||''))}</div>`; r.appendChild(tx);
       if(x.v===APP_VERSION) r.appendChild(h('span','sub',L('使用中','In use')));
       else{ const d=vcmp(x.v,APP_VERSION); r.appendChild(btn(d>0?L('アップデート','Update'):L('ダウングレード','Downgrade'),()=>{ if(d<0&&CFG.autoUpdate){ CFG.autoUpdate=false; saveCfg(); } goVersion(x.v); })); }
       list.appendChild(r); }
+    if(pages>1){ const pg=h('div','row updPager'); pg.style.cssText='gap:6px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap;align-items:center;justify-content:center';
+      const go=n=>{ page=n; draw(); c.scrollIntoView({block:'start'}); };
+      const pv=btn(IC('chevron-left')+L('まえ','Prev'),()=>go(page-1)); pv.disabled=page===0; pg.appendChild(pv);
+      for(let i=0;i<pages;i++){ const b=btn(String(i+1),()=>go(i),i===page?'pri':''); b.style.minWidth='38px'; b.style.justifyContent='center'; pg.appendChild(b); }
+      const nx=btn(L('つぎ','Next')+IC('chevron-right'),()=>go(page+1)); nx.disabled=page===pages-1; pg.appendChild(nx);
+      pg.appendChild(h('span','sub',L(`${page+1} / ${pages} ページ（ぜんぶで ${m.versions.length}こ）`,`Page ${page+1} of ${pages} (${m.versions.length} total)`))); list.appendChild(pg); }
     if(pin){ list.appendChild(btn(L('固定を解除して最新にする','Unpin and use latest'),()=>{ STORE.set('pinVer',null); CFG.autoUpdate=true; saveCfg(); goVersion(m.latest); })); } };
   const chk=btn(L('アップデートを確認','Check for updates'),async()=>{ chk.textContent=L('確認中…','Checking…'); try{ await fetchManifest(); draw(); chk.textContent=L('アップデートを確認','Check for updates'); if(vcmp(UPD.manifest.latest,APP_VERSION)<=0) toastW(L('最新のバージョンです','You are up to date')); }catch(e){ chk.textContent=L('アップデートを確認','Check for updates'); toastW(L('確認できませんでした：','Could not check: ')+e.message); } });
   c.appendChild(chk); c.appendChild(h('p','sub',L('ダウングレードすると自動アップデートはオフになり、そのバージョンに固定されます。','Downgrading turns off auto-update and pins that version.'))).style.marginTop='8px';
