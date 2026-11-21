@@ -671,7 +671,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='5.7.0';
+const APP_VERSION='5.7.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -7637,6 +7637,7 @@ const GUIDE=[
 ['setting','アップデート','設定 →「アップデート」','最新版への更新や、前のバージョンに戻すことができます。一覧は10こずつのページです。','アップデート バージョン 更新'],
 ['setting','電源・再読み込み','メニュー／クイック設定','おかしくなったときは「再起動（再読み込み）」、終わるときは「電源を切る」。','電源 再起動 再読み込み'],
 ['trouble','手が反応しない','設定 →「指の認識を再起動」','カメラから少し離れ、手を正面に。明るい場所で使ってください。','反応しない 手 認識'],
+['trouble','画面が真っ暗になる','—','v5.7.1で直しました。開いた瞬間の画面の大きさがうまく取れないと起きていました。まだ起きるときは、端末を少し回すか、再読み込みしてください。','真っ暗 暗い 映らない 黒い'],
 ['trouble','ダブルタップでズームしてしまう','—','v3.11.2で直しました。まだ起きるときはページを再読み込みしてください。','ズーム ダブルタップ'],
 ['trouble','保存できない','—','ワールドや写真は端末に保存されます。容量がいっぱいのときは、いらないワールドや写真を消してください。','保存 容量 いっぱい'],
 ['trouble','ほかの人とつながらない','—','ログインが必要です。公開ワールドか公式ワールドで遊んでください。','つながらない オンライン ログイン']];
@@ -7845,6 +7846,31 @@ APPIMPL.hanoi=(body)=>{ body.classList.add('gmBody'); let n=LOAD('hn5',4), pegs,
   const draw=()=>{ top.innerHTML=gTop([[L('手数','Moves'),moves],[L('さいしょう','Minimum'),2**n-1],['',pegs[2].length===n?L('クリア！','Cleared!'):'']]); field.innerHTML=''; pegs.forEach((p,i)=>{ const col=h('button','hnPeg'+(sel===i?' sel':'')); col.appendChild(h('i','hnRod')); p.forEach((d,k)=>{ const e=h('div','hnDisk'+(sel===i&&k===p.length-1?' lift':'')); e.style.width=(30+d*(70/n))+'%'; e.style.background=COLS[(d-1)%8]; col.appendChild(e); }); col.onclick=()=>tap(i); field.appendChild(col); });
     ctl.innerHTML=''; ctl.append(gSeg([3,4,5,6,7].map(k=>[k,k+'まい',k+' disks']),n,k=>{ n=k; SAVE('hn5',k); reset(); }),btn(IC('wand-sparkles')+L('お手本を見る','Watch solution'),solve),btn(IC('rotate-ccw')+L('はじめから','Restart'),reset,'pri')); };
   reset(); };
+
+/* ================= 画面が真っ暗になる問題の対策 ================= */
+// 原因：ページを開いた瞬間に画面の大きさが0（タブの復元中など）だと、3Dの見え方の計算がこわれて何も映らなくなる。
+// 対策：大きさがおかしいときは待ってからやり直す・定期的に大きさを確認・角度がこわれたら元に戻す・暗さの上限。
+(function(){
+  const _rs=resize;
+  resize=function(){ const w=innerWidth||document.documentElement.clientWidth, h=innerHeight||document.documentElement.clientHeight;
+    if(!(w>80&&h>80)){ clearTimeout(resize.t); resize.t=setTimeout(resize,250); return; }
+    try{ _rs(); }catch(e){ console.warn('resize',e); }
+    if(!(S.P>0)||!isFinite(S.DB)){ S.P=Math.round(Math.max(w,h)*.6)||600; S.DB=S.P*1000/(.72*Math.min(w,h*1.55))||1000; }
+    try{ applyCam(); }catch(e){} };
+  const _ac=applyCam;
+  applyCam=function(){ if(!isFinite(S.yaw)) S.yaw=0; if(!isFinite(S.pitch)) S.pitch=0; if(!(S.P>0)) S.P=600; return _ac(); };
+  const heal=()=>{ if(Math.abs((innerWidth||0)-S.W)>2||Math.abs((innerHeight||0)-S.H)>2||!(S.P>0)) resize(); };
+  setInterval(heal,1000);
+  ['pageshow','focus','orientationchange'].forEach(ev=>addEventListener(ev,()=>setTimeout(()=>{ resize(); },120)));
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) setTimeout(resize,150); });
+  if(window.visualViewport) visualViewport.addEventListener('resize',()=>setTimeout(heal,100));
+  // 暗くなりすぎない（景色の明るさの設定が最大の暗さになっていても少し見える）
+  if(CFG.dim>.85){ CFG.dim=.85; try{ saveCfg(); }catch(e){} }
+  const _sd=setDim; setDim=function(v,temp){ return _sd(Math.min(.9,+v||0),temp); };
+  setTimeout(()=>{ try{ setDim(CFG.dim,true); }catch(e){} },500);
+  // 開いてすぐ1回、念のためにやり直す
+  setTimeout(resize,300); setTimeout(resize,1500);
+})();
 
 </script>
 </body>

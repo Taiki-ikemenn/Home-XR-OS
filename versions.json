@@ -1,6 +1,12 @@
 {
- "latest": "5.7.0",
+ "latest": "5.7.1",
  "versions": [
+  {
+   "v": "5.7.1",
+   "date": "2026-11-22",
+   "notes_ja": "ときどき画面が真っ暗になって何も映らない問題を直しました（開いた瞬間に画面の大きさが0になると起きていました）。画面の大きさを毎秒確認して自動で直します。景色の暗さの上限も設定しました。",
+   "notes_en": "Fixed the occasional black screen on open (zero-size viewport at load)."
+  },
   {
    "v": "5.7.0",
    "date": "2026-11-22",
