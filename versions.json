@@ -1,6 +1,12 @@
 {
- "latest": "5.5.1",
+ "latest": "5.6.0",
  "versions": [
+  {
+   "v": "5.6.0",
+   "date": "2026-11-22",
+   "notes_ja": "作り直し：チャット（スタンプ12種類・リアクション・メッセージ削除・日付と時刻・人さがし・オンライン表示・よく使う言葉）、フィード（フォトの写真を投稿・コメント・#タグ・自分／いいねした／人気のタブ）、ビデオ（YouTubeと端末の動画・最近見た動画・お気に入り・再生速度）、設定（検索）。ガイドも更新しました。",
+   "notes_en": "Rebuilt Chat (stamps, reactions), Feed (photos, comments, tags), Video, and Settings search."
+  },
   {
    "v": "5.5.1",
    "date": "2026-11-22",
