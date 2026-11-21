@@ -1,6 +1,12 @@
 {
- "latest": "3.10.0",
+ "latest": "3.11.0",
  "versions": [
+  {
+   "v": "3.11.0",
+   "date": "2026-11-21",
+   "notes_ja": "ゲームワールド35こ追加。新ジャンル：レース・障害物アスレ・フリーランニング・パーティ・パズル・RPG・ロールプレイ・射撃・ショッピング・シミュレーション。公式ワールドは165こに",
+   "notes_en": "Added 35 game worlds in new genres: racing, obstacle courses, free running, party, puzzle, RPG, roleplay, shooting, shopping and simulation. 165 official worlds."
+  },
   {
    "v": "3.10.0",
    "date": "2026-11-21",
