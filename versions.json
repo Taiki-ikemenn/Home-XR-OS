@@ -1,6 +1,12 @@
 {
- "latest": "3.14.0",
+ "latest": "5.0.0",
  "versions": [
+  {
+   "v": "5.0.0",
+   "date": "2026-11-22",
+   "notes_ja": "ワールドアプリ大型アップデート！スマートウォッチ（時計・現在地の天気・コイン・アプリ一覧）。ぶき6しゅるい＋スコープ。エモート8しゅるい。空がいまの時間とおなじに（夕方・夜・星）＋雨・雪・いまの天気。ミニマップ。バッジ24こ。テンプレートからワールドをつくる。おんがく（BGM6曲・YouTube・ワールドのBGM）。らくがき。ゲームパッド対応",
+   "notes_en": "Big Worlds update: smartwatch, 6 weapons with scope, 8 emotes, real-time sky and weather, minimap, 24 badges, templates, music & BGM, painting, gamepad support."
+  },
   {
    "v": "3.14.0",
    "date": "2026-11-21",
