@@ -399,6 +399,10 @@ body.w3on #pads,body.w3on #hud,body.w3on #handCam,body.w3on #htInfo,body.w3on .h
 #kbDock.on{display:block}
 #kbDock .kb{position:static;visibility:visible!important}
 #kbDock .wo.off{visibility:visible}
+.swBox{position:absolute;inset:0;z-index:3;background:#16171d;padding:20px 24px;overflow:hidden}
+.swGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}
+.swCard{position:relative;display:flex;flex-direction:column;gap:4px}
+.swNo{position:absolute;right:12px;top:10px;font-size:12px;opacity:.5;font-weight:800}
 #htInfo{position:fixed;left:14px;top:142px;z-index:8;display:none;font-size:12px;padding:4px 9px;border-radius:9px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
 body.hands #htInfo{display:block}
 #handCam.seen{border-color:#3ecf8e;box-shadow:0 0 0 3px rgba(62,207,142,.5)}
@@ -458,7 +462,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.8.1';
+const APP_VERSION='3.9.0';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -5251,6 +5255,202 @@ const _worldsImpl29=APPIMPL.worlds; APPIMPL.worlds=(body,w)=>{ _worldsImpl29(bod
 // ログインしたら、保存してあるアバターを読みこむ
 fbOn(async u=>{ if(!u||!FB.m) return; try{ const s=await FB.m.getDoc(FB.m.doc(FB.db,'xr_users',u.uid)); const d=s.exists()&&s.data(); if(d&&d.av&&!STORE.get('avatar',null)){ const a=JSON.parse(d.av); if(a&&typeof a==='object') STORE.set('avatar',a); } }catch(e){} });
 renderLib();
+
+
+/* ================= サンプルワールド100こ ================= */
+const SW={};
+(function(){
+let N=0; const id=()=>'o'+(++N);
+const B=(p,s,c,x={})=>({id:id(),t:'box',p,r:x.r||[0,0,0],s,c,solid:x.solid===0?0:1,...x,r:x.r||[0,0,0]});
+const SH=(t,p,s,c,x={})=>({id:id(),t,p,r:x.r||[0,0,0],s,c,solid:x.solid==null?1:x.solid,...x,r:x.r||[0,0,0]});
+const T=(p,txt,c='#ffffff',w=3,x={})=>({id:id(),t:'text',p,r:x.r||[0,0,0],s:[w,1,1],c,txt,solid:0,...x});
+const I=(item,p,ry=0,x={})=>{ if(!W3ITEMS.map[item]){ const [f,n]=String(item).split('_'); const fam=W3FAM.find(q=>q.id===f); item=fam?f+'_'+((+n||0)%fam.v.length):'chair_0'; } const o=w3ItemObj(item); return {...o,id:id(),p,r:[0,ry,0],...x,op:{...(o.op||{}),...(x.op||{})}}; };
+const R=seed=>{ let s=seed>>>0||1; return ()=>((s=Math.imul(s^s>>>15,1|s)+0x6D2B79F5|0,(s^s>>>7)>>>0)%100000)/100000; };
+const pick=(r,a)=>a[(r()*a.length)|0];
+const walls=(cx,cz,w,d,h,c,door=true)=>{ const o=[]; o.push(B([cx,h/2,cz-d/2],[w,h,.2],c),B([cx-w/2,h/2,cz],[.2,h,d],c),B([cx+w/2,h/2,cz],[.2,h,d],c)); if(door){ o.push(B([cx-w/4-.6,h/2,cz+d/2],[w/2-1.2,h,.2],c),B([cx+w/4+.6,h/2,cz+d/2],[w/2-1.2,h,.2],c),B([cx,h-.4,cz+d/2],[2.4,.8,.2],c)); } else o.push(B([cx,h/2,cz+d/2],[w,h,.2],c)); return o; };
+const floor=(cx,cz,w,d,c,x={})=>B([cx,.05,cz],[w,.1,d],c,{solid:0,...x});
+const UI_TIMER=[{id:'ut',name:'タイム',t:'text',x:2,y:2,w:22,h:7,text:'タイム 0.0',fg:'#ffffff',bg:'#000000',op:45,size:26,r:14,align:'center'}];
+const SC_TIMER=`let t = 0, run = true\nworld.on('tick', dt => { if (run) { t += dt; ui.get('タイム') && ui.get('タイム').setText('タイム ' + t.toFixed(1)) } })\nconst g = world.get('ゴール')\nif (g) g.onTouch(() => { if (run) { run = false; world.say('クリア！ ' + t.toFixed(1) + ' 秒') } })`;
+const W=(o)=>({v:1,desc:'',fog:true,grav:1,spawn:[0,0,8],objs:[],script:'',ui:[],...o});
+// ---- アスレチック ----
+SW.obby=(seed,th)=>{ N=0; const r=R(seed); const o=[]; let x=0,y=0,z=4; o.push(B([0,.25,6],[4,.5,4],th.a));
+  for(let i=0;i<22;i++){ const kind=r(); const dx=(r()-.5)*4, dz=-(2.6+r()*1.4); x+=dx; z+=dz; y=Math.min(y+(r()<.6?.6:0),30);
+    if(i%7===6){ o.push(B([x,y,z],[3,.4,3],'#22c55e',{op:{checkpoint:1},name:'チェックポイント'})); continue; }
+    if(kind<.15) o.push(B([x,y,z],[2,.3,2],th.b,{op:{moveX:1}}));
+    else if(kind<.27){ o.push(B([x,y,z],[1.6,.3,1.6],'#f472b6',{op:{tramp:1}})); y+=1.6; }
+    else if(kind<.37) o.push(B([x,y,z],[2.2,.3,2.2],'#bae6fd',{op:{ice:1}}));
+    else if(kind<.45) o.push(SH('cyl',[x,y,z],[1.6,.3,1.6],th.c));
+    else o.push(B([x,y,z],[1.5+r()*1.5,.4,1.5+r()*1.2],pick(r,[th.a,th.b,th.c]))); }
+  o.push(B([x,y+.2,z-3],[4,.4,4],'#facc15',{name:'ゴール',op:{goal:1}}),T([x,y+3,z-4.5],'ゴール！','#facc15',3));
+  o.push(B([0,-4,-30],[160,.2,160],th.lava||'#ef4444',{op:{damage:1},glow:1,name:'溶岩'}));
+  return W({sky:th.sky,ground:'none',spawn:[0,.5,6],objs:o,script:SC_TIMER,ui:JSON.parse(JSON.stringify(UI_TIMER)),fog:!!th.fog}); };
+// ---- めいろ ----
+SW.maze=(seed,n,th)=>{ N=0; const r=R(seed); const g=[...Array(n)].map(()=>[...Array(n)].map(()=>({v:0,w:[1,1,1,1]}))); const st=[[0,0]]; g[0][0].v=1; const D=[[0,-1,0,2],[1,0,1,3],[0,1,2,0],[-1,0,3,1]];
+  while(st.length){ const [cx,cy]=st[st.length-1]; const nb=D.filter(([dx,dy])=>{ const x=cx+dx,y=cy+dy; return x>=0&&y>=0&&x<n&&y<n&&!g[y][x].v; }); if(!nb.length){ st.pop(); continue; } const [dx,dy,a,b]=pick(r,nb); g[cy][cx].w[a]=0; g[cy+dy][cx+dx].w[b]=0; g[cy+dy][cx+dx].v=1; st.push([cx+dx,cy+dy]); }
+  const S=3, o=[], ox=-n*S/2, oz=-n*S-2, H=2.6;
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){ const c=g[y][x], px=ox+x*S, pz=oz+y*S; if(c.w[0]) o.push(B([px+S/2,H/2,pz],[S+.3,H,.3],th.wall)); if(c.w[3]) o.push(B([px,H/2,pz+S/2],[.3,H,S+.3],th.wall)); if(y===n-1&&c.w[2]&&x!==0) o.push(B([px+S/2,H/2,pz+S],[S+.3,H,.3],th.wall)); if(x===n-1&&c.w[1]) o.push(B([px+S,H/2,pz+S/2],[.3,H,S+.3],th.wall)); if(r()<.12) o.push(I('coinItem_0',[px+S/2,-.2,pz+S/2])); }
+  o.push(B([ox+(n-.5)*S,.1,oz+S/2],[2,.2,2],'#facc15',{name:'ゴール',op:{goal:1},solid:0}),T([ox+(n-.5)*S,2,oz+S/2],'ゴール','#facc15',2,{op:{billboard:1}}));
+  o.push(floor(0,oz+n*S/2,n*S+2,n*S+2,th.floor));
+  return W({sky:th.sky,ground:th.ground,spawn:[ox+S/2,0,oz+n*S+2],objs:o,script:SC_TIMER,ui:JSON.parse(JSON.stringify(UI_TIMER))}); };
+// ---- コイン集め ----
+SW.coins=(seed,th)=>{ N=0; const r=R(seed); const o=[]; const n=25; for(let i=0;i<n;i++){ const x=(r()-.5)*50, z=(r()-.5)*50-10, y=r()<.3?2+r()*3:0; if(y>0) o.push(B([x,y-.3,z],[2,.3,2],th.plat)); o.push(I('coinItem_0',[x,y-.6,z])); }
+  for(let i=0;i<15;i++) o.push(I(pick(r,th.deco),[(r()-.5)*60,0,(r()-.5)*60-10],r()*360));
+  for(let i=0;i<5;i++) o.push(B([(r()-.5)*40,.05,(r()-.5)*40-10],[1.5,.1,1.5],'#22c55e',{op:{jumppad:1}}));
+  return W({sky:th.sky,ground:th.ground,objs:o,ui:[{id:'uc',name:'コイン',t:'text',x:2,y:2,w:24,h:7,text:'コインを25こ集めよう',fg:'#ffffff',bg:'#000000',op:45,size:22,r:14}]}); };
+// ---- お部屋 ----
+SW.room=(seed,th)=>{ N=0; const o=[...walls(0,-4,10,10,3,th.wall,true)]; o.push(floor(0,-4,10,10,th.floor));
+  o.push(I('bed_'+th.bed,[-3.2,0,-7.5],0),I('desk_'+th.desk,[3,0,-8.4],0),I('chair_'+th.chair,[3,0,-7.5],180),I('bookshelf_0',[4.4,0,-5.5],-90),I('rug_'+th.rug,[0,0,-4]),I('desklamp_'+th.lamp,[3.4,.76,-8.5]),I('plant_0',[-4.3,0,-1]),I('laptop_0',[2.8,.76,-8.4]),
+    I('tv_0',[-4.6,0,-3.5],90,{p:[-4.75,.5,-3.5]}),I('beanbag_'+th.chair,[-2.5,0,-2.5]),I('teddy_'+(th.bed%6),[-3.3,.5,-8.4]),I('mug_'+th.chair,[2.4,.76,-8.3]),I('clock_0',[0,2.2,-8.85]),I('floorlamp_0',[-4.3,0,-8.5]),I('cushion_'+th.rug,[-1.8,0,-3]));
+  o.push(T([0,2.6,-8.8],th.name,'#ffffff',3));
+  return W({sky:'#bfe3ff',ground:'#86efac',spawn:[0,0,2],objs:o}); };
+// ---- カフェ ----
+SW.cafe=(seed,th)=>{ N=0; const r=R(seed); const o=[...walls(0,-5,14,12,3.4,th.wall)]; o.push(floor(0,-5,14,12,th.floor,{pat:'tile'}));
+  o.push(B([0,.5,-9.5],[8,1,1],th.counter),B([0,1.02,-9.5],[8.2,.06,1.2],'#f8fafc'),T([0,2.8,-10.8],th.name,th.sign,4));
+  for(let i=0;i<6;i++) o.push(I(pick(r,th.drinks),[-3.5+i*1.3,1.05,-9.5]));
+  for(const [x,z] of [[-4,-5],[0,-5],[4,-5],[-4,-2],[4,-2]]){ o.push(I('table_'+th.table,[x,0,z])); o.push(I('chair_'+th.chairs,[x,0,z+1]),I('chair_'+th.chairs,[x,0,z-1],180)); o.push(I(pick(r,th.drinks),[x-.3,.75,z]),I(pick(r,th.food),[x+.3,.75,z])); }
+  o.push(I('plant_1',[-6.4,0,-10.4]),I('plant_2',[6.4,0,-10.4]),I('speaker_0',[6.3,0,-1],-90),I('coffee_1',[0,1.05,-9.2]));
+  return W({sky:'#ffe8cc',ground:'#d6d3d1',spawn:[0,0,3],objs:o}); };
+// ---- お店 ----
+SW.shop=(seed,th)=>{ N=0; const r=R(seed); const o=[...walls(0,-6,16,14,3.4,'#f8fafc')]; o.push(floor(0,-6,16,14,'#e5e7eb',{pat:'tile'}),T([0,2.9,-12.8],th.name,th.sign,5));
+  for(let row=0;row<3;row++){ const z=-10+row*3; o.push(B([-2,.6,z],[8,1.2,.8],th.shelf)); for(let k=0;k<12;k++) o.push(I(pick(r,th.items),[-5.5+k*.6,1.22,z])); }
+  o.push(B([5.5,.55,-2],[3,1.1,1],'#475569'),I('laptop_1',[5.5,1.1,-2],180),T([5.5,2,-2],'レジ','#ffffff',1.6));
+  o.push(B([6.8,1,-11.5],[1.2,2,.8],'#ef4444',{name:'じはんき',op:{info:1},info:'タップで飲み物が出るよ'}));
+  return W({sky:'#cfe8ff',ground:'#9ca3af',spawn:[0,0,2],objs:o,script:`const v = world.get('じはんき')\nconst d = ['can_0','can_1','can_2','can_12','bottle_8','milkbottle_1']\nif (v) v.onClick(() => { const p = v.pos; world.item(world.pick(d), { pos: [p[0] - 1, 0, p[2] + 1] }); world.sound(330); world.say('ガコン！') })`}); };
+// ---- 公園 ----
+SW.park=(seed,th)=>{ N=0; const r=R(seed); const o=[];
+  for(let i=0;i<30;i++){ const a=r()*TAU, d=12+r()*20; o.push(SH('tree',[Math.cos(a)*d,0,Math.sin(a)*d-8],[1,.8+r()*.8,1],pick(r,th.leaf))); }
+  o.push(SH('cyl',[0,.3,-8],[5,.6,5],'#9ca3af'),SH('cyl',[0,.62,-8],[4.4,.1,4.4],'#38bdf8',{solid:0,op:{water:1},glass:1}),SH('cyl',[0,1.4,-8],[.5,1.6,.5],'#9ca3af'),SH('sphere',[0,2.4,-8],[.8,.8,.8],'#7dd3fc',{op:{float:1},glass:1}));
+  for(const a of [0,1,2,3]) o.push(I('bench_0',[Math.cos(a*1.57)*6,0,Math.sin(a*1.57)*6-8],-a*90-90));
+  for(let i=0;i<20;i++) o.push(I('flower_'+((r()*8)|0),[(r()-.5)*20,0,(r()-.5)*20-8]));
+  for(const a of [.5,2,3.6,5]) o.push(I('floorlamp_1',[Math.cos(a)*9,0,Math.sin(a)*9-8]));
+  (th.extra||[]).forEach(e=>o.push(I(e,[(r()-.5)*14,0,(r()-.5)*10-2])));
+  return W({sky:th.sky,ground:th.ground,objs:o}); };
+// ---- 宇宙ステーション ----
+SW.space=(seed,th)=>{ N=0; const r=R(seed); const o=[B([0,.2,4],[6,.4,6],'#94a3b8')]; let x=0,y=0,z=0;
+  for(let i=0;i<18;i++){ x=(r()-.5)*24; y=i*1.6; z=-i*3; o.push(SH(pick(r,['cyl','box']),[x,y,z],[3+r()*2,.4,3+r()*2],pick(r,th.cols),{glow:r()<.3?1:0})); if(r()<.35) o.push(I('crystal_'+((r()*4)|0),[x,y+.2,z])); if(r()<.2) o.push(B([x+2,y+.3,z],[1.2,.2,1.2],'#f472b6',{op:{tramp:1}})); }
+  o.push(SH('sphere',[30,20,-40],[16,16,16],th.planet,{solid:0,glow:1}),T([0,y+3,z],'ステーションのてっぺん','#a5f3fc',4),B([0,y+1,z-2],[3,.3,3],'#facc15',{op:{goal:1},name:'ゴール'}));
+  for(let i=0;i<20;i++) o.push(I('starDeco_'+(i%2),[(r()-.5)*60,5+r()*30,-r()*60],0,{solid:0}));
+  return W({sky:'#020617',ground:'none',grav:th.grav,fog:false,spawn:[0,.4,4],objs:o,ui:JSON.parse(JSON.stringify(UI_TIMER)),script:SC_TIMER}); };
+// ---- 雪の町 ----
+SW.snow=(seed,th)=>{ N=0; const r=R(seed); const o=[];
+  for(let i=0;i<10;i++){ const x=(i%5-2)*7, z=i<5?-14:-2; const c=pick(r,['#fca5a5','#fde68a','#bfdbfe','#d9f99d','#f5d0fe']); o.push(B([x,1.5,z],[4,3,4],c),SH('cone',[x,3.8,z],[6,1.8,6],'#f8fafc',{r:[0,45,0]}),B([x,1,z+2.01],[1,2,.05],'#92400e',{solid:0}),B([x+1.2,2,z+2.01],[.8,.8,.05],'#fef3c7',{glow:1,solid:0})); }
+  o.push(B([0,.03,-8],[30,.06,4],'#e0f2fe',{op:{ice:1},solid:0,name:'こおり'}));
+  for(let i=0;i<5;i++) o.push(I('snowman_0',[(r()-.5)*30,0,-8+(r()-.5)*16]));
+  for(let i=0;i<8;i++) o.push(SH('tree',[(r()-.5)*40,0,-25-r()*10],[1,1.2,1],'#166534'));
+  o.push(I('lantern_0',[-3,0,-6]),I('lantern_1',[3,0,-6]));
+  return W({sky:th.sky,ground:'#f8fafc',objs:o,script:`world.every(0.25, () => { const p = world.player.pos; const s = world.spawn({ type: 'sphere', pos: [p[0] + world.random(-10, 10), 10, p[2] + world.random(-10, 10)], scale: [0.12, 0.12, 0.12], color: '#ffffff' }); world.after(2.5, () => s.remove()) })\nworld.on('tick', dt => world.all().forEach(o => { if (o.type === 'sphere' && o.scale[0] < 0.2) o.move(0, -4 * dt, 0) }))`}); };
+// ---- 遊園地 ----
+SW.fun=(seed,th)=>{ N=0; const r=R(seed); const o=[];
+  o.push(SH('cyl',[-8,.3,-10],[6,.6,6],th.a,{op:{spin:1}}),...[0,1,2,3,4,5].map(i=>SH('cyl',[-8+Math.cos(i)*2.2,1.3,-10+Math.sin(i)*2.2],[.15,1.6,.15],'#facc15',{solid:0})));
+  for(let i=0;i<8;i++) o.push(B([8,6,-12],[1.6,.3,1.6],pick(r,['#ef4444','#3b82f6','#facc15','#22c55e']),{op:{orbit:1}}));
+  for(let i=0;i<6;i++) o.push(B([(i-2.5)*2.2,.15,-4],[1.8,.3,1.8],'#f472b6',{op:{tramp:1}}));
+  for(let i=0;i<10;i++) o.push(I('balloon_'+(i%8),[(r()-.5)*24,0,(r()-.5)*10-16]));
+  o.push(I('speaker_0',[0,0,-18]),T([0,4,-20],th.name,'#facc15',5),I('icecream_'+((r()*8)|0),[2,0,2]),I('can_'+((r()*15)|0),[2.4,0,2]));
+  o.push(B([0,2,-24],[6,.4,2],'#a78bfa',{op:{moveY:1}}));
+  return W({sky:th.sky,ground:th.ground,objs:o}); };
+// ---- 音楽ホール ----
+SW.music=(seed,th)=>{ N=0; const o=[...walls(0,-6,18,16,5,th.wall)]; o.push(floor(0,-6,18,16,th.floor)); o.push(B([0,.4,-12],[12,.8,4],'#1f2937'),T([0,4,-13.8],th.name,'#facc15',5));
+  o.push(I('drum_0',[-3,.8,-12]),I('drum_1',[-2,.8,-12.5]),I('piano_0',[2.5,.8,-12],180),I('speaker_0',[-5.5,.8,-12.5]),I('speaker_1',[5.5,.8,-12.5]),I('xylophone_0',[0,.8,-11]),I('neon_0',[-6,0,-13.5]),I('neon_5',[6,0,-13.5]));
+  return W({sky:'#0f172a',ground:'#1f2937',spawn:[0,0,1],objs:o,script:`const n = [523, 587, 659, 698, 784, 880, 988, 1046]\nn.forEach((f, i) => { const k = world.spawn({ type: 'box', pos: [i * 1.2 - 4.2, 0.06, -4], scale: [1.1, 0.12, 2.5], color: i % 2 ? '${th.k1}' : '${th.k2}' }); k.onTouch(() => { world.sound(f, 0.35); k.setColor('#facc15'); world.after(0.3, () => k.setColor(i % 2 ? '${th.k1}' : '${th.k2}')) }) })`}); };
+// ---- タワー ----
+SW.tower=(seed,th)=>{ N=0; const r=R(seed); const o=[]; const n=th.n; for(let i=0;i<n;i++){ const a=i*.55; o.push(B([Math.cos(a)*4,i*1.05+.3,Math.sin(a)*4-10],[1.8,.3,1.8],i%2?th.a:th.b,i%9===8?{op:{checkpoint:1}}:{})); }
+  o.push(SH('cyl',[0,n*.52,-10],[2.5,n*1.05,2.5],th.core),B([0,n*1.05+.6,-10],[3,.3,3],'#facc15',{op:{goal:1},name:'ゴール'}),T([0,n*1.05+3,-10],'てっぺん！','#facc15',3,{op:{billboard:1}}));
+  return W({sky:th.sky,ground:th.ground,objs:o,ui:JSON.parse(JSON.stringify(UI_TIMER)),script:SC_TIMER}); };
+// ---- トランポリン・氷 ----
+SW.bounce=(seed,th)=>{ N=0; const r=R(seed); const o=[]; for(let i=0;i<30;i++) o.push(B([(r()-.5)*30,.15+((r()*3)|0)*2,(r()-.5)*30-12],[2,.3,2],pick(r,['#f472b6','#a78bfa','#38bdf8','#facc15']),{op:{tramp:1}})); for(let i=0;i<8;i++) o.push(I('beachball_'+(i%6),[(r()-.5)*20,1,(r()-.5)*20-10]));
+  return W({sky:th.sky,ground:th.ground,grav:th.grav||1,objs:o}); };
+SW.ice=(seed,th)=>{ N=0; const r=R(seed); const o=[B([0,.03,-10],[30,.06,20],'#e0f2fe',{op:{ice:1},solid:0,glass:0})]; for(let i=0;i<14;i++) o.push(I('tcone_'+(i%2),[(r()-.5)*24,.06,(r()-.5)*16-10])); for(let i=0;i<4;i++) o.push(I('snowman_0',[(i-1.5)*8,0,-22]));
+  return W({sky:th.sky,ground:'#f1f5f9',objs:o}); };
+// ---- ゲーム（スクリプト） ----
+SW.treasure=(seed,th)=>{ N=0; const r=R(seed); const o=[]; for(let i=0;i<40;i++) o.push(I(pick(r,['rock_0','rock_1','tree'===0?'':'bonsai_0','plant_0','cactus_0']),[(r()-.5)*60,0,(r()-.5)*60],r()*360)); for(let i=0;i<20;i++) o.push(SH('tree',[(r()-.5)*70,0,(r()-.5)*70],[1,1+r(),1],pick(r,th.leaf)));
+  return W({sky:th.sky,ground:th.ground,objs:o,ui:[{id:'uh',name:'ヒント',t:'text',x:30,y:2,w:40,h:8,text:'たからばこをさがそう',fg:'#ffffff',bg:'#000000',op:50,size:26,r:16}],
+    script:`const t = world.item('treasure_0', { pos: [world.random(-25, 25), 0, world.random(-25, 25)] })\nworld.on('tick', () => { const d = t.distanceToPlayer(); ui.get('ヒント').setText(d < 3 ? 'すぐそば！タップしてね' : d < 8 ? 'ちかい！' : d < 15 ? 'すこしちかい' : 'とおい…') })\nt.onClick(() => { world.say('みつけた！おめでとう！'); world.addScore(1); t.setPos(world.random(-25, 25), 0, world.random(-25, 25)) })`}); };
+SW.dodge=(seed,th)=>{ N=0; const o=[B([0,.1,-6],[24,.2,24],th.floor,{solid:0})];
+  return W({sky:th.sky,ground:th.ground,objs:o,ui:[{id:'us',name:'じかん',t:'text',x:2,y:2,w:30,h:7,text:'よけた時間 0',fg:'#ffffff',bg:'#000000',op:45,size:24,r:14}],
+    script:`let t = 0\nworld.on('tick', dt => { t += dt; ui.get('じかん').setText('よけた時間 ' + t.toFixed(0) + ' 秒') })\nworld.every(${th.rate}, () => { const p = world.player.pos; const b = world.spawn({ type: 'box', pos: [p[0] + world.random(-4, 4), 14, p[2] + world.random(-4, 4)], color: '${th.box}', gravity: true, solid: true }); b.onTouch(() => { world.say('あたった！'); t = 0 }); world.after(6, () => b.remove()) })`}); };
+SW.tag=(seed,th)=>{ N=0; const r=R(seed); const o=[]; for(let i=0;i<20;i++) o.push(B([(r()-.5)*40,1,(r()-.5)*40-6],[2,2,2],pick(r,th.cols)));
+  return W({sky:th.sky,ground:th.ground,objs:o,script:`const oni = world.spawn({ type: 'sphere', pos: [12, 0.9, -12], scale: [1.6, 1.6, 1.6], color: '#7c3aed', name: 'おに', opts: { label: 1 } })\nlet safe = 0\nworld.on('tick', dt => { const p = world.player.pos; oni.moveToward(p[0], 0.9, p[2], ${th.speed} * dt); safe += dt; world.hud('にげた時間 ' + safe.toFixed(0) + ' 秒'); if (oni.distanceToPlayer() < 1.3) { world.say('つかまった！'); world.teleport(-12, 1, 10); safe = 0 } })`}); };
+// ---- 建物 ----
+SW.gallery=(seed,th)=>{ N=0; const r=R(seed); const o=[...walls(0,-8,20,18,4,th.wall)]; o.push(floor(0,-8,20,18,th.floor,{pat:'wood'})); const titles=['夕やけ','海の朝','森のこみち','星空','花ばたけ','雪の山','ねこの午後','虹'];
+  for(let i=0;i<8;i++){ const side=i<4?-1:1, z=-14+(i%4)*4; o.push(I('frame_'+(i%2),[side*9.7,1.2,z],side*90,{op:{info:1},info:'作品「'+titles[i]+'」'})); }
+  for(let i=0;i<3;i++) o.push(I('bench_'+(i%6),[0,0,-14+i*4],90)); o.push(T([0,3.2,-16.8],th.name,'#ffffff',4),I('vase_0',[-3,0,-16]),I('vase_1',[3,0,-16]));
+  return W({sky:'#e5e7eb',ground:'#d6d3d1',spawn:[0,0,0],objs:o}); };
+SW.library=(seed,th)=>{ N=0; const r=R(seed); const o=[...walls(0,-8,20,18,4,th.wall)]; o.push(floor(0,-8,20,18,th.floor,{pat:'wood'}));
+  for(let i=0;i<10;i++) o.push(I('bookshelf_'+(i%6),[i<5?-9:9,0,-15+(i%5)*3],i<5?90:-90)); for(const z of [-12,-7]){ o.push(I('table_1',[0,0,z])); o.push(I('chair_10'===0?'':'chair_1',[0,0,z+1]),I('chair_1',[0,0,z-1],180)); for(let k=0;k<3;k++) o.push(I('book_'+((r()*7)|0),[-.4+k*.4,.76,z])); }
+  o.push(I('desklamp_0',[.5,.76,-12]),I('clock_0',[0,2.6,-16.9]),T([0,3.3,-16.8],th.name,'#ffffff',4));
+  return W({sky:'#e0f2fe',ground:'#a3a3a3',spawn:[0,0,0],objs:o}); };
+SW.school=(seed,th)=>{ N=0; const o=[...walls(0,-7,14,14,3.4,th.wall)]; o.push(floor(0,-7,14,14,th.floor,{pat:'wood'}),B([0,1.8,-13.85],[8,2.2,.1],'#14532d',{solid:0}),T([0,2,-13.7],th.board,'#f8fafc',5),I('desk_0',[0,0,-12],180),I('clock_0',[4.5,2.6,-13.85]));
+  for(let x=0;x<4;x++) for(let z=0;z<3;z++){ o.push(I('desk_1',[-4.5+x*3,0,-8.5+z*2.6],0)); o.push(I('chair_'+((x+z)%10),[-4.5+x*3,0,-7.9+z*2.6],180)); }
+  return W({sky:'#bae6fd',ground:'#86efac',spawn:[0,0,1],objs:o}); };
+SW.city=(seed,th)=>{ N=0; const r=R(seed); const o=[];
+  for(let i=0;i<30;i++){ const x=(i%6-2.5)*9, z=-6-Math.floor(i/6)*9; if(Math.abs(x)<3) continue; const hh=4+r()*16; o.push(B([x,hh/2,z],[6,hh,6],pick(r,th.cols))); for(let k=0;k<4;k++) o.push(B([x,1.5+k*3.5,z+3.01],[4,.6,.05],th.win,{glow:1,solid:0})); }
+  o.push(B([0,.02,-25],[4,.04,60],'#374151',{solid:0})); for(let i=0;i<8;i++) o.push(I('floorlamp_3',[2.8,0,-4-i*7])); for(let i=0;i<6;i++) o.push(I('neon_'+(i%6),[(r()-.5)*10,0,-10-i*6]));
+  return W({sky:th.sky,ground:'#1f2937',objs:o,fog:true}); };
+SW.castle=(seed,th)=>{ N=0; const o=[...walls(0,-14,24,20,6,th.stone,true)];
+  for(const [x,z] of [[-12,-24],[12,-24],[-12,-4],[12,-4]]) o.push(SH('cyl',[x,4,z],[4,8,4],th.stone),SH('cone',[x,9.5,z],[5,3,5],th.roof,{solid:0}));
+  o.push(B([0,.03,-14],[3,.06,18],'#b91c1c',{solid:0}),B([0,.5,-22],[4,1,3],th.stone),I('chair_0',[0,1,-22.5],0,{c:'#facc15'}),I('trophy_0',[1.5,1,-22]),I('treasure_0',[-2,0,-21]),T([0,5,-23.8],th.name,'#facc15',6));
+  for(let i=0;i<6;i++) o.push(I('lantern_'+(i%6),[(i%2?4:-4),0,-8-Math.floor(i/2)*5]));
+  return W({sky:th.sky,ground:th.ground,spawn:[0,0,2],objs:o}); };
+SW.farm=(seed,th)=>{ N=0; const r=R(seed); const o=[]; for(let i=0;i<60;i++) o.push(I(pick(r,th.items),[(i%10-4.5)*1.6,0,-6-Math.floor(i/10)*1.6]));
+  for(let i=0;i<12;i++) o.push(B([-9+i*1.6,.5,-3],[.15,1,.15],'#a16207'),B([-8.2+i*1.6,.7,-3],[1.6,.1,.08],'#a16207',{solid:0}));
+  o.push(B([10,1.5,-10],[5,3,5],'#dc2626'),SH('cone',[10,3.8,-10],[7,1.6,7],'#7c2d12',{r:[0,45,0]}),T([10,4.8,-7.4],th.name,'#ffffff',3));
+  return W({sky:th.sky,ground:th.ground,objs:o}); };
+SW.islands=(seed,th)=>{ N=0; const r=R(seed); const o=[SH('cyl',[0,.5,4],[6,1,6],'#65a30d')]; for(let i=0;i<10;i++){ const a=i*.9, x=Math.cos(a)*(8+i), z=Math.sin(a)*(8+i)-8, y=2+i*1.4; o.push(SH('cyl',[x,y,z],[4,1,4],'#65a30d'),SH('cone',[x,y-1.4,z],[4,2,4],'#92400e',{r:[180,0,0]}),SH('tree',[x,y+.5,z],[1,1,1],'#16a34a')); if(i%3===2) o.push(B([x+1.5,y+.6,z],[1.2,.2,1.2],'#f472b6',{op:{tramp:1}})); }
+  o.push(I('treasure_1',[Math.cos(8.1)*17,2+9*1.4+.5,Math.sin(8.1)*17-8]));
+  return W({sky:th.sky,ground:'none',spawn:[0,1,4],objs:o,grav:th.grav||1}); };
+SW.domino=(seed,th)=>{ N=0; const o=[]; for(let i=0;i<40;i++){ const a=i*.16; o.push(B([Math.cos(a)*(6+i*.12),.6,Math.sin(a)*(6+i*.12)-8],[.15,1.2,.6],i%2?th.a:th.b,{phys:1,op:{push:1},r:[0,-a*57.3,0]})); }
+  o.push(I('beachball_0',[0,0,0]));
+  return W({sky:th.sky,ground:th.ground,objs:o}); };
+SW.bowling=(seed,th)=>{ N=0; const o=[B([0,.03,-10],[3,.06,22],'#d6a86c',{solid:0,pat:'wood'}),B([-1.7,.2,-10],[.4,.4,22],'#475569'),B([1.7,.2,-10],[.4,.4,22],'#475569')]; const pins=[[0,0],[-.3,-.5],[.3,-.5],[-.6,-1],[0,-1],[.6,-1],[-.9,-1.5],[-.3,-1.5],[.3,-1.5],[.9,-1.5]];
+  for(const [x,z] of pins) o.push(SH('cyl',[x,.4,-18+z],[.25,.8,.25],'#f8fafc',{phys:1,op:{push:1}}));
+  for(let i=0;i<4;i++) o.push(I('ball_'+i,[-1+i*.6,0,0]));
+  return W({sky:th.sky,ground:'#1f2937',objs:o,spawn:[0,0,2]}); };
+SW.soccer=(seed,th)=>{ N=0; const o=[B([0,.02,-10],[24,.04,36],'#16a34a',{solid:0,pat:'stripe'})]; for(const z of [-27,7]){ o.push(B([-3,1.2,z],[.2,2.4,.2],'#f8fafc'),B([3,1.2,z],[.2,2.4,.2],'#f8fafc'),B([0,2.4,z],[6.2,.2,.2],'#f8fafc')); }
+  o.push(I('ball_0',[0,0,-10],0,{phys:1,op:{push:1,hold:1,throw:1}}),B([0,.03,-27.5],[6,.06,1],'#facc15',{solid:0,name:'ゴール'}));
+  return W({sky:th.sky,ground:'#15803d',objs:o,script:`const g = world.get('ゴール')\nworld.on('tick', () => { world.all().forEach(o => { if (o.type === 'item' && g && world.distance(o.pos, g.pos) < 2) { world.say('ゴール！！'); world.addScore(1); o.setPos(0, 1, -10) } }) })`}); };
+})();
+// 100こ一覧 [カテゴリ, 名前, 英語名, 説明, つくる]
+const SWLIST=(()=>{ const L2=[]; const add=(cat,ja,en,desc,f)=>L2.push({cat,ja,en,desc,f});
+  const OB=[['草原','Meadow',{sky:'#8ec5ff',a:'#84cc16',b:'#f97316',c:'#38bdf8'}],['夜空','Night sky',{sky:'#0b1026',a:'#6366f1',b:'#f472b6',c:'#22d3ee'}],['雲の上','Clouds',{sky:'#e0f2fe',a:'#f8fafc',b:'#bae6fd',c:'#fde68a'}],['氷','Ice',{sky:'#cffafe',a:'#bae6fd',b:'#e0f2fe',c:'#7dd3fc',lava:'#0ea5e9'}],['溶岩','Lava',{sky:'#7c2d12',a:'#57534e',b:'#a8a29e',c:'#f97316'}],['宇宙','Space',{sky:'#020617',a:'#a78bfa',b:'#22d3ee',c:'#f472b6',lava:'#4c1d95'}],['にじ','Rainbow',{sky:'#fbcfe8',a:'#ef4444',b:'#facc15',c:'#3b82f6'}],['おかし','Sweets',{sky:'#fce7f3',a:'#f9a8d4',b:'#fde68a',c:'#a16207',lava:'#f472b6'}],['海','Ocean',{sky:'#7dd3fc',a:'#fde68a',b:'#22d3ee',c:'#f97316',lava:'#0369a1'}],['森','Forest',{sky:'#bbf7d0',a:'#15803d',b:'#a16207',c:'#65a30d',lava:'#166534'}],['雪','Snow',{sky:'#e2e8f0',a:'#f8fafc',b:'#cbd5e1',c:'#93c5fd',lava:'#64748b'}],['ネオン','Neon',{sky:'#000000',a:'#22d3ee',b:'#e879f9',c:'#a3e635',lava:'#1e1b4b',fog:0}]];
+  OB.forEach(([ja,en,th],i)=>add('game',`アスレチック：${ja}`,`Obby: ${en}`,'足場をジャンプしてゴールをめざそう。チェックポイント・トランポリン・動く床・氷つき',()=>SW.obby(100+i,th)));
+  const MZ=[['小さな','Small',6],['ふつうの','Medium',8],['大きな','Big',11]]; const MT=[['石','Stone',{wall:'#78716c',floor:'#a8a29e',sky:'#cbd5e1',ground:'#a8a29e'}],['生け垣','Hedge',{wall:'#15803d',floor:'#86efac',sky:'#bfdbfe',ground:'#4ade80'}],['レンガ','Brick',{wall:'#b45309',floor:'#d6d3d1',sky:'#fde68a',ground:'#d6d3d1'}],['氷','Ice',{wall:'#7dd3fc',floor:'#e0f2fe',sky:'#e0f2fe',ground:'#f8fafc'}]];
+  let k=0; for(const [mj,me,n] of MZ) for(const [tj,te,th] of MT){ if(k++>=10) break; add('game',`めいろ：${mj}${tj}`,`Maze: ${me} ${te}`,'コインを拾いながら出口のゴールへ',()=>SW.maze(200+k,n,th)); }
+  [['草原','Meadow',{sky:'#8ec5ff',ground:'#7cc47f',plat:'#f97316',deco:['plant_0','flower_0','rock_0','bench_0']}],['砂ばく','Desert',{sky:'#fde68a',ground:'#e7d3a8',plat:'#b45309',deco:['cactus_0','cactus_1','rock_1']}],['夜の森','Night forest',{sky:'#0b1026',ground:'#14532d',plat:'#6366f1',deco:['lantern_0','mushroom_0','mushroom_2']}],['雪原','Snowfield',{sky:'#e2e8f0',ground:'#f8fafc',plat:'#93c5fd',deco:['snowman_0','present_0']}],['お花','Flowers',{sky:'#fbcfe8',ground:'#86efac',plat:'#f472b6',deco:['flower_1','flower_3','flower_5']}],['宇宙','Space',{sky:'#020617',ground:'#334155',plat:'#a78bfa',deco:['crystal_0','crystal_1','starDeco_0']}]].forEach(([ja,en,th],i)=>add('game',`コイン集め：${ja}`,`Coin hunt: ${en}`,'25このコインを集めよう。ジャンプ台もあるよ',()=>SW.coins(300+i,th)));
+  [['青いお部屋','Blue room',{wall:'#bfdbfe',floor:'#d6a86c',bed:0,desk:0,chair:5,rug:5,lamp:5,name:'ぼくの部屋'}],['ピンクのお部屋','Pink room',{wall:'#fbcfe8',floor:'#fde68a',bed:5,desk:3,chair:7,rug:7,lamp:1,name:'わたしの部屋'}],['ゲーマー部屋','Gamer room',{wall:'#1f2937',floor:'#374151',bed:6,desk:4,chair:9,rug:2,lamp:4,name:'GAME ROOM'}],['ナチュラル部屋','Natural room',{wall:'#fef3c7',floor:'#b8863b',bed:3,desk:0,chair:10,rug:3,lamp:2,name:'ナチュラル'}],['子ども部屋','Kids room',{wall:'#fde68a',floor:'#bbf7d0',bed:2,desk:5,chair:2,rug:0,lamp:0,name:'こどもべや'}],['リビング','Living',{wall:'#f5f5f4',floor:'#a16207',bed:1,desk:1,chair:11,rug:8,lamp:3,name:'リビング'}],['しん室','Bedroom',{wall:'#e9d5ff',floor:'#d6a86c',bed:6,desk:2,chair:6,rug:6,lamp:5,name:'おやすみ'}],['書さい','Study',{wall:'#d6d3d1',floor:'#6b4226',bed:7,desk:1,chair:10,rug:9,lamp:4,name:'書さい'}]].forEach(([ja,en,th],i)=>add('room',ja,en,'家具がそろったお部屋。テレビ・ライト・パソコンもさわれるよ',()=>SW.room(400+i,th)));
+  const DR=['can_0','can_1','can_12','bottle_8','juice_0','boba_0','coffee_1','milkbottle_1','teacup_0','float_0'], FD=['donut_0','cake_0','cupcake_0','icecream_0','burger_0','pizza_0','onigiri_0','sushi_0'];
+  [['カフェ「ほっと」','Cafe Hot',{wall:'#fef3c7',floor:'#d6a86c',counter:'#78350f',table:0,chairs:10,name:'Cafe ほっと',sign:'#78350f',drinks:['coffee_0','coffee_1','mug_0','teacup_0','milkbottle_1'],food:['cake_0','donut_0','cupcake_2']}],['タピオカ屋','Bubble tea',{wall:'#fce7f3',floor:'#fbcfe8',counter:'#f472b6',table:3,chairs:7,name:'タピオカ',sign:'#be185d',drinks:['boba_0','boba_1','boba_2','boba_4','boba_6'],food:['donut_1','candy_0']}],['ジュースバー','Juice bar',{wall:'#dcfce7',floor:'#a7f3d0',counter:'#16a34a',table:7,chairs:3,name:'JUICE BAR',sign:'#15803d',drinks:['juice_0','juice_1','juice_3','juice_5','float_0'],food:['apple_0','banana_0','watermelon_0']}],['和カフェ','Japanese cafe',{wall:'#f5f5f4',floor:'#a16207',counter:'#292524',table:1,chairs:10,name:'甘味処',sign:'#292524',drinks:['teacup_3','glass_8','carton_5'],food:['onigiri_0','icecream_3','cake_2']}],['ファストフード','Fast food',{wall:'#fee2e2',floor:'#fef3c7',counter:'#dc2626',table:4,chairs:2,name:'BURGER',sign:'#dc2626',drinks:['can_0','can_1','juice_6','float_2'],food:['burger_0','burger_1','pizza_1','icecream_0']}]].forEach(([ja,en,th],i)=>add('shop',ja,en,'飲み物や食べ物を持って、飲んだり食べたりできるよ',()=>SW.cafe(500+i,th)));
+  [['コンビニ','Convenience store',{name:'コンビニ',sign:'#16a34a',shelf:'#e5e7eb',items:[...DR,...FD]}],['ドリンク専門店','Drink shop',{name:'ドリンク',sign:'#2563eb',shelf:'#dbeafe',items:DR.concat(['bottle_0','bottle_2','bottle_4','can_5','can_7'])}],['ケーキ屋','Cake shop',{name:'ケーキ屋さん',sign:'#db2777',shelf:'#fce7f3',items:['cake_0','cake_1','cake_2','cake_3','cupcake_0','cupcake_1','donut_2']}],['おかし屋','Sweets shop',{name:'おかし',sign:'#ea580c',shelf:'#ffedd5',items:['candy_0','candy_2','candy_4','donut_0','donut_4','icecream_6']}],['雑貨屋','Variety shop',{name:'ざっかや',sign:'#7c3aed',shelf:'#ede9fe',items:['mug_3','teddy_0','duck_0','present_1','lantern_2','vase_0','book_3']}]].forEach(([ja,en,th],i)=>add('shop',ja,en,'たなの商品は持ったり飲んだりできるよ。じはんきもあるよ',()=>SW.shop(600+i,th)));
+  [['春の公園','Spring park',{sky:'#fbcfe8',ground:'#86efac',leaf:['#f9a8d4','#fbcfe8','#fda4af']}],['夏の公園','Summer park',{sky:'#7dd3fc',ground:'#4ade80',leaf:['#16a34a','#22c55e'],extra:['icecream_4','float_4','beachball_2']}],['秋の公園','Autumn park',{sky:'#fed7aa',ground:'#d9a066',leaf:['#f97316','#dc2626','#facc15']}],['冬の公園','Winter park',{sky:'#e2e8f0',ground:'#f8fafc',leaf:['#e2e8f0','#cbd5e1'],extra:['snowman_0','snowman_0']}],['夜の公園','Night park',{sky:'#0b1026',ground:'#14532d',leaf:['#14532d','#166534'],extra:['lantern_0','lantern_3','candle_0']}],['花の公園','Flower park',{sky:'#fdf4ff',ground:'#bbf7d0',leaf:['#a78bfa','#f472b6','#fde68a']}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'噴水と木とベンチの公園。のんびりおさんぽしよう',()=>SW.park(700+i,th)));
+  [['宇宙ステーション','Space station',{grav:.17,cols:['#94a3b8','#64748b','#a78bfa'],planet:'#f97316'}],['月面きち','Moon base',{grav:.17,cols:['#e5e7eb','#9ca3af'],planet:'#60a5fa'}],['ネオン宇宙','Neon space',{grav:.3,cols:['#22d3ee','#e879f9','#a3e635'],planet:'#e879f9'}],['火星','Mars',{grav:.38,cols:['#b45309','#c2410c','#9a3412'],planet:'#fde68a'}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'重力がよわくて、ふわふわジャンプできるよ',()=>SW.space(800+i,th)));
+  [['雪の町','Snow town',{sky:'#e2e8f0'}],['夜の雪の町','Snowy night',{sky:'#0f172a'}],['クリスマスの町','Christmas town',{sky:'#7f1d1d'}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'雪がふる町。こおりの道はつるつるすべるよ',()=>SW.snow(900+i,th)));
+  [['遊園地','Amusement park',{sky:'#bae6fd',ground:'#a7f3d0',a:'#f472b6',name:'ゆうえんち'}],['夜の遊園地','Night carnival',{sky:'#1e1b4b',ground:'#312e81',a:'#facc15',name:'ナイトパーク'}],['おかしの国','Candy land',{sky:'#fce7f3',ground:'#fbcfe8',a:'#a16207',name:'おかしの国'}],['お祭り','Festival',{sky:'#fdba74',ground:'#d6a86c',a:'#dc2626',name:'おまつり'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'回る台・トランポリン・動く床・風船がいっぱい',()=>SW.fun(1000+i,th)));
+  [['コンサートホール','Concert hall',{wall:'#1f2937',floor:'#111827',name:'ステージ',k1:'#1f2937',k2:'#f8fafc'}],['にじいろ音楽室','Rainbow music room',{wall:'#fdf4ff',floor:'#e9d5ff',name:'おんがくしつ',k1:'#a78bfa',k2:'#f9a8d4'}],['ジャズバー','Jazz bar',{wall:'#451a03',floor:'#292524',name:'JAZZ',k1:'#78350f',k2:'#fde68a'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'床のピアノを歩くと音が鳴るよ。楽器もさわれる',()=>SW.music(1100+i,th)));
+  [['らせんタワー','Spiral tower',{n:30,sky:'#8ec5ff',ground:'#7cc47f',a:'#f97316',b:'#38bdf8',core:'#e5e7eb'}],['高い高いタワー','Very tall tower',{n:50,sky:'#bae6fd',ground:'#a7f3d0',a:'#ef4444',b:'#facc15',core:'#f8fafc'}],['夜のタワー','Night tower',{n:35,sky:'#0b1026',ground:'#1e293b',a:'#22d3ee',b:'#e879f9',core:'#334155'}],['おかしのタワー','Candy tower',{n:30,sky:'#fce7f3',ground:'#fbcfe8',a:'#f9a8d4',b:'#fde68a',core:'#a16207'}]].forEach(([ja,en,th],i)=>add('game',ja,en,'ぐるぐる回りながらてっぺんをめざそう',()=>SW.tower(1200+i,th)));
+  [['トランポリンパーク','Trampoline park',{sky:'#fbcfe8',ground:'#e9d5ff'}],['ふわふわトランポリン','Floaty trampolines',{sky:'#e0f2fe',ground:'#bae6fd',grav:.5}],['夜のトランポリン','Night trampolines',{sky:'#1e1b4b',ground:'#312e81'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'トランポリンでどこまで高くとべるかな',()=>SW.bounce(1300+i,th)));
+  [['スケートリンク','Ice rink',{sky:'#e0f2fe'}],['夜のスケート','Night skating',{sky:'#0f172a'}]].forEach(([ja,en,th],i)=>add('fun',ja,en,'つるつるの氷の上ですべろう',()=>SW.ice(1400+i,th)));
+  [['宝さがし：森','Treasure: forest',{sky:'#bbf7d0',ground:'#4ade80',leaf:['#16a34a','#15803d']}],['宝さがし：砂ばく','Treasure: desert',{sky:'#fde68a',ground:'#e7d3a8',leaf:['#65a30d']}],['宝さがし：夜','Treasure: night',{sky:'#0b1026',ground:'#14532d',leaf:['#166534']}]].forEach(([ja,en,th],i)=>add('game',ja,en,'ヒントをたよりに、かくれた宝箱をさがそう',()=>SW.treasure(1500+i,th)));
+  [['ふってくる箱をよけろ','Dodge the boxes',{sky:'#8ec5ff',ground:'#7cc47f',floor:'#e5e7eb',rate:1,box:'#ef4444'}],['ハードモード：よけろ','Dodge: hard',{sky:'#450a0a',ground:'#7f1d1d',floor:'#1f2937',rate:.45,box:'#facc15'}]].forEach(([ja,en,th],i)=>add('game',ja,en,'空から箱がふってくる！どれだけよけられるかな',()=>SW.dodge(1600+i,th)));
+  [['おにごっこ','Tag',{sky:'#8ec5ff',ground:'#7cc47f',cols:['#f97316','#38bdf8','#facc15'],speed:2.4}],['はやいおにごっこ','Fast tag',{sky:'#1e1b4b',ground:'#312e81',cols:['#a78bfa','#f472b6'],speed:3.6}]].forEach(([ja,en,th],i)=>add('game',ja,en,'おにが追いかけてくる。箱のかげにかくれてにげよう',()=>SW.tag(1700+i,th)));
+  [['びじゅつかん','Art museum',{wall:'#f5f5f4',floor:'#d6a86c',name:'びじゅつかん'}],['ギャラリー','Gallery',{wall:'#1f2937',floor:'#374151',name:'GALLERY'}]].forEach(([ja,en,th],i)=>add('room',ja,en,'絵をタップすると作品の説明が出るよ',()=>SW.gallery(1800+i,th)));
+  [['としょかん','Library',{wall:'#fef3c7',floor:'#b8863b',name:'としょかん'}],['ひみつの書庫','Secret archive',{wall:'#292524',floor:'#44403c',name:'ひみつの書庫'}]].forEach(([ja,en,th],i)=>add('room',ja,en,'本を持って読書スペースへ',()=>SW.library(1900+i,th)));
+  [['きょうしつ','Classroom',{wall:'#fef9c3',floor:'#d6a86c',board:'きょうは なにを まなぶ？'}],['理科室','Science room',{wall:'#e0f2fe',floor:'#94a3b8',board:'じっけんのじかん'}]].forEach(([ja,en,th],i)=>add('room',ja,en,'つくえと黒板のある教室',()=>SW.school(2000+i,th)));
+  [['夜の街','Night city',{sky:'#0b1026',cols:['#1e293b','#334155','#1f2937'],win:'#fde68a'}],['ネオン街','Neon city',{sky:'#1e1b4b',cols:['#312e81','#4c1d95','#1e1b4b'],win:'#e879f9'}],['夕方の街','Sunset city',{sky:'#fdba74',cols:['#78716c','#a8a29e','#57534e'],win:'#fef3c7'}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'ビルがならぶ街をおさんぽ',()=>SW.city(2100+i,th)));
+  [['お城','Castle',{stone:'#a8a29e',roof:'#1d4ed8',sky:'#bfdbfe',ground:'#4ade80',name:'おしろ'}],['夜のお城','Night castle',{stone:'#57534e',roof:'#7c3aed',sky:'#0b1026',ground:'#14532d',name:'まおうのしろ'}]].forEach(([ja,en,th],i)=>add('room',ja,en,'王さまのいすとたからばこがあるよ',()=>SW.castle(2200+i,th)));
+  [['お花ばたけ','Flower farm',{sky:'#fdf4ff',ground:'#86efac',items:['flower_0','flower_1','flower_2','flower_3','flower_5','flower_6'],name:'はなばたけ'}],['くだもの農園','Fruit farm',{sky:'#bbf7d0',ground:'#65a30d',items:['apple_0','apple_1','watermelon_0','banana_0'],name:'のうえん'}]].forEach(([ja,en,th],i)=>add('nature',ja,en,'いっぱい育った畑。くだものは食べられるよ',()=>SW.farm(2300+i,th)));
+  [['空にうかぶ島','Sky islands',{sky:'#bae6fd'}],['ふわふわ島','Floaty islands',{sky:'#fbcfe8',grav:.4}]].forEach(([ja,en,th],i)=>add('game',ja,en,'島から島へジャンプ。いちばん上に宝箱',()=>SW.islands(2400+i,th)));
+  add('fun','ドミノたおし','Dominoes','ボールを投げたり押したりしてドミノをたおそう',()=>SW.domino(2500,{sky:'#8ec5ff',ground:'#e5e7eb',a:'#ef4444',b:'#f8fafc'}));
+  add('fun','ボウリング','Bowling','ボールを持って投げて、ピンをたおそう',()=>SW.bowling(2600,{sky:'#1e1b4b'}));
+  add('fun','サッカー場','Soccer field','ボールを押してゴールに入れよう',()=>SW.soccer(2700,{sky:'#8ec5ff'}));
+  return L2.slice(0,100); })();
+// ワールドアプリに「サンプル」タブ
+const _worldsImpl30=APPIMPL.worlds;
+APPIMPL.worlds=(body,w)=>{ _worldsImpl30(body,w); const root=body.querySelector('.scroll'); const swBtn=btn(IC('sparkles')+L(`サンプル（${SWLIST.length}こ）`,`Samples (${SWLIST.length})`),()=>sw(),'pri'); swBtn.style.cssText+=';position:absolute;right:150px;top:20px;z-index:2'; body.appendChild(swBtn);
+  const sw=()=>{ let cat='all'; const box=h('div','swBox scroll'); body.appendChild(box);
+    const draw=()=>{ box.innerHTML=''; const hd=h('div','row'); hd.style.cssText='justify-content:space-between;margin-bottom:10px;flex-wrap:nowrap'; hd.append(h('h2','',L(`サンプルワールド ${SWLIST.length}こ`,`${SWLIST.length} sample worlds`)),btn(IC('x')+L('とじる','Close'),()=>box.remove())); box.appendChild(hd);
+      const seg=h('div','seg'); for(const [k,ja,en] of [['all','ぜんぶ','All'],['game','ゲーム','Games'],['fun','あそび','Fun'],['room','たてもの','Places'],['shop','お店','Shops'],['nature','けしき','Scenery']]){ const b=h('button',cat===k?'on':'',L(ja,en)); b.onclick=()=>{ cat=k; draw(); }; seg.appendChild(b); } box.appendChild(seg);
+      const g=h('div','swGrid'); SWLIST.forEach((s,i)=>{ if(cat!=='all'&&s.cat!==cat) return; const c=h('div','card swCard'); c.innerHTML=`<div class="swNo">${i+1}</div><b>${esc(L(s.ja,s.en))}</b><div class="sub">${esc(s.desc)}</div>`; const r=h('div','row'); r.style.cssText='gap:6px;margin-top:8px;flex-wrap:nowrap';
+        r.append(btn(IC('play')+L('入る','Enter'),()=>{ const d=s.f(); d.name=L(s.ja,s.en); w3Open('sample'+i,{data:d}); },'pri'),btn(IC('copy')+L('コピーしてつくる','Remix'),()=>{ const d=s.f(); d.name=L(s.ja,s.en); d.createdAt=Date.now(); const m=MYW(); const nid=wid(); m[nid]=d; if(saveMYW(m)){ toastW(L('マイワールドにコピーしました','Copied to My worlds')); box.remove(); } }));
+        c.appendChild(r); g.appendChild(c); }); box.appendChild(g); }; draw(); }; };
 
 </script>
 </body>

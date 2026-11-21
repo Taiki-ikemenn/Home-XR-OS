@@ -1,143 +1,149 @@
 {
-  "latest": "3.8.1",
-  "versions": [
-    {
-      "v": "3.8.1",
-      "date": "2026-11-21",
-      "notes_ja": "キーボードが見えないことがあったのを修正（画面の下に平らに出るように）。アバターの着せかえ（体・顔・目・髪・帽子・服・くつ・アクセをこまかく変更、ワールドで友だちにも見える、歩く・手をふる）。",
-      "notes_en": "Fixed invisible keyboard (now a flat bottom keyboard). Detailed avatar customization, visible to friends in Worlds."
-    },
-    {
-      "v": "3.8.0",
-      "date": "2026-11-21",
-      "notes_ja": "ワールド：スクラッチみたいなブロックでコードを作れるように（コードの命令はぜんぶブロック化＋もし・くり返し・変数・計算・リスト・関数）。UIエディタ：画面にボタン・文字・パネル・ゲージ・アイコン・入力欄を置いて、ブロックやコードで動かせます。",
-      "notes_en": "Worlds: Scratch-like block coding covering the whole API plus logic/loops/variables/functions. UI editor for buttons, text, panels, gauges, icons and inputs."
-    },
-    {
-      "v": "3.7.0",
-      "date": "2026-11-21",
-      "notes_ja": "ワールド：アイテム500種類（家具・飲み物・食べ物・家電など、3Dモデルとギミックつき）、右手・左手で持つ＋バックパック、物のオプション50こ（持てる・飲める・すわれる・動く床・トランポリン・コイン・ゴールなど）、サンプルコード110こ。",
-      "notes_en": "Worlds: 500 items with 3D models & gimmicks, two-hand holding + backpack, 50 object options, 110 code samples."
-    },
-    {
-      "v": "3.6.1",
-      "date": "2026-11-21",
-      "notes_ja": "ワールド：物に模様（11種類）・ガラス・好きな色、重力で落ちる／押せる／はねる物、ワールドの重力（宇宙・月〜すごく強い）。コードからも重力を変えられます。",
-      "notes_en": "Worlds: 11 patterns, glass, any color, gravity/pushable/bouncy objects, world gravity setting, gravity in code."
-    },
-    {
-      "v": "3.6.0",
-      "date": "2026-11-21",
-      "notes_ja": "新アプリ「ワールド」：自分だけの3D空間をつくって、歩いて、公開すると友だちといっしょに遊べます（アバター・ヤッホー・ひとこと）。物の配置・色・大きさ、コードで動かすこともできます。手の認識の再起動ボタンも追加。",
-      "notes_en": "New Worlds app: build your own 3D space, walk around, publish and play with friends (avatars, waves, chat), add code. Hand tracking restart button."
-    },
-    {
-      "v": "3.5.2",
-      "date": "2026-11-21",
-      "notes_ja": "キーボードが画面の下にかくれて見えないことがあったのを修正（画面に入る大きさ・位置に自動で合わせる）。キーボードを出している間は下のバーをかくします。",
-      "notes_en": "Keyboard now always fits on screen; the dock hides while typing."
-    },
-    {
-      "v": "3.5.1",
-      "date": "2026-11-21",
-      "notes_ja": "重なり順を整理（メニュー・ライブラリ・パネルがいちばん手前、次にキーボード、その奥にウィンドウ）。アプリの固定／固定解除。メニューとクイック設定に「再起動」「電源を切る」。ウィンドウの「…」メニュー。",
-      "notes_en": "Fixed layering (menus/library on top). Pin/unpin apps. Restart & power off in the menu. Window ⋯ menu."
-    },
-    {
-      "v": "3.5.0",
-      "date": "2026-11-21",
-      "notes_ja": "AIアシスタントを追加（アプリと下のバーのボタン）。文字や声で話しかけると答えて、アプリを開く・天気・タイマー・景色・ウィジェットなどの操作もできます。Geminiのキーを入れると何でもお話しできます。",
-      "notes_en": "New AI Assistant (app + dock button). Chat by text or voice; it can open apps, show weather, set timers, change scenery and more. Add a Gemini key for full chat."
-    },
-    {
-      "v": "3.4.0",
-      "date": "2026-11-21",
-      "notes_ja": "ライブラリの「並び替え・フォルダ」モード：アプリをつまんで並び替え、フォルダの作成・名前変更・削除、アプリをフォルダに入れる／出す、ライブラリから削除ができます。",
-      "notes_en": "Library Arrange mode: drag to reorder, create/rename/delete folders, move apps in and out, remove apps."
-    },
-    {
-      "v": "3.3.1",
-      "date": "2026-11-21",
-      "notes_ja": "ブラウザで開いているサイトを、アプリとしてライブラリに追加できるようになりました（開くとブラウザでそのページが開きます）。サイトのアイコンも表示。",
-      "notes_en": "Add the current website to your library as an app (opens in the browser). Site icons shown."
-    },
-    {
-      "v": "3.3.0",
-      "date": "2026-11-21",
-      "notes_ja": "絵文字をやめて線のアイコンに統一。空間ウィジェット（時計・天気・カレンダー・メモ・写真・タイマー）。新しい景色（森・夜の街・雪山・オーロラ）と、自分の写真・360°写真の背景。友だちと同じ部屋に入れる「いっしょの部屋」（アバター・いっしょにYouTube・リアクション）。",
-      "notes_en": "Line icons instead of emoji. Spatial widgets. New sceneries plus your own photo / 360° photo backgrounds. Together: share a room with friends (avatars, watch YouTube together, reactions)."
-    },
-    {
-      "v": "3.2.1",
-      "date": "2026-11-21",
-      "notes_ja": "マイアプリに「🚀 アプリを起動」を追加。Roblox・Minecraft・YouTube・Discord・LINE・Spotifyなど、iPadに入っているアプリをライブラリから開けます。",
-      "notes_en": "My Apps: new Launch type to open installed apps (Roblox, Minecraft, YouTube, Discord, LINE, Spotify…) from the library."
-    },
-    {
-      "v": "3.2.0",
-      "date": "2026-11-21",
-      "notes_ja": "全画面ボタンを追加（ドックとクイック設定）。新アプリ「マイアプリ」：好きなウェブサイト（URL）やHTMLファイルを自分のアプリとしてライブラリに追加できます。",
-      "notes_en": "Full screen button (dock & quick settings). New My Apps: add any website or HTML file as your own app."
-    },
-    {
-      "v": "3.1.9",
-      "date": "2026-11-21",
-      "notes_ja": "ブラウザのサイトを、空間のウィンドウのまま指でさわって操作できるようになりました。サイト内で移動するとアドレスバーが変わり、もどる・すすむも使えます。",
-      "notes_en": "Touch websites directly inside the floating browser window. Address bar and back/forward follow in-site navigation."
-    },
-    {
-      "v": "3.1.8",
-      "date": "2026-11-21",
-      "notes_ja": "手の認識を約2〜3倍の回数で行うようにして、見失いにくくしました。カメラ映像に手の骨組みを表示（タップで大きく）。近すぎ・遠すぎ・はみ出しをお知らせ。",
-      "notes_en": "Hand tracking runs 2-3x more often, hand skeleton on the camera preview (tap to enlarge), distance/position hints."
-    },
-    {
-      "v": "3.1.7",
-      "date": "2026-11-20",
-      "notes_ja": "ブラウザに「👆 さわって操作」を追加。サイトを平らな画面で開いて、指で直接クリック・スクロール・入力できます。",
-      "notes_en": "Browser: added Touch mode to use sites directly with your fingers."
-    },
-    {
-      "v": "3.1.6",
-      "date": "2026-11-20",
-      "notes_ja": "つまむ判定を3Dの指のすき間（cm）で測るようにして、指さしただけでつまみ扱いになる問題を修正。カメラの下に手の状態とすき間を表示。",
-      "notes_en": "Pinch now measured as 3D finger gap (cm), fixing false pinches when pointing. Hand status shown under the camera."
-    },
-    {
-      "v": "3.1.5",
-      "date": "2026-11-20",
-      "notes_ja": "つまむときにカーソルがズレなくなりました（指を近づけると止まる・つまむ前の場所でつまむ）。つまみ具合がカーソルのまわりに出ます。「止めてクリック」を追加。",
-      "notes_en": "Cursor no longer slips when pinching. Pinch progress ring around the cursor. Added Dwell to click."
-    },
-    {
-      "v": "3.1.4",
-      "date": "2026-11-19",
-      "notes_ja": "手が反応しやすくなりました（少しはなれても認識・見えたら緑の枠）。端末のキーボードと貼り付けに対応（YouTubeは「貼り付けて再生」、ブラウザは📋ボタン）。",
-      "notes_en": "Better hand detection (works farther away, green frame when seen). Device keyboard and paste support (YouTube: Paste & play, Browser: 📋)."
-    },
-    {
-      "v": "3.1.3",
-      "date": "2026-11-19",
-      "notes_ja": "「はじめる」を押すとようこそ画面にもどってしまう問題を修正。カメラは外カメラを使うようにしました（切りかえもできます）",
-      "notes_en": "Fixed returning to the welcome screen after Start. Cameras now use the back camera (switchable)"
-    },
-    {
-      "v": "3.1.2",
-      "date": "2026-11-19",
-      "notes_ja": "ジャイロと手の認識をオンにすると固まることがあった問題を修正。手の認識を軽くしました",
-      "notes_en": "Fixed a freeze with gyro and hand tracking; hand tracking is lighter"
-    },
-    {
-      "v": "3.1.1",
-      "date": "2026-11-19",
-      "notes_ja": "チャットとフィードが、たいアカウントで本当に使えるようになりました",
-      "notes_en": "Chats and Feed now work with your Tai account"
-    },
-    {
-      "v": "3.1.0",
-      "date": "2026-11-19",
-      "notes_ja": "アカウント・チャット・フィード（Firebase）、アップデート機能、自動アップデートを追加",
-      "notes_en": "Added accounts, chat and feed (Firebase), updates and auto-update"
-    }
-  ]
+ "latest": "3.9.0",
+ "versions": [
+  {
+   "v": "3.9.0",
+   "date": "2026-11-21",
+   "ja": "サンプルワールド100こ追加（アスレチック・めいろ・コイン集め・お部屋・カフェ・お店・公園・宇宙・雪の町・遊園地・音楽ホール・タワー・宝さがし・おにごっこ ほか）。入って遊ぶ・コピーして作りかえるができる",
+   "en": "Added 100 sample worlds (obbies, mazes, coin hunts, rooms, cafes, shops, parks, space, snow town, amusement parks, music halls, towers, treasure hunts, tag and more). Enter to play or remix into your own."
+  },
+  {
+   "v": "3.8.1",
+   "date": "2026-11-21",
+   "notes_ja": "キーボードが見えないことがあったのを修正（画面の下に平らに出るように）。アバターの着せかえ（体・顔・目・髪・帽子・服・くつ・アクセをこまかく変更、ワールドで友だちにも見える、歩く・手をふる）。",
+   "notes_en": "Fixed invisible keyboard (now a flat bottom keyboard). Detailed avatar customization, visible to friends in Worlds."
+  },
+  {
+   "v": "3.8.0",
+   "date": "2026-11-21",
+   "notes_ja": "ワールド：スクラッチみたいなブロックでコードを作れるように（コードの命令はぜんぶブロック化＋もし・くり返し・変数・計算・リスト・関数）。UIエディタ：画面にボタン・文字・パネル・ゲージ・アイコン・入力欄を置いて、ブロックやコードで動かせます。",
+   "notes_en": "Worlds: Scratch-like block coding covering the whole API plus logic/loops/variables/functions. UI editor for buttons, text, panels, gauges, icons and inputs."
+  },
+  {
+   "v": "3.7.0",
+   "date": "2026-11-21",
+   "notes_ja": "ワールド：アイテム500種類（家具・飲み物・食べ物・家電など、3Dモデルとギミックつき）、右手・左手で持つ＋バックパック、物のオプション50こ（持てる・飲める・すわれる・動く床・トランポリン・コイン・ゴールなど）、サンプルコード110こ。",
+   "notes_en": "Worlds: 500 items with 3D models & gimmicks, two-hand holding + backpack, 50 object options, 110 code samples."
+  },
+  {
+   "v": "3.6.1",
+   "date": "2026-11-21",
+   "notes_ja": "ワールド：物に模様（11種類）・ガラス・好きな色、重力で落ちる／押せる／はねる物、ワールドの重力（宇宙・月〜すごく強い）。コードからも重力を変えられます。",
+   "notes_en": "Worlds: 11 patterns, glass, any color, gravity/pushable/bouncy objects, world gravity setting, gravity in code."
+  },
+  {
+   "v": "3.6.0",
+   "date": "2026-11-21",
+   "notes_ja": "新アプリ「ワールド」：自分だけの3D空間をつくって、歩いて、公開すると友だちといっしょに遊べます（アバター・ヤッホー・ひとこと）。物の配置・色・大きさ、コードで動かすこともできます。手の認識の再起動ボタンも追加。",
+   "notes_en": "New Worlds app: build your own 3D space, walk around, publish and play with friends (avatars, waves, chat), add code. Hand tracking restart button."
+  },
+  {
+   "v": "3.5.2",
+   "date": "2026-11-21",
+   "notes_ja": "キーボードが画面の下にかくれて見えないことがあったのを修正（画面に入る大きさ・位置に自動で合わせる）。キーボードを出している間は下のバーをかくします。",
+   "notes_en": "Keyboard now always fits on screen; the dock hides while typing."
+  },
+  {
+   "v": "3.5.1",
+   "date": "2026-11-21",
+   "notes_ja": "重なり順を整理（メニュー・ライブラリ・パネルがいちばん手前、次にキーボード、その奥にウィンドウ）。アプリの固定／固定解除。メニューとクイック設定に「再起動」「電源を切る」。ウィンドウの「…」メニュー。",
+   "notes_en": "Fixed layering (menus/library on top). Pin/unpin apps. Restart & power off in the menu. Window ⋯ menu."
+  },
+  {
+   "v": "3.5.0",
+   "date": "2026-11-21",
+   "notes_ja": "AIアシスタントを追加（アプリと下のバーのボタン）。文字や声で話しかけると答えて、アプリを開く・天気・タイマー・景色・ウィジェットなどの操作もできます。Geminiのキーを入れると何でもお話しできます。",
+   "notes_en": "New AI Assistant (app + dock button). Chat by text or voice; it can open apps, show weather, set timers, change scenery and more. Add a Gemini key for full chat."
+  },
+  {
+   "v": "3.4.0",
+   "date": "2026-11-21",
+   "notes_ja": "ライブラリの「並び替え・フォルダ」モード：アプリをつまんで並び替え、フォルダの作成・名前変更・削除、アプリをフォルダに入れる／出す、ライブラリから削除ができます。",
+   "notes_en": "Library Arrange mode: drag to reorder, create/rename/delete folders, move apps in and out, remove apps."
+  },
+  {
+   "v": "3.3.1",
+   "date": "2026-11-21",
+   "notes_ja": "ブラウザで開いているサイトを、アプリとしてライブラリに追加できるようになりました（開くとブラウザでそのページが開きます）。サイトのアイコンも表示。",
+   "notes_en": "Add the current website to your library as an app (opens in the browser). Site icons shown."
+  },
+  {
+   "v": "3.3.0",
+   "date": "2026-11-21",
+   "notes_ja": "絵文字をやめて線のアイコンに統一。空間ウィジェット（時計・天気・カレンダー・メモ・写真・タイマー）。新しい景色（森・夜の街・雪山・オーロラ）と、自分の写真・360°写真の背景。友だちと同じ部屋に入れる「いっしょの部屋」（アバター・いっしょにYouTube・リアクション）。",
+   "notes_en": "Line icons instead of emoji. Spatial widgets. New sceneries plus your own photo / 360° photo backgrounds. Together: share a room with friends (avatars, watch YouTube together, reactions)."
+  },
+  {
+   "v": "3.2.1",
+   "date": "2026-11-21",
+   "notes_ja": "マイアプリに「🚀 アプリを起動」を追加。Roblox・Minecraft・YouTube・Discord・LINE・Spotifyなど、iPadに入っているアプリをライブラリから開けます。",
+   "notes_en": "My Apps: new Launch type to open installed apps (Roblox, Minecraft, YouTube, Discord, LINE, Spotify…) from the library."
+  },
+  {
+   "v": "3.2.0",
+   "date": "2026-11-21",
+   "notes_ja": "全画面ボタンを追加（ドックとクイック設定）。新アプリ「マイアプリ」：好きなウェブサイト（URL）やHTMLファイルを自分のアプリとしてライブラリに追加できます。",
+   "notes_en": "Full screen button (dock & quick settings). New My Apps: add any website or HTML file as your own app."
+  },
+  {
+   "v": "3.1.9",
+   "date": "2026-11-21",
+   "notes_ja": "ブラウザのサイトを、空間のウィンドウのまま指でさわって操作できるようになりました。サイト内で移動するとアドレスバーが変わり、もどる・すすむも使えます。",
+   "notes_en": "Touch websites directly inside the floating browser window. Address bar and back/forward follow in-site navigation."
+  },
+  {
+   "v": "3.1.8",
+   "date": "2026-11-21",
+   "notes_ja": "手の認識を約2〜3倍の回数で行うようにして、見失いにくくしました。カメラ映像に手の骨組みを表示（タップで大きく）。近すぎ・遠すぎ・はみ出しをお知らせ。",
+   "notes_en": "Hand tracking runs 2-3x more often, hand skeleton on the camera preview (tap to enlarge), distance/position hints."
+  },
+  {
+   "v": "3.1.7",
+   "date": "2026-11-20",
+   "notes_ja": "ブラウザに「👆 さわって操作」を追加。サイトを平らな画面で開いて、指で直接クリック・スクロール・入力できます。",
+   "notes_en": "Browser: added Touch mode to use sites directly with your fingers."
+  },
+  {
+   "v": "3.1.6",
+   "date": "2026-11-20",
+   "notes_ja": "つまむ判定を3Dの指のすき間（cm）で測るようにして、指さしただけでつまみ扱いになる問題を修正。カメラの下に手の状態とすき間を表示。",
+   "notes_en": "Pinch now measured as 3D finger gap (cm), fixing false pinches when pointing. Hand status shown under the camera."
+  },
+  {
+   "v": "3.1.5",
+   "date": "2026-11-20",
+   "notes_ja": "つまむときにカーソルがズレなくなりました（指を近づけると止まる・つまむ前の場所でつまむ）。つまみ具合がカーソルのまわりに出ます。「止めてクリック」を追加。",
+   "notes_en": "Cursor no longer slips when pinching. Pinch progress ring around the cursor. Added Dwell to click."
+  },
+  {
+   "v": "3.1.4",
+   "date": "2026-11-19",
+   "notes_ja": "手が反応しやすくなりました（少しはなれても認識・見えたら緑の枠）。端末のキーボードと貼り付けに対応（YouTubeは「貼り付けて再生」、ブラウザは📋ボタン）。",
+   "notes_en": "Better hand detection (works farther away, green frame when seen). Device keyboard and paste support (YouTube: Paste & play, Browser: 📋)."
+  },
+  {
+   "v": "3.1.3",
+   "date": "2026-11-19",
+   "notes_ja": "「はじめる」を押すとようこそ画面にもどってしまう問題を修正。カメラは外カメラを使うようにしました（切りかえもできます）",
+   "notes_en": "Fixed returning to the welcome screen after Start. Cameras now use the back camera (switchable)"
+  },
+  {
+   "v": "3.1.2",
+   "date": "2026-11-19",
+   "notes_ja": "ジャイロと手の認識をオンにすると固まることがあった問題を修正。手の認識を軽くしました",
+   "notes_en": "Fixed a freeze with gyro and hand tracking; hand tracking is lighter"
+  },
+  {
+   "v": "3.1.1",
+   "date": "2026-11-19",
+   "notes_ja": "チャットとフィードが、たいアカウントで本当に使えるようになりました",
+   "notes_en": "Chats and Feed now work with your Tai account"
+  },
+  {
+   "v": "3.1.0",
+   "date": "2026-11-19",
+   "notes_ja": "アカウント・チャット・フィード（Firebase）、アップデート機能、自動アップデートを追加",
+   "notes_en": "Added accounts, chat and feed (Firebase), updates and auto-update"
+  }
+ ]
 }
