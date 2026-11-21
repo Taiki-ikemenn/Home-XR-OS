@@ -302,7 +302,14 @@ body.hands .htRe{display:inline-flex}
 .w3dot{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.4);display:grid;place-items:center;padding:0}
 .w3dot svg{width:16px;height:16px}
 .w3dot.on{outline:3px solid #4f8cff;outline-offset:1px}
-.w3color{width:34px;height:30px;border:0;padding:0;background:none}
+.w3colorB{position:relative;flex:none;padding:6px 10px;min-height:32px;font-size:13px}
+.w3color{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.w3pat{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.w3patB{aspect-ratio:1;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.25);display:grid;place-items:center;padding:0;background:rgba(255,255,255,.08)}
+.w3patB canvas{width:100%;height:100%;display:block}
+.w3patB svg{width:18px;height:18px}
+.w3patB.on{border-color:#4f8cff;outline:2px solid #4f8cff}
+.w3gv{opacity:.6;font-weight:600;font-size:11px;margin-left:3px}
 .w3code{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,94vw);max-height:90vh;overflow:auto;background:rgba(20,22,30,.97);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:10px;z-index:3}
 .w3ta{width:100%;min-height:220px;box-sizing:border-box;border-radius:12px;border:0;padding:12px;font:15px/1.5 ui-monospace,Menlo,monospace;background:#0b0d12;color:#e5e7eb;user-select:text;-webkit-user-select:text}
 .w3ex{flex-wrap:wrap}.w3ex .w3pb{flex:none}
@@ -370,7 +377,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.6.0';
+const APP_VERSION='3.6.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -3665,8 +3672,27 @@ function w3TextTex(T,text,col,bg){ const c=document.createElement('canvas'); c.w
   g.textAlign='center'; g.textBaseline='middle'; g.fillText(text,256,66); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; return t; }
 
 /* ---- 物をつくる ---- */
+const W3PAT=[['none','なし','None'],['check','チェック','Check'],['stripe','しま','Stripes'],['dots','水玉','Dots'],['brick','レンガ','Brick'],['wood','木目','Wood'],['stone','石','Stone'],['grass','草','Grass'],['tile','タイル','Tile'],['star','星','Stars'],['wave','なみ','Waves'],['heart','ハート','Hearts']];
+const W3TEX=new Map();
+function w3PatTex(pat,col){ const k=pat+col; if(W3TEX.has(k)) return W3TEX.get(k); const T=W3.T; const c=document.createElement('canvas'); c.width=c.height=256; const g=c.getContext('2d');
+  const base=new T.Color(col), dk='#'+base.clone().multiplyScalar(.62).getHexString(), lt='#'+base.clone().lerp(new T.Color(0xffffff),.45).getHexString(), b='#'+base.getHexString();
+  g.fillStyle=b; g.fillRect(0,0,256,256); const r=rnd(pat.length*97+7);
+  if(pat==='check'){ g.fillStyle=dk; for(let y=0;y<4;y++) for(let x=0;x<4;x++) if((x+y)%2) g.fillRect(x*64,y*64,64,64); }
+  else if(pat==='stripe'){ g.fillStyle=lt; for(let i=-256;i<512;i+=64){ g.beginPath(); g.moveTo(i,0); g.lineTo(i+32,0); g.lineTo(i+32-256,256); g.lineTo(i-256,256); g.fill(); } }
+  else if(pat==='dots'){ g.fillStyle=lt; for(let y=0;y<4;y++) for(let x=0;x<4;x++){ g.beginPath(); g.arc(x*64+32+(y%2?32:0)%64,y*64+32,14,0,TAU); g.fill(); } }
+  else if(pat==='brick'){ g.fillStyle=lt; g.fillRect(0,0,256,256); g.fillStyle=b; for(let y=0;y<8;y++) for(let x=-1;x<4;x++) g.fillRect(x*64+(y%2?32:0)+3,y*32+3,58,26); }
+  else if(pat==='wood'){ for(let i=0;i<40;i++){ g.strokeStyle=i%2?dk:lt; g.globalAlpha=.25+r()*.3; g.lineWidth=2+r()*4; g.beginPath(); const y=r()*256; g.moveTo(0,y); for(let x=0;x<=256;x+=16) g.lineTo(x,y+Math.sin(x/40+i)*6); g.stroke(); } g.globalAlpha=1; }
+  else if(pat==='stone'){ for(let i=0;i<60;i++){ g.fillStyle=r()<.5?dk:lt; g.globalAlpha=.3+r()*.4; g.beginPath(); g.ellipse(r()*256,r()*256,10+r()*26,8+r()*20,r()*3,0,TAU); g.fill(); } g.globalAlpha=1; }
+  else if(pat==='grass'){ for(let i=0;i<700;i++){ g.strokeStyle=r()<.5?dk:lt; g.lineWidth=2; const x=r()*256,y=r()*256; g.beginPath(); g.moveTo(x,y); g.lineTo(x+(r()-.5)*6,y-6-r()*8); g.stroke(); } }
+  else if(pat==='tile'){ g.strokeStyle=lt; g.lineWidth=6; for(let i=0;i<=256;i+=64){ g.beginPath(); g.moveTo(i,0); g.lineTo(i,256); g.moveTo(0,i); g.lineTo(256,i); g.stroke(); } }
+  else if(pat==='star'){ g.fillStyle=lt; for(let k=0;k<6;k++){ const cx=r()*256,cy=r()*256,R=14+r()*14; g.beginPath(); for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr=i%2?R*.45:R; g.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr); } g.fill(); } }
+  else if(pat==='wave'){ g.strokeStyle=lt; g.lineWidth=10; for(let y=16;y<256;y+=48){ g.beginPath(); for(let x=0;x<=256;x+=8) g.lineTo(x,y+Math.sin(x/256*TAU*2)*10); g.stroke(); } }
+  else if(pat==='heart'){ g.fillStyle=lt; for(let y=0;y<4;y++) for(let x=0;x<4;x++){ const cx=x*64+32+(y%2?32:0), cy=y*64+34; g.beginPath(); g.moveTo(cx,cy+12); g.bezierCurveTo(cx-22,cy-4,cx-10,cy-22,cx,cy-8); g.bezierCurveTo(cx+10,cy-22,cx+22,cy-4,cx,cy+12); g.fill(); } }
+  const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; t.wrapS=t.wrapT=T.RepeatWrapping; t.anisotropy=4; W3TEX.set(k,t); return t; }
 function w3Mesh(o){ const T=W3.T; let m; const col=new T.Color(okCol(o.c));
-  const mat=()=>new T.MeshStandardMaterial({color:col,roughness:.75,metalness:.05,emissive:o.glow?col:0x000000,emissiveIntensity:o.glow?.9:0});
+  const mat=()=>{ const pat=o.pat&&o.pat!=='none'; const opt={color:pat?0xffffff:col,roughness:o.glass?.1:.75,metalness:.05,emissive:o.glow?col:0x000000,emissiveIntensity:o.glow?.9:0};
+    if(pat){ const t=w3PatTex(o.pat,okCol(o.c)).clone(); t.needsUpdate=true; t.repeat.set(Math.max(1,Math.round(o.s[0])),Math.max(1,Math.round(o.s[1]))); opt.map=t; }
+    if(o.glass){ opt.transparent=true; opt.opacity=.35; opt.depthWrite=false; } return new T.MeshStandardMaterial(opt); };
   if(o.t==='box') m=new T.Mesh(new T.BoxGeometry(1,1,1),mat());
   else if(o.t==='sphere') m=new T.Mesh(new T.SphereGeometry(.5,28,18),mat());
   else if(o.t==='cyl') m=new T.Mesh(new T.CylinderGeometry(.5,.5,1,28),mat());
@@ -3683,7 +3709,7 @@ function w3Place(m,o){ const s=o.t==='text'?[o.s[0],o.s[0],1]:o.s; m.position.se
 function w3Add(o){ const m=w3Mesh(o); W3.scene.add(m); W3.objs.set(o.id,{o,m}); }
 function w3Rebuild(id){ const e=W3.objs.get(id); if(!e) return; W3.scene.remove(e.m); w3Dispose(e.m); const m=w3Mesh(e.o); W3.scene.add(m); e.m=m; if(W3.sel===id) w3Outline(); w3Boxes(); }
 function w3Dispose(m){ m.traverse(x=>{ if(x.geometry) x.geometry.dispose(); if(x.material){ if(x.material.map) x.material.map.dispose(); x.material.dispose(); } }); }
-function w3Boxes(){ const T=W3.T; W3.boxes=[]; for(const {o,m} of W3.objs.values()){ if(!o.solid||m.visible===false) continue; m.updateMatrixWorld(true); const b=new T.Box3().setFromObject(m); if(o.t==='stairs'){ // 階段は段ごとに
+function w3Boxes(){ const T=W3.T; W3.boxes=[]; W3.dyn=[]; for(const [id,e] of W3.objs){ const {o,m}=e; if(o.phys&&o.t!=='light'&&o.t!=='text'){ e.vy=e.vy||0; W3.dyn.push(e); continue; } if(!o.solid||m.visible===false) continue; m.updateMatrixWorld(true); const b=new T.Box3().setFromObject(m); if(o.t==='stairs'){ // 階段は段ごとに
       m.children.forEach(c=>W3.boxes.push(new T.Box3().setFromObject(c))); } else W3.boxes.push(b); } }
 function w3Env(){ const T=W3.T, d=W3.data; W3.scene.background=new T.Color(okCol(d.sky)); W3.scene.fog=d.fog?new T.Fog(okCol(d.sky),25,90):null;
   W3.groundM.material.color.set(okCol(d.ground)); W3.groundM.visible=d.ground!=='none';
@@ -3694,7 +3720,7 @@ async function w3Open(id,opts={}){
   let T; try{ T=await w3Three(); }catch(e){ toastW(L('3Dを読みこめませんでした（ネットが必要です）','Could not load 3D (needs internet)')); return; }
   let data=opts.data; W3.mine=!!opts.mine; W3.wid=id; W3.remote=!!opts.remote;
   if(!data){ const m=MYW(); data=m[id]; if(!data){ toastW(L('ワールドが見つかりません','World not found')); return; } }
-  W3.data=JSON.parse(JSON.stringify(data)); W3.data.objs=(W3.data.objs||[]).slice(0,500);
+  W3.gScript=null; W3.data=JSON.parse(JSON.stringify(data)); W3.data.objs=(W3.data.objs||[]).slice(0,500);
   // 画面
   const ov=h('div','w3'); ov.id='w3'; ov.innerHTML=`<canvas class="w3c"></canvas>
    <div class="w3top"><button class="w3b w3exit" aria-label="${L('ワールドから出る','Leave world')}">${svg('x')}</button><div class="w3title"><b></b><span class="sub"></span></div><div class="sp"></div>
@@ -3775,7 +3801,7 @@ function w3Tap(x,y){ const T=W3.T; const v=new T.Vector2(x/innerWidth*2-1,-(y/in
   if(hit&&hit.distance<12){ w3ScriptEvent({ev:'click',id:hit.object.userData.oid}); } }
 
 /* ---- うごき ---- */
-const W3R=.32, W3H=1.65;
+const W3R=.32, W3H=1.65; const w3G=()=>20*(W3.gScript!=null?W3.gScript:(W3.data&&W3.data.grav!=null?W3.data.grav:1));
 function w3Collide(axis){ const p=W3.pos; for(const b of W3.boxes){ if(p.x+W3R<=b.min.x||p.x-W3R>=b.max.x||p.z+W3R<=b.min.z||p.z-W3R>=b.max.z||p.y+W3H<=b.min.y||p.y>=b.max.y) continue;
     if(axis==='y') continue;
     const step=b.max.y-p.y; if(step>0&&step<=.45&&W3.ground){ p.y=b.max.y; continue; }
@@ -3789,7 +3815,21 @@ function w3Loop(now){ if(!W3.on) return; W3.raf=requestAnimationFrame(w3Loop); c
   const dx=(mx*c+mz*s)*sp*dt, dz=(-mx*s+mz*c)*sp*dt; W3.moving=Math.hypot(mx,mz)>.1;
   const p=W3.pos; p.x+=dx; w3Collide('x'); p.z+=dz; w3Collide('z');
   // 重力
-  W3.vel.y-=20*dt; const py=p.y; p.y+=W3.vel.y*dt; W3.ground=false;
+  // 動く物（重力・押せる）
+  const G=w3G(), T3=W3.T;
+  for(const e of (W3.dyn||[])){ const o=e.o; if(W3.carry===o.id) continue; e.m.updateMatrixWorld(true); const bb=new T3.Box3().setFromObject(e.m); const hy=(bb.max.y-bb.min.y)/2, hx=(bb.max.x-bb.min.x)/2, hz=(bb.max.z-bb.min.z)/2;
+    e.vy-=G*dt; e.vy=Math.max(e.vy,-40); let y=o.p[1]+e.vy*dt; let land=false;
+    if(W3.data.ground!=='none'&&y-hy<=0&&Math.hypot(o.p[0],o.p[2])<80){ y=hy; land=true; }
+    for(const b of W3.boxes){ if(o.p[0]+hx<=b.min.x||o.p[0]-hx>=b.max.x||o.p[2]+hz<=b.min.z||o.p[2]-hz>=b.max.z) continue; if(e.vy<=0&&o.p[1]-hy>=b.max.y-.05&&y-hy<b.max.y){ y=b.max.y+hy; land=true; } }
+    if(land){ e.vy=o.bounce&&Math.abs(e.vy)>2?-e.vy*.55:0; }
+    // 押す
+    const pp=W3.pos; if(o.solid&&pp.x+W3R>o.p[0]-hx&&pp.x-W3R<o.p[0]+hx&&pp.z+W3R>o.p[2]-hz&&pp.z-W3R<o.p[2]+hz&&pp.y+W3H>y-hy&&pp.y<y+hy-.1){
+      const ox=o.p[0]-pp.x, oz=o.p[2]-pp.z; if(Math.abs(ox)/hx>Math.abs(oz)/hz) o.p[0]=pp.x+Math.sign(ox||1)*(hx+W3R+.01); else o.p[2]=pp.z+Math.sign(oz||1)*(hz+W3R+.01); }
+    if(y<-60){ y=10; e.vy=0; }
+    o.p[1]=y; w3Place(e.m,o); }
+  W3.vel.y-=G*dt; const py=p.y; p.y+=W3.vel.y*dt; W3.ground=false;
+  // 動く物の上にも乗れる
+  for(const e of (W3.dyn||[])){ if(!e.o.solid) continue; const b=new T3.Box3().setFromObject(e.m); if(p.x+W3R<=b.min.x||p.x-W3R>=b.max.x||p.z+W3R<=b.min.z||p.z-W3R>=b.max.z) continue; if(W3.vel.y<=0&&py>=b.max.y-.05&&p.y<b.max.y){ p.y=b.max.y; W3.vel.y=0; W3.ground=true; } }
   if(W3.data.ground!=='none'&&p.y<=0&&Math.hypot(p.x,p.z)<80){ p.y=0; W3.vel.y=0; W3.ground=true; }
   for(const b of W3.boxes){ if(p.x+W3R<=b.min.x||p.x-W3R>=b.max.x||p.z+W3R<=b.min.z||p.z-W3R>=b.max.z) continue;
     if(W3.vel.y<=0&&py>=b.max.y-.05&&p.y<b.max.y){ p.y=b.max.y; W3.vel.y=0; W3.ground=true; }
@@ -3839,6 +3879,10 @@ function w3Panel(){ const P=W3.ov.querySelector('.w3panel'); P.innerHTML=''; if(
     const ds=h('input','w3input'); ds.value=W3.data.desc||''; ds.maxLength=80; ds.placeholder=L('せつめい','Description'); ds.onchange=()=>{ W3.data.desc=ds.value.slice(0,80); W3.dirty=true; }; ds.onkeydown=e=>e.stopPropagation(); P.appendChild(ds);
     P.appendChild(h('div','w3sub',L('空の色','Sky'))); P.appendChild(w3Swatch(['#8ec5ff','#cfe8ff','#fbcfe8','#fdba74','#0b1026','#1e1b4b','#000000','#d1fae5'],W3.data.sky,c=>{ W3.data.sky=c; w3Env(); W3.dirty=true; }));
     P.appendChild(h('div','w3sub',L('地面の色','Ground'))); P.appendChild(w3Swatch(['#7cc47f','#d1d5db','#e7d3a8','#1f2937','#60a5fa','#ffffff','#a16207','none'],W3.data.ground,c=>{ W3.data.ground=c; w3Env(); W3.dirty=true; }));
+    P.appendChild(h('div','w3sub',L('ワールドの重力','World gravity')));
+    const gv=W3.data.grav!=null?W3.data.grav:1; const gr=h('div','w3grid');
+    for(const [v,ja,en] of [[.1,'宇宙','Space'],[.17,'月','Moon'],[.5,'よわい','Low'],[1,'ふつう','Normal'],[1.6,'つよい','High'],[2.5,'すごく強い','Very high']]) gr.appendChild(B(L(ja,en)+`<span class="w3gv">×${v}</span>`,()=>{ W3.data.grav=v; W3.dirty=true; w3Panel(); w3Hint(L(`重力：${ja}`,`Gravity: ${en}`)); },Math.abs(gv-v)<1e-3?'pri':''));
+    P.appendChild(gr);
     P.appendChild(row(B(IC('map-pin')+L('ここをスタート地点に','Set start here'),()=>{ W3.data.spawn=[+W3.pos.x.toFixed(2),+W3.pos.y.toFixed(2),+W3.pos.z.toFixed(2)]; W3.dirty=true; toastW(L('スタート地点にしました','Start point set')); }),B(IC('cloud-fog')+(W3.data.fog?L('きり：あり','Fog: on'):L('きり：なし','Fog: off')),()=>{ W3.data.fog=!W3.data.fog; w3Env(); W3.dirty=true; w3Panel(); })));
     P.appendChild(B(IC('code')+L('ワールドのコード','World code'),()=>w3CodeEditor(null)));
     P.appendChild(row(B(IC('save')+L('保存','Save'),()=>w3Save(),'pri'),B(IC('play')+L('あそぶ','Play'),()=>w3SetEdit(false))));
@@ -3857,6 +3901,12 @@ function w3Panel(){ const P=W3.ov.querySelector('.w3panel'); P.innerHTML=''; if(
   P.appendChild(row(h('span','w3lab',L('ぜんぶ','All')),B('−',()=>sc(-1,.8)),B('＋',()=>sc(-1,1.25))));
   if(o.t!=='text'&&o.t!=='light') for(const [i,lab] of [[0,L('はば','W')],[1,L('高さ','H')],[2,L('おく','D')]]) P.appendChild(row(h('span','w3lab',lab),B('−',()=>sc(i,.8)),B('＋',()=>sc(i,1.25))));
   P.appendChild(h('div','w3sub',L('色','Color'))); P.appendChild(w3Swatch(W3COL,o.c,c=>{ o.c=c; w3Changed(o.id,true); },true));
+  if(o.t!=='text'&&o.t!=='light'){ P.appendChild(h('div','w3sub',L('模様','Pattern'))); const pg=h('div','w3pat'); for(const [k,ja,en] of W3PAT){ const b=h('button','w3patB'+((o.pat||'none')===k?' on':''),''); b.setAttribute('aria-label',L(ja,en)); b.title=L(ja,en);
+      if(k==='none') b.innerHTML=svg('x'); else { const c=w3PatTex(k,okCol(o.c)).image; const im=document.createElement('canvas'); im.width=im.height=40; im.getContext('2d').drawImage(c,0,0,128,128,0,0,40,40); b.appendChild(im); }
+      b.onclick=()=>{ o.pat=k; w3Changed(o.id,true); w3Panel(); }; pg.appendChild(b); } P.appendChild(pg);
+    P.appendChild(row(B((o.glass?IC('check'):'')+L('すける（ガラス）','Glass'),()=>{ o.glass=o.glass?0:1; w3Changed(o.id,true); w3Panel(); },o.glass?'pri':'')));
+    P.appendChild(h('div','w3sub',L('うごき','Physics')));
+    P.appendChild(row(B((o.phys?IC('check'):'')+L('重力で落ちる・押せる','Gravity / pushable'),()=>{ o.phys=o.phys?0:1; if(!o.phys){ const e2=W3.objs.get(o.id); if(e2) e2.vy=0; } w3Changed(o.id); w3Panel(); },o.phys?'pri':''),B((o.bounce?IC('check'):'')+L('はねる','Bouncy'),()=>{ o.bounce=o.bounce?0:1; W3.dirty=true; w3Panel(); },o.bounce?'pri':''))); }
   if(o.t==='text'){ const ti=h('input','w3input'); ti.value=o.txt||''; ti.maxLength=40; ti.onkeydown=ev=>ev.stopPropagation(); ti.onchange=()=>{ o.txt=ti.value.slice(0,40); w3Changed(o.id,true); }; P.append(h('div','w3sub',L('文字','Text')),ti); }
   if(o.t!=='light') P.appendChild(row(B((o.solid?IC('check'):'')+L('ぶつかる・乗れる','Solid'),()=>{ o.solid=o.solid?0:1; w3Changed(o.id); w3Panel(); },o.solid?'pri':''),B((o.glow?IC('check'):'')+L('光る','Glow'),()=>{ o.glow=o.glow?0:1; w3Changed(o.id,true); w3Panel(); },o.glow?'pri':'')));
   const nmI=h('input','w3input'); nmI.value=o.name||''; nmI.placeholder=L('名前（コードで使う）','Name (for code)'); nmI.maxLength=20; nmI.onkeydown=ev=>ev.stopPropagation(); nmI.onchange=()=>{ o.name=nmI.value.trim().replace(/[^\w぀-ヿ一-鿿-]/g,'').slice(0,20); W3.dirty=true; }; P.appendChild(nmI);
@@ -3864,7 +3914,7 @@ function w3Panel(){ const P=W3.ov.querySelector('.w3panel'); P.innerHTML=''; if(
   P.appendChild(row(B(IC('copy')+L('コピー','Duplicate'),()=>{ const n=JSON.parse(JSON.stringify(o)); n.id='o'+Date.now().toString(36); n.p=[n.p[0]+1,n.p[1],n.p[2]]; W3.data.objs.push(n); w3Add(n); w3Boxes(); W3.dirty=true; w3Select(n.id); }),B(IC('trash-2')+L('けす','Delete'),()=>w3Del(o.id))));
 }
 function w3Swatch(list,cur,f,custom){ const r=h('div','w3sw'); for(const c of list){ const b=h('button','w3dot'+(c===cur?' on':'')); if(c==='none'){ b.innerHTML=svg('x'); b.setAttribute('aria-label',L('なし','None')); } else b.style.background=c; b.onclick=()=>{ r.querySelectorAll('.w3dot').forEach(x=>x.classList.toggle('on',x===b)); f(c); }; r.appendChild(b); }
-  if(custom){ const i=document.createElement('input'); i.type='color'; i.value=/^#[0-9a-f]{6}$/i.test(cur)?cur:'#ffffff'; i.className='w3color'; i.oninput=()=>f(i.value); r.appendChild(i); } return r; }
+  if(custom){ const lab=h('label','w3pb w3colorB',IC('palette')+L('好きな色','Any color')); const i=document.createElement('input'); i.type='color'; i.value=/^#[0-9a-f]{6}$/i.test(cur)?cur:'#ffffff'; i.className='w3color'; let tm=0; i.oninput=()=>{ clearTimeout(tm); tm=setTimeout(()=>f(i.value),80); }; lab.appendChild(i); r.appendChild(lab); } return r; }
 async function w3Save(silent){ if(!W3.mine) return; const m=MYW(); const d=W3.data; d.updatedAt=Date.now(); m[W3.wid]=d; if(!saveMYW(m)) return; W3.dirty=false;
   if(d.published&&FB.user){ try{ await w3Upload(W3.wid,d); if(!silent) toastW(L('保存して、公開中のワールドも更新しました','Saved and updated')); }catch(e){ toastW(L('保存しました（公開の更新はできませんでした）','Saved locally (could not update online)')); } }
   else if(!silent) toastW(L('保存しました','Saved')); }
@@ -3883,6 +3933,7 @@ function mk(o){ if(!o) return null; if(o._api) return o._api; const id=o.id; con
   setScale(x,y,z){ if(y===undefined){ y=x; z=x; } o.s=[+x||1,+y||1,+z||1]; post({op:'set',id,s:o.s}); return api; },
   setColor(c){ o.c=String(c); post({op:'set',id,c:o.c}); return api; },
   setText(t){ o.txt=String(t).slice(0,40); post({op:'set',id,txt:o.txt}); return api; },
+  setGravity(on){ post({op:'set',id,phys:on?1:0}); return api; }, jump(v=6){ post({op:'set',id,vy:+v||6}); return api; },
   show(){ post({op:'set',id,hide:0}); return api; }, hide(){ post({op:'set',id,hide:1}); return api; },
   onClick(f){ H.click.push([id,f]); return api; }, onTouch(f){ H.touch.push([id,f]); post({op:'touchable',id}); return api; } };
   o._api=api; return api; }
@@ -3891,7 +3942,7 @@ const world={ time:0, player:{pos:[0,0,0],name:''},
   all(){ return Object.values(objs).map(mk); },
   on(ev,f){ if(H[ev]) H[ev].push([null,f]); if(ev==='touch') Object.keys(objs).forEach(id=>post({op:'touchable',id})); },
   say(t){ post({op:'say',t:String(t).slice(0,60)}); }, teleport(x,y,z){ post({op:'tp',p:[+x||0,+y||0,+z||0]}); },
-  sound(freq=660,dur=.15){ post({op:'snd',f:+freq,d:+dur}); }, setSky(c){ post({op:'sky',c:String(c)}); },
+  sound(freq=660,dur=.15){ post({op:'snd',f:+freq,d:+dur}); }, setSky(c){ post({op:'sky',c:String(c)}); }, setGravity(g){ post({op:'grav',g:+g}); },
   random(a=0,b=1){ return a+Math.random()*(b-a); }, log(...a){ post({op:'log',t:a.map(String).join(' ').slice(0,200)}); } };
 const call=(f,...a)=>{ try{ f(...a); }catch(e){ post({op:'err',t:String(e&&e.message||e)}); } };
 addEventListener('message',e=>{ const d=e.data; if(!d||!d.__w3) return;
@@ -3932,6 +3983,8 @@ function w3ScriptOp(m){ const sc=W3.script;
   if(m.op==='set'){ const e=W3.objs.get(m.id); if(!e) return; const o=e.o; let rebuild=false;
     if(m.p) o.p=m.p.map(Number).map(v=>isFinite(v)?Math.max(-500,Math.min(500,v)):0); if(m.r) o.r=m.r.map(Number).map(v=>isFinite(v)?v:0); if(m.s) o.s=m.s.map(Number).map(v=>isFinite(v)?Math.max(.01,Math.min(100,v)):1);
     if(m.hide!==undefined) o.hide=m.hide?1:0;
+    if(m.phys!==undefined&&!!o.phys!==!!m.phys){ o.phys=m.phys?1:0; setTimeout(w3Boxes,0); }
+    if(m.vy!==undefined&&o.phys){ e.vy=Math.max(-50,Math.min(50,+m.vy||0)); }
     if(m.c&&/^#[0-9a-f]{6}$/i.test(m.c)&&m.c!==o.c){ o.c=m.c; if(e.m.isMesh&&e.m.material.color&&o.t!=='text'){ e.m.material.color.set(o.c); if(o.glow) e.m.material.emissive.set(o.c); } else rebuild=true; }
     if(m.txt!==undefined&&o.t==='text'){ o.txt=String(m.txt).slice(0,40); rebuild=true; }
     if(rebuild) w3Rebuild(m.id); else w3Place(e.m,o); if(o.solid){ clearTimeout(W3.bt); W3.bt=setTimeout(w3Boxes,120); } return; }
@@ -3939,6 +3992,7 @@ function w3ScriptOp(m){ const sc=W3.script;
   if(m.op==='say'){ w3Hint(String(m.t).slice(0,60)); return; }
   if(m.op==='tp'){ const p=m.p.map(Number); if(p.every(isFinite)){ W3.pos.set(p[0],p[1],p[2]); W3.vel.set(0,0,0); } return; }
   if(m.op==='snd'){ const now=performance.now(); if(now-(W3.sndT||0)<60) return; W3.sndT=now; AU.tone(Math.max(60,Math.min(4000,m.f||660)),Math.max(.02,Math.min(1,m.d||.15)),'sine',.08); return; }
+  if(m.op==='grav'){ const g=+m.g; if(isFinite(g)) W3.gScript=Math.max(0,Math.min(5,g)); return; }
   if(m.op==='sky'){ if(/^#[0-9a-f]{6}$/i.test(m.c)){ W3.data.sky=m.c; w3Env(); } return; }
   if(m.op==='log'){ w3Log('code',m.t); return; }
   if(m.op==='err'){ w3Log('⚠',L('コードのエラー：','Code error: ')+String(m.t).slice(0,120)); return; }
@@ -3948,6 +4002,11 @@ const W3EX=[
   [L('さわると色が変わる','Click to change color'),`self.onClick(() => {\n  const c = ['#f87171','#60a5fa','#4ade80','#facc15']\n  self.setColor(c[Math.floor(world.random(0, 4))])\n  world.sound(880)\n})`],
   [L('上下にふわふわ','Float'),`const y = self.pos[1]\nworld.on('tick', () => {\n  const p = self.pos\n  self.setPos(p[0], y + Math.sin(world.time * 2) * 0.5, p[2])\n})`],
   [L('ふれたらワープ','Teleport on touch'),`self.onTouch(() => {\n  world.say('ワープ！')\n  world.teleport(0, 10, 0)\n})`],
+  [L('さわるとジャンプ（重力オン）','Jump when tapped'),`self.setGravity(true)
+self.onClick(() => {
+  self.jump(8)
+  world.sound(660)
+})`],
   [L('ひとことに返事','Reply to chat'),`world.on('chat', (name, text) => {\n  if (text.includes('こんにちは')) world.say(name + 'さん、こんにちは！')\n})`],
 ];
 function w3CodeEditor(id){ const o=id?W3.objs.get(id).o:null; const box=h('div','w3code'); W3.ov.appendChild(box);
@@ -3964,7 +4023,8 @@ self.pos / self.rot / self.scale / self.name
 world.get('${L('名前','name')}') / world.all()
 world.on('tick', dt=>…) / world.on('chat',(name,text)=>…)
 world.say('…') / world.sound(880, 0.2)
-world.teleport(x,y,z) / world.setSky('#000000')
+world.teleport(x,y,z) / world.setSky('#000000') / world.setGravity(0.5)
+self.setGravity(true) / self.jump(6)
 world.player.pos / world.time / world.random(a,b) / world.log(…)</pre></details>
    <div class="w3row"><button class="w3pb pri w3ok">${IC('check')}${L('保存して動かす','Save & run')}</button><button class="w3pb w3clr">${IC('trash-2')}${L('コードをけす','Clear')}</button></div>`;
   const ta=box.querySelector('.w3ta'); ta.value=(o?o.script:W3.data.script)||''; ta.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Tab'){ e.preventDefault(); const s=ta.selectionStart; ta.setRangeText('  ',s,ta.selectionEnd,'end'); } };

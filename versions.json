@@ -1,6 +1,12 @@
 {
-  "latest": "3.6.0",
+  "latest": "3.6.1",
   "versions": [
+    {
+      "v": "3.6.1",
+      "date": "2026-11-21",
+      "notes_ja": "ワールド：物に模様（11種類）・ガラス・好きな色、重力で落ちる／押せる／はねる物、ワールドの重力（宇宙・月〜すごく強い）。コードからも重力を変えられます。",
+      "notes_en": "Worlds: 11 patterns, glass, any color, gravity/pushable/bouncy objects, world gravity setting, gravity in code."
+    },
     {
       "v": "3.6.0",
       "date": "2026-11-21",
