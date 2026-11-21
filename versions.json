@@ -1,6 +1,12 @@
 {
-  "latest": "3.3.0",
+  "latest": "3.3.1",
   "versions": [
+    {
+      "v": "3.3.1",
+      "date": "2026-11-21",
+      "notes_ja": "ブラウザで開いているサイトを、アプリとしてライブラリに追加できるようになりました（開くとブラウザでそのページが開きます）。サイトのアイコンも表示。",
+      "notes_en": "Add the current website to your library as an app (opens in the browser). Site icons shown."
+    },
     {
       "v": "3.3.0",
       "date": "2026-11-21",
