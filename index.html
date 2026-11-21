@@ -169,6 +169,7 @@ body.hands #handDbg{display:block}
 #handCam{transition:width .2s}
 #handCam.big{width:min(420px,60vw)}
 body.framehole #world iframe{pointer-events:auto}
+.fsI{font-size:26px;line-height:1;font-weight:700}
 #htInfo{position:fixed;left:14px;top:142px;z-index:8;display:none;font-size:12px;padding:4px 9px;border-radius:9px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
 body.hands #htInfo{display:block}
 #handCam.seen{border-color:#3ecf8e;box-shadow:0 0 0 3px rgba(62,207,142,.5)}
@@ -226,7 +227,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.1.9';
+const APP_VERSION='3.2.0';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -2555,19 +2556,20 @@ APPIMPL.browser=(body,w)=>{ _br(body,w); const f=body.querySelector('.field'); c
 // 空間の中のサイトは、ほかのサイトなのでカーソルのクリックを届けられない。
 // 平らな画面で開いて、指で直接さわれるようにする。
 const DV={el:null};
-function openDirect(url){
+function openDirect(url,html){
   closeDirect();
   const o=h('div',''); o.id='directView'; o.setAttribute('role','dialog'); o.setAttribute('aria-label',L('さわって操作','Touch mode'));
   const bar=h('div','dvBar');
   const back=h('button','dvBtn','✕ '+L('もどる','Back')); back.onclick=closeDirect;
-  const u=h('div','dvUrl'); u.textContent=url.replace(/^https?:\/\//,'');
+  const u=h('div','dvUrl'); u.textContent=html!=null?L('マイアプリ','My app'):url.replace(/^https?:\/\//,'');
   const rl=h('button','dvBtn','⟳'); rl.setAttribute('aria-label',L('再読み込み','Reload'));
   const ext=h('button','dvBtn','↗ '+L('新しいタブ','New tab')); ext.onclick=()=>window.open(url,'_blank','noopener');
   bar.append(back,u,rl,ext);
-  const fr=document.createElement('iframe'); fr.src=url; fr.title=url; fr.referrerPolicy='no-referrer';
-  fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals');
+  const fr=document.createElement('iframe'); fr.title=url||'app'; fr.referrerPolicy='no-referrer';
+  fr.setAttribute('sandbox',html!=null?'allow-scripts allow-forms allow-modals allow-popups allow-pointer-lock':'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals');
+  if(html!=null) fr.srcdoc=html; else fr.src=url; if(html!=null) ext.style.display='none';
   fr.setAttribute('allow','autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture');
-  rl.onclick=()=>{ fr.src='about:blank'; setTimeout(()=>fr.src=url,50); };
+  rl.onclick=()=>{ if(html!=null){ fr.srcdoc=''; setTimeout(()=>fr.srcdoc=html,50); return; } fr.src='about:blank'; setTimeout(()=>fr.src=url,50); };
   const tip=h('div','dvTip',L('指で直接さわって操作できます（カーソル・手では中を操作できません）。表示されないサイトは「新しいタブ」で開いてね','Touch the page directly. If it stays blank, use New tab.'));
   setTimeout(()=>tip.remove(),5000);
   o.append(bar,fr,tip); document.body.appendChild(o); DV.el=o; document.body.classList.add('direct');
@@ -2639,6 +2641,104 @@ APPIMPL.browser=(body,w)=>{
   bk.addEventListener('click',e=>{ if(fr&&fr.isConnected&&n>0){ e.stopImmediatePropagation(); expect=-1; history.back(); } },true);
   fw.addEventListener('click',e=>{ if(fr&&fr.isConnected&&fwd>0){ e.stopImmediatePropagation(); expect=1; history.forward(); } },true);
 };
+
+
+/* ================= 全画面 ================= */
+const FS={
+  on:()=>!!(document.fullscreenElement||document.webkitFullscreenElement),
+  can:()=>!!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen),
+  async toggle(){
+    try{
+      if(FS.on()){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); return; }
+      if(!FS.can()) throw new Error('no');
+      const el=document.documentElement; await (el.requestFullscreen||el.webkitRequestFullscreen).call(el);
+    }catch(e){ toastW(L('この端末では全画面にできません。共有ボタン →「ホーム画面に追加」から開くと、全画面で使えます','Fullscreen is not available here. Add to Home Screen to use it full screen.')); }
+  }
+};
+function fsUpdate(){ const b=$('dFull'); if(b){ b.innerHTML=FS.on()?'<span class="fsI">⤡</span>':'<span class="fsI">⛶</span>'; b.setAttribute('aria-label',FS.on()?L('全画面をやめる','Exit full screen'):L('全画面','Full screen')); } }
+document.addEventListener('fullscreenchange',fsUpdate); document.addEventListener('webkitfullscreenchange',fsUpdate);
+(function(){ // ドックに全画面ボタン
+  const dk=DOCK&&DOCK.el; if(!dk) return;
+  const b=h('button','dbtn'); b.id='dFull'; b.onclick=()=>FS.toggle(); dk.appendChild(b); fsUpdate();
+})();
+const _bq15=buildQuick;
+buildQuick=function(el){ _bq15(el);
+  const r=qrow(L('全画面','Full screen'),btn(FS.on()?L('やめる','Exit'):'⛶ '+L('全画面にする','Go full screen'),()=>{ FS.toggle(); closePanels(); }));
+  el.insertBefore(r,el.firstChild); };
+// 始めるボタンを押したときに全画面にする（設定でオン）
+document.addEventListener('click',e=>{ if(CFG.autoFS&&!FS.on()&&e.target.closest&&e.target.closest('.start button')) FS.toggle(); },true);
+
+/* ================= マイアプリ（自分でアプリを追加） ================= */
+// ・URL（ウェブアプリ）をアプリとして追加
+// ・HTMLファイルをアプリとして追加（この端末の中だけに保存）
+// ※ exe などのパソコン用のプログラムは、ブラウザでは動かせません
+let MYAPPS=STORE.get('myapps',[]);
+const MYCOLORS=['linear-gradient(160deg,#6ee7b7,#059669)','linear-gradient(160deg,#93c5fd,#2563eb)','linear-gradient(160deg,#fca5a5,#dc2626)','linear-gradient(160deg,#fcd34d,#d97706)','linear-gradient(160deg,#c4b5fd,#7c3aed)','linear-gradient(160deg,#f9a8d4,#db2777)'];
+function myImpl(m){ return (body,w)=>{
+  body.style.position='relative';
+  const fr=document.createElement('iframe'); fr.title=m.name; fr.style.cssText='width:100%;height:100%;border:0;background:#fff;display:block';
+  fr.setAttribute('allow','autoplay; fullscreen; clipboard-write; camera; microphone; gamepad');
+  if(m.type==='html'){ fr.setAttribute('sandbox','allow-scripts allow-forms allow-modals allow-popups allow-pointer-lock'); fr.srcdoc=m.html; }
+  else{ fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals'); fr.referrerPolicy='no-referrer'; fr.src=m.url; }
+  body.appendChild(fr);
+  const tools=h('div','row'); tools.style.cssText='position:absolute;top:8px;right:8px;gap:6px;z-index:2';
+  const full=btn('⛶',()=>{ if(m.type==='html') openDirect('',m.html); else openDirect(m.url); }); full.setAttribute('aria-label',L('全画面','Full screen')); full.style.cssText+=';opacity:.8;padding:6px 10px';
+  tools.appendChild(full); body.appendChild(tools);
+}; }
+function myRegister(m){ regApp(m.id,{name:m.name,en:m.name,emoji:m.emoji,bg:m.bg,cat:'tool',store:0,w:1000,h:660,desc:L('自分で追加したアプリ','Your own app'),den:'Your own app',impl:myImpl(m)}); }
+function mySave(){ try{ localStorage.setItem('xr_myapps',JSON.stringify(MYAPPS)); return true; }catch(e){ toastW(L('保存できませんでした（ファイルが大きすぎるかも）','Could not save (file may be too large)')); return false; } }
+function myAdd(m){ m.id='my_'+Date.now().toString(36); m.bg=m.bg||MYCOLORS[MYAPPS.length%MYCOLORS.length]; MYAPPS.push(m);
+  if(!mySave()){ MYAPPS.pop(); return false; }
+  myRegister(m); INST.push(m.id); STORE.set('inst',INST); renderLib(); AU.tone(784,.12,'sine',.12); toastW(L(`「${m.name}」をライブラリに追加しました`,`Added "${m.name}"`)); return true; }
+function myRemove(id){ MYAPPS=MYAPPS.filter(x=>x.id!==id); mySave(); INST=INST.filter(x=>x!==id); STORE.set('inst',INST); const w=WINS.find(x=>x.id===id); if(w) closeWin(id); delete APPS[id]; delete APPIMPL[id]; renderLib(); }
+MYAPPS.forEach(myRegister);
+
+regApp('myapps',{name:'マイアプリ',en:'My Apps',emoji:'🧩',bg:'linear-gradient(160deg,#a7f3d0,#0d9488)',cat:'tool',w:900,h:660,
+  desc:'好きなウェブサイトやHTMLファイルを、自分のアプリとして追加できます。',den:'Add websites or HTML files as your own apps.',
+  impl:(body,w)=>{
+    const sc=h('div','scroll'); sc.style.cssText='height:100%;overflow:hidden;padding:24px 30px'; body.appendChild(sc);
+    const EMO=['🧩','🎮','📝','🎵','🌐','⭐','🐱','🚀','🛠️','📚','🍰','🎨'];
+    let emoji='🧩', type='url';
+    const draw=()=>{ sc.innerHTML='';
+      sc.appendChild(h('h2','',L('アプリを追加','Add an app'))).style.marginBottom='12px';
+      const seg=h('div','seg'); for(const [k,n] of [['url',L('🌐 URL（ウェブアプリ）','🌐 URL')],['html',L('📄 HTMLファイル','📄 HTML file')]]){ const b=h('button',type===k?'on':'',n); b.onclick=()=>{ type=k; draw(); }; seg.appendChild(b); } sc.appendChild(seg);
+      const card=h('div','card'); card.style.margin='14px 0';
+      const name=inputField(w,L('アプリの名前','App name'),{mode:'kana',enter:L('決定','OK'),onEnter:()=>hideKB()}); name.style.cssText+=';width:100%;margin-bottom:10px';
+      card.appendChild(name);
+      let url=null, file=null;
+      if(type==='url'){ url=inputField(w,'https://…',{mode:'abc',enter:L('決定','OK'),onEnter:()=>hideKB()}); url.style.cssText+=';width:100%;margin-bottom:10px'; card.appendChild(url); }
+      else{
+        file=document.createElement('input'); file.type='file'; file.accept='.html,.htm,text/html'; file.style.display='none'; card.appendChild(file);
+        const fl=h('div','sub',L('まだ選んでいません','No file yet')); fl.style.margin='6px 0 10px';
+        const pick=btn('📂 '+L('HTMLファイルを選ぶ','Choose an HTML file'),()=>file.click());
+        file.onchange=()=>{ const f=file.files[0]; if(f){ fl.textContent='📄 '+f.name+'（'+Math.ceil(f.size/1024)+'KB）'; if(!name.get()) name.set(f.name.replace(/\.html?$/i,'')); } };
+        card.append(pick,fl, h('p','sub',L('ファイル選びは、画面を指で直接タップしてね。1つのHTMLファイルにまとまったアプリが使えます（画像などの別ファイルは読みこめません）','Tap directly with your finger to choose. Single-file HTML apps only.')));
+      }
+      const er=h('div','row'); er.style.cssText='gap:6px;margin:6px 0 12px;flex-wrap:wrap';
+      for(const e of EMO){ const b=h('button','btn'+(e===emoji?' pri':''),e); b.style.cssText+=';font-size:22px;padding:6px 10px'; b.onclick=()=>{ emoji=e; er.querySelectorAll('.btn').forEach(x=>x.classList.toggle('pri',x===b)); }; er.appendChild(b); }
+      card.append(h('div','sub',L('アイコン','Icon')),er);
+      card.appendChild(btn('＋ '+L('ライブラリに追加','Add to library'),async()=>{
+        let nm=(name.get()||'').trim();
+        if(type==='url'){ let u=(url.get()||'').trim(); if(!u){ toastW(L('URLを入れてね','Enter a URL')); return; } if(!/^https?:\/\//i.test(u)) u='https://'+u;
+          try{ u=new URL(u).href; }catch(e){ toastW(L('URLが正しくないみたい','That URL looks wrong')); return; }
+          if(!nm) nm=new URL(u).host; if(myAdd({name:nm,emoji,type:'url',url:u})) draw(); }
+        else{ const f=file.files&&file.files[0]; if(!f){ toastW(L('HTMLファイルを選んでね','Choose an HTML file')); return; }
+          if(f.size>2.5e6){ toastW(L('ファイルが大きすぎます（2.5MBまで）','File too large (max 2.5MB)')); return; }
+          const html=await f.text(); if(!nm) nm=f.name.replace(/\.html?$/i,''); if(myAdd({name:nm,emoji,type:'html',html})) draw(); }
+      },'pri'));
+      sc.appendChild(card);
+      sc.appendChild(h('h3','',L('追加したアプリ','Your apps'))).style.margin='18px 0 8px';
+      if(!MYAPPS.length) sc.appendChild(h('p','sub',L('まだありません','None yet')));
+      for(const m of MYAPPS){ const r=h('div','row'); r.style.cssText='padding:10px 0;border-top:1px solid var(--line);flex-wrap:nowrap;align-items:center;gap:12px';
+        r.appendChild(iconEl(m.id,48)); const t=h('div',''); t.style.flex='1'; t.innerHTML=`<b>${esc(m.name)}</b><div class="sub">${esc(m.type==='url'?m.url:L('HTMLファイル','HTML file'))}</div>`; r.appendChild(t);
+        r.append(btn(L('開く','Open'),()=>openApp(m.id)),btn(L('削除','Delete'),()=>{ myRemove(m.id); draw(); }));
+        sc.appendChild(r); }
+      sc.appendChild(h('p','sub',L('※ exe などのパソコン用プログラムは、ブラウザの中では動かせません。ウェブアプリ（URL）か HTML ファイルなら使えます。','Note: .exe and other desktop programs cannot run in a browser. Web apps (URL) and HTML files work.'))).style.marginTop='16px';
+    };
+    draw();
+  }});
+if(!INST.includes('myapps')){ INST.push('myapps'); STORE.set('inst',INST); }
+renderLib();
 
 </script>
 </body>

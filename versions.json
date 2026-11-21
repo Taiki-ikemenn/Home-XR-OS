@@ -1,6 +1,12 @@
 {
-  "latest": "3.1.9",
+  "latest": "3.2.0",
   "versions": [
+    {
+      "v": "3.2.0",
+      "date": "2026-11-21",
+      "notes_ja": "全画面ボタンを追加（ドックとクイック設定）。新アプリ「マイアプリ」：好きなウェブサイト（URL）やHTMLファイルを自分のアプリとしてライブラリに追加できます。",
+      "notes_en": "Full screen button (dock & quick settings). New My Apps: add any website or HTML file as your own app."
+    },
     {
       "v": "3.1.9",
       "date": "2026-11-21",
