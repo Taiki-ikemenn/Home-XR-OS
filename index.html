@@ -261,6 +261,7 @@ body.framehole #world iframe{pointer-events:auto}
 .poLogo svg{width:100%;height:100%}
 .pwrRow .card{display:flex;align-items:center;justify-content:center;gap:4px}
 #worldT .mini,#worldT .folderView{background:rgba(30,30,36,.97)}
+.dock.kbHide{opacity:0!important;pointer-events:none!important;transition:opacity .2s}
 #htInfo{position:fixed;left:14px;top:142px;z-index:8;display:none;font-size:12px;padding:4px 9px;border-radius:9px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
 body.hands #htInfo{display:block}
 #handCam.seen{border-color:#3ecf8e;box-shadow:0 0 0 3px rgba(62,207,142,.5)}
@@ -320,7 +321,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='3.5.1';
+const APP_VERSION='3.5.2';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -3554,6 +3555,18 @@ togglePalmMenu=function(show){ _tpm21(show); if(PALM&&PALM.shown){ hideKB(); con
 const _bq21=buildQuick;
 buildQuick=function(el){ _bq21(el); const sc=el.querySelector('.qScroll')||el; const r=h('div','row'); r.style.cssText='gap:8px;margin-top:14px'; r.append(btn(IC('rotate-ccw')+L('再起動','Restart'),()=>location.reload()),btn(IC('power')+L('電源を切る','Power off'),()=>{ closePanels(); powerMenu(); })); sc.appendChild(r); };
 renderLib();
+
+/* ---- キーボードが画面の外にはみ出さないようにする・ドックとかさならないように ---- */
+function fitKB(){ const o=KB.wo; if(!o||!o.shown) return; o.s=1; o.place();
+  const r=o.el.getBoundingClientRect(); if(!r.height) return; const lim=S.H-6; if(r.bottom<=lim) return;
+  const c=(r.top+r.bottom)/2, need=r.height/2; let s=(lim-c)/need;
+  if(s<.72){ // 小さくしすぎるときは、少し上にずらす
+    const up=(r.bottom-lim)-(r.height*(1-.72)/2); o.y-=up*(o.d*S.DB/S.P); s=.72; }
+  o.s=Math.max(.6,Math.min(1,s)); o.place(); }
+const _showKB21=showKB;
+showKB=function(opts){ _showKB21(opts); layerFix(); requestAnimationFrame(()=>requestAnimationFrame(fitKB)); };
+addEventListener('resize',()=>setTimeout(fitKB,200));
+FRAME.push(()=>{ const on=!!(KB.wo&&KB.wo.shown); if(DOCK&&DOCK.el.classList.contains('kbHide')!==on) DOCK.el.classList.toggle('kbHide',on); });
 
 </script>
 </body>

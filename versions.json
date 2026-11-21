@@ -1,6 +1,12 @@
 {
-  "latest": "3.5.1",
+  "latest": "3.5.2",
   "versions": [
+    {
+      "v": "3.5.2",
+      "date": "2026-11-21",
+      "notes_ja": "キーボードが画面の下にかくれて見えないことがあったのを修正（画面に入る大きさ・位置に自動で合わせる）。キーボードを出している間は下のバーをかくします。",
+      "notes_en": "Keyboard now always fits on screen; the dock hides while typing."
+    },
     {
       "v": "3.5.1",
       "date": "2026-11-21",
