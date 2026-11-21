@@ -1,6 +1,12 @@
 {
- "latest": "3.9.3",
+ "latest": "3.10.0",
  "versions": [
+  {
+   "v": "3.10.0",
+   "date": "2026-11-21",
+   "notes_ja": "ゲームワールド29こ追加（モグラたたき・的あて・サイモン・フルーツキャッチ・○×クイズ・じゅんばんタッチ・だるまさんがころんだ・とけるゆか・ガラスの橋・上がる溶岩・きえる足場・脱出ゲーム）。公式ワールドは130こに。ゲームをジャンル（アスレチック・めいろ・あつめる・スコアアタック・クイズ・サバイバル・なぞとき脱出・スポーツ）で分けて表示",
+   "notes_en": "Added 29 game worlds (whack-a-mole, targets, Simon, catch, true/false quiz, number order, red light green light, melting floor, glass bridge, rising lava, blinking platforms, escape rooms). 130 official worlds, with games sorted by genre."
+  },
   {
    "v": "3.9.3",
    "date": "2026-11-21",
