@@ -1,6 +1,12 @@
 {
-  "latest": "3.5.0",
+  "latest": "3.5.1",
   "versions": [
+    {
+      "v": "3.5.1",
+      "date": "2026-11-21",
+      "notes_ja": "重なり順を整理（メニュー・ライブラリ・パネルがいちばん手前、次にキーボード、その奥にウィンドウ）。アプリの固定／固定解除。メニューとクイック設定に「再起動」「電源を切る」。ウィンドウの「…」メニュー。",
+      "notes_en": "Fixed layering (menus/library on top). Pin/unpin apps. Restart & power off in the menu. Window ⋯ menu."
+    },
     {
       "v": "3.5.0",
       "date": "2026-11-21",
