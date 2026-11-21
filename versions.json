@@ -1,6 +1,12 @@
 {
- "latest": "3.9.1",
+ "latest": "3.9.2",
  "versions": [
+  {
+   "v": "3.9.2",
+   "date": "2026-11-21",
+   "notes_ja": "サンプルワールド101こを「Home-XR公式ワールド」として、みんなのワールドの一番上に公開。公式ワールドはみんなでいっしょに入れる（ログイン時）",
+   "notes_en": "All 101 sample worlds are now Home-XR Official worlds at the top of Public worlds, and can be joined together with others when signed in."
+  },
   {
    "v": "3.9.1",
    "date": "2026-11-21",
