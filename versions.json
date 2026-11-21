@@ -1,6 +1,12 @@
 {
-  "latest": "3.6.1",
+  "latest": "3.7.0",
   "versions": [
+    {
+      "v": "3.7.0",
+      "date": "2026-11-21",
+      "notes_ja": "ワールド：アイテム500種類（家具・飲み物・食べ物・家電など、3Dモデルとギミックつき）、右手・左手で持つ＋バックパック、物のオプション50こ（持てる・飲める・すわれる・動く床・トランポリン・コイン・ゴールなど）、サンプルコード110こ。",
+      "notes_en": "Worlds: 500 items with 3D models & gimmicks, two-hand holding + backpack, 50 object options, 110 code samples."
+    },
     {
       "v": "3.6.1",
       "date": "2026-11-21",
