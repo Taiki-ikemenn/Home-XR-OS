@@ -1,6 +1,12 @@
 {
-  "latest": "3.5.2",
+  "latest": "3.6.0",
   "versions": [
+    {
+      "v": "3.6.0",
+      "date": "2026-11-21",
+      "notes_ja": "新アプリ「ワールド」：自分だけの3D空間をつくって、歩いて、公開すると友だちといっしょに遊べます（アバター・ヤッホー・ひとこと）。物の配置・色・大きさ、コードで動かすこともできます。手の認識の再起動ボタンも追加。",
+      "notes_en": "New Worlds app: build your own 3D space, walk around, publish and play with friends (avatars, waves, chat), add code. Hand tracking restart button."
+    },
     {
       "v": "3.5.2",
       "date": "2026-11-21",

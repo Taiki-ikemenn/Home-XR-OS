@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "xr_live": {
+      "$wid": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && auth.uid == $uid"
+        }
+      }
+    }
+  }
+}
