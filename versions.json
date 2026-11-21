@@ -1,6 +1,12 @@
 {
-  "latest": "3.3.1",
+  "latest": "3.4.0",
   "versions": [
+    {
+      "v": "3.4.0",
+      "date": "2026-11-21",
+      "notes_ja": "ライブラリの「並び替え・フォルダ」モード：アプリをつまんで並び替え、フォルダの作成・名前変更・削除、アプリをフォルダに入れる／出す、ライブラリから削除ができます。",
+      "notes_en": "Library Arrange mode: drag to reorder, create/rename/delete folders, move apps in and out, remove apps."
+    },
     {
       "v": "3.3.1",
       "date": "2026-11-21",
