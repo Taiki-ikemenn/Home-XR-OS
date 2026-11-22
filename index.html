@@ -782,7 +782,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.23';
+const APP_VERSION='5.11.24';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9193,8 +9193,45 @@ const got = {}; for (let i = 1; i <= 4; i++) { const s = world.get('スタンプ
 hudText = () => 'スタンプラリー ' + Object.keys(got).length + ' / 4　さかなをタップして名前を見よう'
 hud()`);
   return W({sky:'#1e5a85',ground:'#24496e',fog:false,spawn:[0,0,3],objs:o,script,ui:[TX('スコア',2,2,52,7,'さかなをタップして名前を見よう',17)]}); };
+// ===== プラネタリウム =====
+NW.planet=()=>{ reset(); const o=[S('cyl',[0,.05,0],[40,.1,40],'#0f172a',{solid:0}),S('cyl',[0,.6,0],[1.2,1.2,1.2],'#334155'),S('sphere',[0,1.6,0],[1,1,1],'#475569',{name:'投影機'})];
+  for(let i=0;i<14;i++){ const a=i/14*6.283; o.push(I('bench_0',[Math.cos(a)*6,0,Math.sin(a)*6],-a*57.3+90)); }
+  o.push(...START([0,.5,3.2],'星座ツアー'),B([-3.2,.5,3.2],[1.4,1,1.4],'#3b82f6',{name:'冬',glow:1}),T([-3.2,1.7,3.2],'冬の空','#bfdbfe',1.6,{op:{billboard:1}}),B([3.2,.5,3.2],[1.4,1,1.4],'#f59e0b',{name:'夏',glow:1}),T([3.2,1.7,3.2],'夏の空','#fde68a',1.6,{op:{billboard:1}}),B([0,.5,5.4],[1.4,1,1.4],'#a855f7',{name:'線',glow:1}),T([0,1.7,5.4],'星座線','#e9d5ff',1.6,{op:{billboard:1}}));
+  const ST=[['ベテルギウス',5.92,7.4,.5,'ori'],['リゲル',5.24,-8.2,.1,'ori'],['ベラトリックス',5.42,6.35,1.6,'ori'],['サイフ',5.8,-9.67,2.1,'ori'],['アルニタク',5.68,-1.94,1.8,'ori'],['アルニラム',5.6,-1.2,1.7,'ori'],['ミンタカ',5.53,-.3,2.2,'ori'],
+    ['ドゥーベ',11.06,61.75,1.8,'uma'],['メラク',11.03,56.38,2.4,'uma'],['フェクダ',11.9,53.69,2.4,'uma'],['メグレズ',12.26,57.03,3.3,'uma'],['アリオト',12.9,55.96,1.8,'uma'],['ミザール',13.4,54.93,2.2,'uma'],['アルカイド',13.79,49.31,1.9,'uma'],['北極星',2.53,89.26,2,''],
+    ['カフ',.15,59.15,2.3,'cas'],['シェダル',.68,56.54,2.2,'cas'],['ツィー',.95,60.72,2.2,'cas'],['ルクバー',1.43,60.24,2.7,'cas'],['セギン',1.91,63.67,3.4,'cas'],
+    ['ベガ',18.62,38.78,0,'lyr'],['デネブ',20.69,45.28,1.3,'cyg'],['アルタイル',19.85,8.87,.8,'aql'],['サドル',20.37,40.26,2.2,'cyg'],['ギェナー',20.77,33.97,2.5,'cyg'],['アルビレオ',19.51,27.96,3.1,'cyg'],['ファワリス',19.75,45.13,2.9,'cyg'],
+    ['アンタレス',16.49,-26.43,1,'sco'],['アクラブ',16.09,-19.8,2.6,'sco'],['ジュバ',16,-22.62,2.3,'sco'],['タウ',16.6,-28.2,2.8,'sco'],['イプシロン',16.84,-34.29,2.3,'sco'],['ミュー',16.86,-38.05,3,'sco'],['ゼータ',16.9,-42.36,3.6,'sco'],['エータ',17.2,-43.24,3.3,'sco'],['サルガス',17.62,-43,1.9,'sco'],['シャウラ',17.56,-37.1,1.6,'sco'],
+    ['カストル',7.58,31.89,1.6,'gem'],['ポルックス',7.76,28.03,1.1,'gem'],['レグルス',10.14,11.97,1.4,'leo'],['エータ獅子',10.12,16.76,3.5,'leo'],['アルギエバ',10.33,19.84,2,'leo'],['アダフェラ',10.28,23.42,3.4,'leo'],['ラサラス',9.88,26,3.9,'leo'],['ゾスマ',11.24,20.52,2.6,'leo'],['デネボラ',11.82,14.57,2.1,'leo'],['シェルタン',11.24,15.43,3.3,'leo'],
+    ['シリウス',6.75,-16.72,-1.46,''],['プロキオン',7.66,5.22,.4,''],['アークトゥルス',14.26,19.18,-.05,''],['スピカ',13.42,-11.16,1,''],['カペラ',5.28,46,.1,''],['アルデバラン',4.6,16.51,.9,''],['すばる',3.79,24.1,2.9,'']];
+  const LN={ori:[['ベテルギウス','ベラトリックス'],['ベテルギウス','アルニタク'],['ベラトリックス','ミンタカ'],['ミンタカ','アルニラム'],['アルニラム','アルニタク'],['アルニタク','サイフ'],['ミンタカ','リゲル']],uma:[['ドゥーベ','メラク'],['メラク','フェクダ'],['フェクダ','メグレズ'],['メグレズ','ドゥーベ'],['メグレズ','アリオト'],['アリオト','ミザール'],['ミザール','アルカイド']],cas:[['カフ','シェダル'],['シェダル','ツィー'],['ツィー','ルクバー'],['ルクバー','セギン']],
+    cyg:[['デネブ','サドル'],['サドル','アルビレオ'],['ギェナー','サドル'],['サドル','ファワリス']],sco:[['アクラブ','ジュバ'],['ジュバ','アンタレス'],['アンタレス','タウ'],['タウ','イプシロン'],['イプシロン','ミュー'],['ミュー','ゼータ'],['ゼータ','エータ'],['エータ','サルガス'],['サルガス','シャウラ']],gem:[['カストル','ポルックス']],
+    leo:[['レグルス','エータ獅子'],['エータ獅子','アルギエバ'],['アルギエバ','アダフェラ'],['アダフェラ','ラサラス'],['アルギエバ','ゾスマ'],['ゾスマ','デネボラ'],['デネボラ','シェルタン'],['シェルタン','レグルス']],tri:[['ベガ','デネブ'],['デネブ','アルタイル'],['アルタイル','ベガ']],wtri:[['ベテルギウス','シリウス'],['シリウス','プロキオン'],['プロキオン','ベテルギウス']]};
+  const CN={ori:['オリオン座','冬の代表。赤いベテルギウスと青白いリゲル、3つ並んだ「三つ星」が目印'],uma:['北斗七星（おおぐま座）','ひしゃくの形。先の2つの星を5倍のばすと北極星'],cas:['カシオペヤ座','Wの形。北極星をさがす目印にもなります'],cyg:['はくちょう座','十字の形で「北十字」とも。デネブはしっぽ'],sco:['さそり座','夏の南の空。赤いアンタレスはさそりの心臓'],gem:['ふたご座','カストルとポルックスのふたご'],leo:['しし座','「？」を裏返した形はライオンの頭'],tri:['夏の大三角','ベガ・デネブ・アルタイル。七夕の織姫と彦星も'],wtri:['冬の大三角','ベテルギウス・シリウス・プロキオン']};
+  const script=PRE(0,`const ST = ${JSON.stringify(ST)}, LN = ${JSON.stringify(LN)}, CN = ${JSON.stringify(CN)}
+const LAT = 35 * Math.PI / 180, RAD = 42, D = {}, DOTS = {}; let lst = 5.5, showLines = true, touring = false
+const pos = (ra, dec) => { const H = (lst - ra) * 15 * Math.PI / 180, d = dec * Math.PI / 180; const sa = Math.sin(d) * Math.sin(LAT) + Math.cos(d) * Math.cos(LAT) * Math.cos(H); const alt = Math.asin(sa); const az = Math.atan2(-Math.cos(d) * Math.sin(H), Math.sin(d) * Math.cos(LAT) - Math.cos(d) * Math.sin(LAT) * Math.cos(H)); return [Math.sin(az) * Math.cos(alt) * RAD, Math.sin(alt) * RAD + 1, -Math.cos(az) * Math.cos(alt) * RAD, alt] }
+ST.forEach(s => { const sz = Math.max(0.25, 1.1 - s[3] * 0.22); const o = world.spawn({ type: 'sphere', pos: [0, -50, 0], scale: [sz, sz, sz], color: s[3] < 0.6 && s[0] === 'ベテルギウス' || s[0] === 'アンタレス' || s[0] === 'アルデバラン' ? '#fca5a5' : s[3] < 1 ? '#fef9c3' : '#e0f2fe', glow: true }); if (!o) return; D[s[0]] = { o, s }
+  o.onClick(() => { const c = CN[s[4]]; world.say(s[0] + (c ? '（' + c[0] + '）' : '') + '　明るさ ' + s[3] + '等'); world.sound(1000, 0.05) }) })
+const BG = []; for (let i = 0; i < 160; i++) { const ra = world.random(0, 24), dec = world.random(-60, 90); const o = world.spawn({ type: 'sphere', pos: [0, -50, 0], scale: [0.12, 0.12, 0.12], color: '#cbd5e1', glow: true }); if (o) BG.push({ o, ra, dec }) }
+Object.keys(LN).forEach(k => { DOTS[k] = []; LN[k].forEach(([a, b]) => { for (let i = 1; i < 6; i++) { const o = world.spawn({ type: 'sphere', pos: [0, -50, 0], scale: [0.16, 0.16, 0.16], color: k === 'tri' || k === 'wtri' ? '#fbbf24' : '#60a5fa', glow: true }); if (o) DOTS[k].push({ o, a, b, f: i / 6 }) } }) })
+const place = () => { Object.values(D).forEach(({ o, s }) => { const p = pos(s[1], s[2]); o.setPos(p[0], p[3] > -0.02 ? p[1] : -50, p[2]) }); BG.forEach(b => { const p = pos(b.ra, b.dec); b.o.setPos(p[0], p[3] > 0 ? p[1] : -50, p[2]) })
+  Object.values(DOTS).forEach(l => l.forEach(d => { const A = D[d.a], B = D[d.b]; if (!A || !B) return; const pa = pos(A.s[1], A.s[2]), pb = pos(B.s[1], B.s[2]); const x = pa[0] + (pb[0] - pa[0]) * d.f, y = pa[1] + (pb[1] - pa[1]) * d.f, z = pa[2] + (pb[2] - pa[2]) * d.f; d.o.setPos(x, showLines && pa[3] > 0 && pb[3] > 0 ? y : -50, z) })) }
+place()
+const btn = (n, f) => { const b = world.get(n); if (b) b.onClick(f) }
+btn('冬', () => { lst = 5.5; place(); world.say('冬の夜（1月の夜9時ごろ）の空です。オリオン座が南に見えます'); world.sound(660, 0.1) })
+btn('夏', () => { lst = 17.8; place(); world.say('夏の夜（7月の夜9時ごろ）の空です。夏の大三角とさそり座が見えます'); world.sound(880, 0.1) })
+btn('線', () => { showLines = !showLines; place(); world.say(showLines ? '星座線を表示しました' : '星座線を消しました') })
+const hl = (k, on) => (DOTS[k] || []).forEach(d => d.o.setColor(on ? '#f472b6' : (k === 'tri' || k === 'wtri' ? '#fbbf24' : '#60a5fa')))
+onBegin = () => { if (touring) return; touring = true; showLines = true; const tour = lst < 12 ? ['ori', 'wtri', 'gem', 'uma', 'cas', 'leo'] : ['tri', 'cyg', 'sco', 'uma', 'cas']; place(); let t = 0
+  tour.forEach((k, i) => { world.after(t, () => { hl(k, true); world.say(CN[k][0] + '：' + CN[k][1]); world.sound(523 + i * 60, 0.15) }); world.after(t + 5, () => hl(k, false)); t += 5.5 })
+  world.after(t, () => { touring = false; score = 100; end('ツアーおしまい！星をタップすると名前がわかります') }) }
+hudText = () => touring ? '星座ツアー中… 上を見上げてね' : '「星座ツアー」で解説スタート。星をタップすると名前がわかります'
+hud()`);
+  return W({sky:'#020617',ground:'#020617',fog:false,spawn:[0,0,1.8],objs:o,script,ui:[TX('スコア',2,2,56,7,'',16)]}); };
 const add=(cat,genre,ja,en,desc,f)=>SWLIST.unshift({cat,genre,ja,en,desc,f});
 add('fun',null,'Home-XR 水族館','Home-XR Aquarium','海・川・サンゴ礁・大きな魚の水そう、頭の上を魚がおよぐ海のトンネル、光るクラゲの深海ゾーン。魚をタップすると名前がわかります。スタンプラリーつき',()=>NW.aqua());
+add('nature',null,'プラネタリウム','Planetarium','本物の星の位置を再現したドーム。冬の空・夏の空を切りかえられて、「星座ツアー」でオリオン座・北斗七星・夏の大三角などを解説します。星をタップすると名前がわかります',()=>NW.planet());
 window.NW6=NW; window.NW6add=add;
 })();
 
