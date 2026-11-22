@@ -670,6 +670,11 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .vfWrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px;height:100%;overflow:auto}.vfWave{width:min(600px,92%);height:auto;background:rgba(255,255,255,.04);border-radius:16px}
 .vfRec{width:96px;height:96px;border-radius:50%;border:0;background:#ef4444;color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 0 0 8px rgba(239,68,68,.2);font-size:36px}.vfRec.on{animation:gpl .6s infinite alternate;background:#b91c1c}.vfRec svg{width:40px;height:40px}.vfInfo{opacity:.8;text-align:center}
 .vfGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;width:min(640px,96%)}.vfFx{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:16px;border:2px solid transparent;background:rgba(255,255,255,.07);color:#fff;font:inherit;cursor:pointer}.vfFx.on{border-color:#a78bfa;background:rgba(167,139,250,.2)}.vfFx:disabled{opacity:.35;cursor:default}.vfFx .ico{font-size:24px}
+.calcPane{flex:1;min-height:0;display:flex}.cvWrap,.spWrap{flex:1;display:flex;flex-direction:column;gap:10px;padding:0 18px 16px;overflow:auto;align-items:center}.cvCats{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.cvCats button,.cvFrom button{border:0;border-radius:999px;padding:7px 14px;background:rgba(255,255,255,.08);color:#fff;font:inherit;font-weight:700;cursor:pointer}.cvCats button.on,.cvFrom button.on{background:#6366f1}
+.cvIn{display:flex;align-items:baseline;gap:10px;font-size:44px;font-weight:900;font-variant-numeric:tabular-nums}.cvIn span{font-size:22px;opacity:.7}.cvFrom{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}.cvList{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%}.cvRow{display:flex;align-items:baseline;gap:6px;padding:10px 14px;border-radius:12px;border:0;background:rgba(255,255,255,.06);color:#fff;font:inherit;cursor:pointer;text-align:left}.cvRow span{flex:1;font-size:12px;opacity:.7}.cvRow b{font-size:18px;font-variant-numeric:tabular-nums}.cvRow em{font-style:normal;opacity:.7}
+.cvPad{display:grid;grid-template-columns:repeat(4,64px);gap:6px}.cvPad .ccK{height:48px}.cvPad.sm{grid-template-columns:repeat(4,60px)}
+.spTot{text-align:center;padding:10px 24px;border-radius:16px;background:rgba(255,255,255,.06)}.spTot b{display:block;font-size:40px;font-variant-numeric:tabular-nums}.spRow{display:flex;gap:10px;align-items:center}.spRow>span{width:84px;opacity:.75}.spN{font-size:22px;min-width:56px;text-align:center}
+.spRes{display:flex;flex-direction:column;gap:6px;align-items:center;padding:12px 20px;border-radius:16px;background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(34,197,94,.2));width:100%}.spRes>div{display:flex;flex-direction:column;align-items:center}.spRes b{font-size:36px}.spRes .alt b{font-size:16px}.spRes em{font-style:normal;opacity:.75;font-size:13px}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -747,7 +752,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.8';
+const APP_VERSION='5.11.9';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -8602,6 +8607,39 @@ regApp('voicefx',{name:'ボイスチェンジャー',en:'Voice Changer',g:'mic-v
     act.innerHTML=''; if(buf) act.append(btn(IC(state==='play'?'square':'play')+(state==='play'?L('止める','Stop'):L('もう一度再生','Play')),()=>{ if(state==='play'){ try{ src.stop(); }catch(e){} state='idle'; draw(); } else play(); },'pri'),btn(IC('download')+L('保存（WAV）','Save (WAV)'),save)); };
   draw(); }});
 INST6('voicefx');
+// ---------- 電卓アップデート：単位変換・割り勘・x²・e ----------
+(function(){ const orig=APPIMPL.calc; if(APPS.calc){ APPS.calc.w=Math.max(APPS.calc.w||560,760); APPS.calc.desc='ふつうの電卓・関数電卓に加えて、単位変換（長さ・重さ・温度など8種類）と割り勘ができます。'; }
+ const UNITS={len:['長さ','Length',[['mm','ミリメートル',.001],['cm','センチメートル',.01],['m','メートル',1],['km','キロメートル',1000],['in','インチ',.0254],['ft','フィート',.3048],['yd','ヤード',.9144],['mi','マイル',1609.344],['尺','尺',10/33],['寸','寸',1/33]]],
+  wt:['重さ','Weight',[['mg','ミリグラム',1e-6],['g','グラム',.001],['kg','キログラム',1],['t','トン',1000],['oz','オンス',.0283495],['lb','ポンド',.453592],['貫','貫',3.75]]],
+  tmp:['温度','Temp',[['℃','セ氏',0],['℉','カ氏',0],['K','ケルビン',0]]],
+  area:['面積','Area',[['cm²','平方センチ',1e-4],['m²','平方メートル',1],['a','アール',100],['ha','ヘクタール',1e4],['km²','平方キロ',1e6],['坪','坪',400/121],['畳','畳（目安）',1.62],['ft²','平方フィート',.092903]]],
+  vol:['体積','Volume',[['mL','ミリリットル',.001],['L','リットル',1],['m³','立方メートル',1000],['カップ','カップ（200mL）',.2],['大さじ','大さじ',.015],['小さじ','小さじ',.005],['合','合',.1804],['gal','ガロン（米）',3.78541]]],
+  spd:['速さ','Speed',[['m/s','秒速メートル',1],['km/h','時速キロ',1/3.6],['mph','時速マイル',.44704],['kt','ノット',.514444],['マッハ','マッハ',340.3]]],
+  time:['時間','Time',[['秒','秒',1],['分','分',60],['時間','時間',3600],['日','日',86400],['週','週',604800],['年','年',31536000]]],
+  data:['データ','Data',[['B','バイト',1],['KB','キロバイト',1024],['MB','メガバイト',1048576],['GB','ギガバイト',1073741824],['TB','テラバイト',1099511627776]]]};
+ const toK=(u,v)=>u==='℃'?v+273.15:u==='℉'?(v-32)*5/9+273.15:v, fromK=(u,v)=>u==='℃'?v-273.15:u==='℉'?(v-273.15)*9/5+32:v;
+ const fmtN=v=>!isFinite(v)?'—':Math.abs(v)>=1e9||(Math.abs(v)<1e-4&&v!==0)?v.toExponential(4):String(+v.toPrecision(8));
+ const conv=(pane)=>{ let cat=LOAD('cv6c','len'), from=LOAD('cv6f_'+cat,null), val=LOAD('cv6v','1'); const wrap=h('div','cvWrap'); pane.appendChild(wrap);
+   const draw=()=>{ wrap.innerHTML=''; const [ja,en,us]=UNITS[cat]; if(!us.find(u=>u[0]===from)) from=us[Math.min(2,us.length-1)][0];
+     const cats=h('div','cvCats'); Object.entries(UNITS).forEach(([k,[a,b]])=>{ const bt=h('button',k===cat?'on':'',L(a,b)); bt.onclick=()=>{ cat=k; SAVE('cv6c',k); from=LOAD('cv6f_'+k,null); draw(); }; cats.appendChild(bt); }); wrap.appendChild(cats);
+     const inp=h('div','cvIn',`<b>${esc(val)}</b><span>${esc(from)}</span>`); wrap.appendChild(inp);
+     const sel=h('div','cvFrom'); us.forEach(([u,n])=>{ const bt=h('button',u===from?'on':'',u); bt.title=n; bt.onclick=()=>{ from=u; SAVE('cv6f_'+cat,u); draw(); }; sel.appendChild(bt); }); wrap.appendChild(sel);
+     const v=parseFloat(val)||0; const base=cat==='tmp'?toK(from,v):v*us.find(u=>u[0]===from)[2]; const list=h('div','cvList');
+     us.forEach(([u,n,f])=>{ if(u===from) return; const out=cat==='tmp'?fromK(u,base):base/f; const r=h('button','cvRow',`<span>${esc(n)}</span><b>${fmtN(out)}</b><em>${esc(u)}</em>`); r.onclick=()=>{ navigator.clipboard&&navigator.clipboard.writeText(fmtN(out)); toastW(L('コピーしました','Copied')); }; list.appendChild(r); }); wrap.appendChild(list);
+     const pad=h('div','cvPad'); ['7','8','9','⌫','4','5','6','C','1','2','3','±','0','.','00',''].forEach(k=>{ if(!k){ pad.appendChild(h('i')); return; } const b=h('button','ccK'+(['⌫','C','±'].includes(k)?' fn':''),k); b.onclick=()=>{ AU.tone(1200,.02,'sine',.03); if(k==='⌫') val=val.slice(0,-1)||'0'; else if(k==='C') val='0'; else if(k==='±') val=val.startsWith('-')?val.slice(1):'-'+val; else if(k==='.'){ if(!val.includes('.')) val+='.'; } else val=val==='0'?(k==='00'?'0':k):val+k; if(val.length>14) val=val.slice(0,14); SAVE('cv6v',val); draw(); }; pad.appendChild(b); }); wrap.appendChild(pad); };
+   draw(); };
+ const split=(pane)=>{ let tot=LOAD('sp6t','3000'), ppl=LOAD('sp6p',3), unit=LOAD('sp6u',10), tip=LOAD('sp6tip',0), field='tot'; const wrap=h('div','spWrap'); pane.appendChild(wrap);
+   const draw=()=>{ wrap.innerHTML=''; const T=(parseFloat(tot)||0)*(1+tip/100), n=Math.max(1,ppl), each=Math.ceil(T/n/unit)*unit, rest=each*n-T, fl=Math.floor(T/n/unit)*unit, ex=T-fl*(n-1);
+     wrap.append(h('div','spTot'+(field==='tot'?' on':''),`<small>${L('合計金額','Total')}</small><b>¥${Number(tot||0).toLocaleString()}</b>`));
+     const pr=h('div','spRow'); pr.append(h('span','',L('人数','People')),btn('−',()=>{ ppl=Math.max(1,ppl-1); SAVE('sp6p',ppl); draw(); }),h('b','spN',ppl+L('人','')),btn('＋',()=>{ ppl=Math.min(99,ppl+1); SAVE('sp6p',ppl); draw(); })); wrap.appendChild(pr);
+     const ur=h('div','spRow'); ur.append(h('span','',L('まるめ','Round to')),gSeg([[1,'1円','¥1'],[10,'10円','¥10'],[100,'100円','¥100'],[500,'500円','¥500'],[1000,'1000円','¥1000']],unit,k=>{ unit=k; SAVE('sp6u',k); draw(); })); wrap.appendChild(ur);
+     const tr=h('div','spRow'); tr.append(h('span','',L('サービス料','Tip')),gSeg([[0,'なし','0%'],[5,'5%','5%'],[10,'10%','10%'],[15,'15%','15%']],tip,k=>{ tip=k; SAVE('sp6tip',k); draw(); })); wrap.appendChild(tr);
+     const res=h('div','spRes'); res.innerHTML=`<div><small>${L('1人あたり','Each')}</small><b>¥${each.toLocaleString()}</b><em>${rest>0?L(`${Math.round(rest).toLocaleString()}円あまります`,`¥${Math.round(rest).toLocaleString()} extra`):L('ぴったり！','Exact!')}</em></div>${n>1&&fl>0&&ex!==fl?`<div class="alt"><small>${L('幹事が多めに払う場合','If the organizer pays more')}</small><b>${L(`${n-1}人は ¥${fl.toLocaleString()}、幹事は ¥${Math.round(ex).toLocaleString()}`,`${n-1}× ¥${fl.toLocaleString()}, organizer ¥${Math.round(ex).toLocaleString()}`)}</b></div>`:''}`; wrap.appendChild(res);
+     const pad=h('div','cvPad sm'); ['7','8','9','⌫','4','5','6','C','1','2','3','000','0','00'].forEach(k=>{ const b=h('button','ccK'+(['⌫','C'].includes(k)?' fn':''),k); b.onclick=()=>{ AU.tone(1200,.02,'sine',.03); if(k==='⌫') tot=tot.slice(0,-1)||'0'; else if(k==='C') tot='0'; else tot=tot==='0'?(k.startsWith('0')?'0':k):tot+k; if(tot.length>10) tot=tot.slice(0,10); SAVE('sp6t',tot); draw(); }; pad.appendChild(b); }); wrap.appendChild(pad); };
+   draw(); };
+ APPIMPL.calc=(body,w)=>{ body.style.cssText+=';display:flex;flex-direction:column'; let tab=LOAD('calc6tab','calc'); const tb=h('div','gmCtl'); tb.style.padding='10px'; const pane=h('div','calcPane'); body.append(tb,pane);
+   const go=k=>{ tab=k; SAVE('calc6tab',k); tb.innerHTML=''; tb.appendChild(gSeg([['calc','電卓','Calculator'],['conv','単位変換','Units'],['split','割り勘','Split bill']],tab,go)); pane.innerHTML=''; pane.style.display='flex'; if(k==='calc') orig(pane,w); else if(k==='conv') conv(pane); else split(pane); };
+   go(tab); }; })();
 
 </script>
 </body>
