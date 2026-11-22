@@ -679,6 +679,7 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .pwBar{height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}.pwBar i{display:block;height:100%;border-radius:999px;transition:width .3s}.pwInfo{display:flex;gap:10px;align-items:baseline;justify-content:center;flex-wrap:wrap}.pwInfo span{opacity:.75;font-size:13px}
 .pwSet{display:flex;flex-direction:column;gap:8px;align-items:center}.pwOpts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:640px}.pwOpt{display:flex;gap:6px;align-items:center;border:0;border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.07);color:#fff;font:inherit;cursor:pointer}.pwOpt.on{background:rgba(251,191,36,.25)}
 .pwAlt{display:flex;flex-direction:column;gap:4px;width:min(640px,96%)}.pwAltI{border:0;border-radius:10px;padding:8px 12px;background:rgba(255,255,255,.04);color:#fff;font:600 15px ui-monospace,Menlo,monospace;text-align:left;cursor:pointer;word-break:break-all}.pwNote{display:flex;gap:6px;align-items:center}
+.lvWrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px;height:100%;overflow:auto}.lvCv{height:min(44vh,400px);width:auto}.lvRead{display:flex;gap:18px;align-items:baseline;font-variant-numeric:tabular-nums}.lvRead b{font-size:22px}.lvRead b.big{font-size:44px}.lvRead span.ok{color:#a3e635;font-weight:900;font-size:20px}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -756,7 +757,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.10';
+const APP_VERSION='5.11.11';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -8667,6 +8668,26 @@ regApp('passgen',{name:'パスワード',en:'Password',g:'key-round',bg:G1+'#fbb
     wrap.appendChild(h('p','sub pwNote',`${IC('shield-check')} ${L('パスワードはこの端末の中だけで作っています。どこにも送信・保存されません。','Generated on this device only. Never sent or saved.')}`)); };
   draw(); }});
 INST6('passgen');
+// ---------- 水平器 ----------
+regApp('level',{name:'水平器',en:'Level',g:'ruler',bg:G1+'#a3e635,#15803d)',cat:'tool',w:820,h:660,desc:'iPadやスマホのジャイロで、かたむきを測ります。平らに置く「面」と、ふちを当てる「線」の2つのモード。0°になると音でお知らせします。',den:'Measure tilt with the gyro.',
+ impl(body,w){ let mode=LOAD('lv6m','flat'), cal=LOAD('lv6cal',{b:0,g:0}), beep=LOAD('lv6beep',true), raw={b:0,g:0}, ok=false, hold=false, sm={b:0,g:0}, demo=false, lastBeep=0;
+  const wrap=h('div','lvWrap'); body.appendChild(wrap); const cvs=cv(520,520); cvs.className='lvCv'; const rd=h('div','lvRead'), ctl=h('div','gmCtl'); wrap.append(cvs,rd,ctl); const x=cvs.getContext('2d');
+  const on=e=>{ if(e.beta==null) return; if(!ok){ ok=true; demo=false; setTimeout(draw,0); } const ang=(screen.orientation&&screen.orientation.angle)||window.orientation||0; let b=e.beta, g=e.gamma; if(ang===90){ [b,g]=[-g,b]; } else if(ang===-90||ang===270){ [b,g]=[g,-b]; } else if(ang===180){ b=-b; g=-g; } raw={b,g}; };
+  const start=async()=>{ try{ if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){ const r=await DeviceOrientationEvent.requestPermission(); if(r!=='granted'){ toastW(L('ジャイロが許可されませんでした','Permission denied')); return; } } }catch(e){} addEventListener('deviceorientation',on); setTimeout(()=>{ if(!ok){ demo=true; draw(); toastW(L('ジャイロが見つからないので、ポインターで試せるモードにしました','No gyro: pointer demo mode')); } },2000); };
+  onCloseAdd(w,()=>removeEventListener('deviceorientation',on)); const P=ptrOn(cvs);
+  const draw=()=>{ ctl.innerHTML=''; ctl.append(gSeg([['flat','面（平らに置く）','Surface'],['edge','線（ふちを当てる）','Edge']],mode,k=>{ mode=k; SAVE('lv6m',k); draw(); }),btn(IC('crosshair')+L('いまを0°にする','Calibrate'),()=>{ cal={b:sm.b+cal.b,g:sm.g+cal.g}; SAVE('lv6cal',cal); toastW(L('いまの角度を0°にしました','Calibrated')); }),btn(IC('rotate-ccw')+L('補正をもどす','Reset'),()=>{ cal={b:0,g:0}; SAVE('lv6cal',cal); }),btn(IC(hold?'lock':'lock-open')+(hold?L('固定中','Held'):L('固定','Hold')),()=>{ hold=!hold; draw(); },hold?'pri':''),btn(IC(beep?'volume-2':'volume-x'),()=>{ beep=!beep; SAVE('lv6beep',beep); draw(); }));
+    if(!ok&&!demo) ctl.appendChild(btn(IC('smartphone')+L('ジャイロを使う','Use gyro'),()=>start(),'pri')); };
+  loopOn(body,dt=>{ if(!hold){ let tb, tg; if(ok){ tb=raw.b-cal.b; tg=raw.g-cal.g; } else { const p=P(); tb=(p.y-.5)*40; tg=(p.x-.5)*40; } const k=Math.min(1,dt*8); sm.b+=(tb-sm.b)*k; sm.g+=(tg-sm.g)*k; }
+    const W=520, cx=260, cy=260; x.clearRect(0,0,W,W); const lv=mode==='flat'?Math.hypot(sm.b,sm.g):Math.abs(mode==='edge'?sm.g:0), good=lv<.5;
+    if(good&&beep&&!hold&&performance.now()-lastBeep>900&&(ok||demo)){ lastBeep=performance.now(); AU.tone(1318,.08,'sine',.05); navigator.vibrate&&navigator.vibrate(20); }
+    if(mode==='flat'){ const R=230; const gr=x.createRadialGradient(cx,cy,10,cx,cy,R); gr.addColorStop(0,good?'#bef264':'#d9f99d'); gr.addColorStop(1,good?'#65a30d':'#4d7c0f'); x.fillStyle=gr; x.beginPath(); x.arc(cx,cy,R,0,TAU); x.fill();
+      x.strokeStyle='rgba(0,0,0,.35)'; x.lineWidth=2; [40,100,170].forEach(r=>{ x.beginPath(); x.arc(cx,cy,r,0,TAU); x.stroke(); }); x.beginPath(); x.moveTo(cx-R,cy); x.lineTo(cx+R,cy); x.moveTo(cx,cy-R); x.lineTo(cx,cy+R); x.stroke();
+      const s=R/20, bx=cx-Math.max(-20,Math.min(20,sm.g))*s, by=cy-Math.max(-20,Math.min(20,sm.b))*s; x.fillStyle='rgba(255,255,255,.85)'; x.shadowColor='rgba(0,0,0,.3)'; x.shadowBlur=10; x.beginPath(); x.arc(bx,by,34,0,TAU); x.fill(); x.shadowBlur=0; x.fillStyle='rgba(255,255,255,.95)'; x.beginPath(); x.arc(bx-10,by-10,9,0,TAU); x.fill(); }
+    else { x.save(); x.translate(cx,cy); x.rotate(sm.g*Math.PI/180); x.fillStyle=good?'#84cc16':'#facc15'; x.fillRect(-240,-40,480,80); x.strokeStyle='#1c1917'; x.lineWidth=3; x.strokeRect(-240,-40,480,80); for(let i=-11;i<=11;i++){ x.beginPath(); x.moveTo(i*20,-40); x.lineTo(i*20,i%5?-28:-18); x.stroke(); } x.restore();
+      x.fillStyle='#365314'; x.fillRect(cx-160,cy+120,320,46); x.fillStyle='#d9f99d'; x.fillRect(cx-156,cy+124,312,38); const bx=cx+Math.max(-140,Math.min(140,-sm.g*14)); x.fillStyle='rgba(255,255,255,.9)'; x.beginPath(); x.ellipse(bx,cy+143,28,14,0,0,TAU); x.fill(); x.strokeStyle='#365314'; x.beginPath(); x.moveTo(cx-34,cy+120); x.lineTo(cx-34,cy+166); x.moveTo(cx+34,cy+120); x.lineTo(cx+34,cy+166); x.stroke(); }
+    rd.innerHTML=mode==='flat'?`<span class="${good?'ok':''}">${good?L('水平です！','Level!'):''}</span><b>${L('前後','Pitch')} ${sm.b.toFixed(1)}°</b><b>${L('左右','Roll')} ${sm.g.toFixed(1)}°</b>`:`<span class="${good?'ok':''}">${good?L('水平です！','Level!'):''}</span><b class="big">${Math.abs(sm.g).toFixed(1)}°</b>`; });
+  draw(); start(); }});
+INST6('level');
 
 </script>
 </body>
