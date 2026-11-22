@@ -782,7 +782,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.22';
+const APP_VERSION='5.11.23';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9154,6 +9154,49 @@ regApp('tabletennis',{name:'卓球',en:'Table Tennis',g:'circle',bg:G1+'#22d3ee,
   window.__tt=()=>({ball,state,sc2,last,bounce,pad,cpu});
   cam.position.set(0,1.45,PZ+1.15); draw(); }});
 INST6('tabletennis');
+
+/* ================= 新しいワールド（水族館・プラネタリウム・お祭り・雪合戦・巨大迷路） ================= */
+(function(){
+const {B,S,T,I,R,HUD,START,PRE,W,id,reset}=SWK;
+const TX=(name,x,y,w,h,text,size=20)=>({id:'u_'+name,name,t:'text',x,y,w,h,text,fg:'#ffffff',bg:'#000000',op:50,size,r:14,align:'center'});
+const NW={};
+// ===== 水族館 =====
+NW.aqua=()=>{ reset(); const o=[]; const wall='#2b5a85', fl='#3b6b94';
+  o.push(B([0,.05,-16],[30,.1,44],fl,{solid:0,pat:'tile'})); o.push(B([-15,3,-16],[.4,6,44],wall),B([15,3,-16],[.4,6,44],wall),B([0,3,-38],[30,6,.4],wall),B([-9,3,6],[12,6,.4],wall),B([9,3,6],[12,6,.4],wall),B([0,6.1,-16],[30,.2,44],'#0b1d33',{solid:0}));
+  o.push(T([0,4.2,5.6],'Home-XR 水族館','#7dd3fc',6,{op:{billboard:0}}),T([0,3.4,5.6],'さかなをタップすると名前がわかります','#e0f2fe',5));
+  const tank=(x,z,w,h,d,col,label)=>{ o.push(B([x,h/2+.4,z],[w,h,d],col,{glass:1,solid:1}),B([x,.2,z],[w+.2,.4,d+.2],'#334155'),B([x,h+.5,z],[w+.2,.2,d+.2],'#334155',{solid:0}),T([x,h+1.1,z+d/2+.05],label,'#bae6fd',3)); };
+  tank(-11,-4,5,3.2,6,'#0ea5e9','海の魚'); tank(11,-4,5,3.2,6,'#22c55e','川と湖の魚'); tank(-11,-16,5,3.2,8,'#38bdf8','サンゴ礁'); tank(11,-16,5,3.2,8,'#0369a1','大きな魚');
+  o.push(B([-4,3,-26],[.2,5.6,10],'#38bdf8',{glass:1}),B([4,3,-26],[.2,5.6,10],'#38bdf8',{glass:1}),B([0,5.8,-26],[8.2,.2,10],'#38bdf8',{glass:1,solid:0}),T([0,5,-20.9],'海のトンネル','#7dd3fc',3));
+  o.push(B([0,3,-33],[29.6,6,.3],'#020617'),B([0,.06,-35.5],[29.6,.1,4.6],'#020617',{solid:0}),T([0,4.6,-32.8],'深海ゾーン（このかべの向こうは、まっくら）','#a78bfa',5));
+  o.push(B([-12,0,-31],[.1,.1,.1],'#000',{solid:0}));
+  [[-7,1.8],[7,1.8],[-7,-8],[7,-8]].forEach(([x,z],i)=>o.push(S('cyl',[x,.6,z],[.8,1.2,.8],['#f472b6','#facc15','#4ade80','#a78bfa'][i],{name:'スタンプ'+(i+1),glow:1}),T([x,1.7,z],'スタンプ'+(i+1),'#ffffff',1.6,{op:{billboard:1}})));
+  [-12,12].forEach(x=>[0,-10,-20,-28].forEach(z=>o.push(I('plant_'+((x+z)&1),[x*.9,0,z+3]))));
+  o.push(I('bench_0',[0,0,-10],0),I('bench_0',[0,0,-14],180));
+  const FS={sea:['マアジ','マダイ','カクレクマノミ','ナンヨウハギ','ハリセンボン','タツノオトシゴ','ミノカサゴ','チョウチョウウオ','ブリ','シマアジ'],fresh:['アユ','ヤマメ','イワナ','ニジマス','コイ','ニシキゴイ','キンギョ','メダカ','ピラルク','アロワナ'],reef:['ナンヨウハギ','ソラスズメダイ','ハタタテダイ','ツノダシ','カクレクマノミ','ニザダイ','オジサン','イシガキダイ'],big:['クロマグロ','シュモクザメ','マンボウ','ロウニンアジ','クエ','ネコザメ'],deep:['チョウチンアンコウ','リュウグウノツカイ','デメニギス','ラブカ','ミツクリザメ','シーラカンス']};
+  const script=PRE(0,`const FS = ${JSON.stringify(FS)}
+const T = [{x:-11,z:-4,w:5,d:6,k:'sea',n:9},{x:11,z:-4,w:5,d:6,k:'fresh',n:9},{x:-11,z:-16,w:5,d:8,k:'reef',n:10},{x:11,z:-16,w:5,d:8,k:'big',n:5}]
+const COL = ['#f97316','#facc15','#38bdf8','#f472b6','#a3e635','#e2e8f0','#fb7185','#60a5fa','#fde047','#c084fc']
+const F = []
+T.forEach(t => { for (let i = 0; i < t.n; i++) { const big = t.k === 'big', s = big ? world.random(0.6, 1.1) : world.random(0.22, 0.45); const nm = world.pick(FS[t.k])
+  const o = world.spawn({ type: 'sphere', pos: [t.x, 1.4, t.z], scale: [s * 1.8, s, s * 0.7], color: world.pick(COL) }); if (!o) continue
+  const f = { o, t, a: world.random(0, 6.28), sp: world.random(0.4, 0.9) * (big ? 0.6 : 1), y: world.random(0.9, 3.2), r: world.random(0.4, 1), nm }
+  o.onClick(() => { world.say(f.nm + '（' + ({sea:'海',fresh:'川・湖',reef:'サンゴ礁',big:'大きな魚'})[t.k] + 'のなかま）'); world.sound(880, 0.06) }); F.push(f) } })
+const TU = []; for (let i = 0; i < 4; i++) { const big = i < 2; const o = world.spawn({ type: big ? 'cyl' : 'sphere', pos: [0, 5, -26], scale: big ? [0.5, 2.6, 0.5] : [1.8, 0.2, 1.4], rot: big ? [0, 0, 90] : [0, 0, 0], color: big ? '#64748b' : '#1e293b' }); if (o) { TU.push({ o, a: i * 1.6, nm: big ? 'シュモクザメ' : 'マンタ' }); o.onClick(() => world.say(TU.find(q => q.o === o).nm + 'が頭の上をおよいでいます')) } }
+const J = []; for (let i = 0; i < 10; i++) { const o = world.spawn({ type: 'sphere', pos: [world.random(-12, 12), 2, world.random(-37.6, -34)], scale: [0.6, 0.45, 0.6], color: world.pick(['#f0abfc', '#a5f3fc', '#c4b5fd']), glow: true }); if (o) { J.push({ o, ph: world.random(0, 6) }); o.onClick(() => world.say('クラゲ：ふわふわ光っています')) } }
+const ank = world.spawn({ type: 'sphere', pos: [10, 1, -36], scale: [0.9, 0.7, 0.7], color: '#292524' }); const lamp = world.spawn({ type: 'sphere', pos: [10.6, 1.8, -36], scale: [0.18, 0.18, 0.18], color: '#fef08a', glow: true }); if (ank) ank.onClick(() => world.say('チョウチンアンコウ：頭のちょうちんで、えものをさそいます'))
+let k = 0, tt = 0
+world.on('tick', dt => { tt += dt; k = (k + 1) % 3
+  F.forEach((f, i) => { if (i % 3 !== k) return; f.a += f.sp * dt * 3; const t = f.t; const x = t.x + Math.cos(f.a) * (t.w / 2 - 0.5) * f.r, z = t.z + Math.sin(f.a * 0.7) * (t.d / 2 - 0.6) * f.r; f.o.setPos(x, f.y + Math.sin(tt + i) * 0.2, z); f.o.setRot(0, -f.a * 57.3 % 360 + 90, 0) })
+  TU.forEach((q, i) => { q.a += dt * 0.35; q.o.setPos(Math.sin(q.a) * 3, 4.6 + Math.sin(q.a * 2) * 0.3, -26 + Math.cos(q.a) * 4.2) })
+  if (k === 0) J.forEach((j, i) => { j.ph += dt * 3; const p = j.o.pos; j.o.setPos(p[0], 2 + Math.sin(j.ph + i) * 0.8, p[2]) }) })
+const got = {}; for (let i = 1; i <= 4; i++) { const s = world.get('スタンプ' + i); if (s) s.onTouch(() => { if (got[i]) return; got[i] = 1; const n = Object.keys(got).length; world.sound(660 + n * 110, 0.1); world.say('スタンプ ' + n + ' / 4 ゲット！'); s.setColor('#94a3b8'); if (n === 4) { world.after(0.6, () => { world.say('スタンプラリー完走！おめでとう 🎉'); [523, 659, 784, 1046].forEach((f, j) => world.after(j * 0.12, () => world.sound(f, 0.12))) }); score = 100; best = 100 } }) }
+hudText = () => 'スタンプラリー ' + Object.keys(got).length + ' / 4　さかなをタップして名前を見よう'
+hud()`);
+  return W({sky:'#1e5a85',ground:'#24496e',fog:false,spawn:[0,0,3],objs:o,script,ui:[TX('スコア',2,2,52,7,'さかなをタップして名前を見よう',17)]}); };
+const add=(cat,genre,ja,en,desc,f)=>SWLIST.unshift({cat,genre,ja,en,desc,f});
+add('fun',null,'Home-XR 水族館','Home-XR Aquarium','海・川・サンゴ礁・大きな魚の水そう、頭の上を魚がおよぐ海のトンネル、光るクラゲの深海ゾーン。魚をタップすると名前がわかります。スタンプラリーつき',()=>NW.aqua());
+window.NW6=NW; window.NW6add=add;
+})();
 
 </script>
 </body>
