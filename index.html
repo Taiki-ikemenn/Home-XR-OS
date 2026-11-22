@@ -708,6 +708,8 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .vrBtn{width:56px;height:56px;border-radius:16px;border:0;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center;cursor:pointer;touch-action:none}
 .cnScreen{flex:1;min-height:0;background:#000;border-radius:14px 14px 0 0;overflow:hidden;box-shadow:0 0 80px rgba(255,255,255,.12)}.cnScreen iframe{width:100%;height:100%;border:0}
 .cnBar{display:flex;flex-direction:column;gap:8px;padding:10px 14px;background:linear-gradient(#1c0a0d,#0a0405)}.cnLib{display:flex;gap:8px;overflow-x:auto}.cnV{flex:none;width:150px;border:2px solid transparent;border-radius:10px;padding:0;background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:12px;cursor:pointer;overflow:hidden;text-align:left}.cnV.on{border-color:#ef4444}.cnV img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}.cnV span{display:block;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cnRoom{display:flex;gap:5px;align-items:center;color:#fca5a5}
+.phStamps{position:absolute;left:50%;bottom:196px;transform:translateX(-50%);display:flex;gap:4px;background:rgba(0,0,0,.45);padding:6px;border-radius:999px;z-index:3}.phStamps button{min-width:40px;white-space:nowrap;padding:0 8px;height:40px;border-radius:999px;border:0;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:20px;cursor:pointer}.phStamps button.on{background:#f472b6}
+.phPrev{position:absolute;inset:0;z-index:1}.phPrev i{position:absolute;transform:translate(-50%,-50%);font-style:normal;pointer-events:none}.phFrName{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:rgba(0,0,0,.5);padding:4px 12px;border-radius:999px;font-size:13px;display:flex;gap:5px;align-items:center}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -785,7 +787,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.30';
+const APP_VERSION='5.11.31';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9422,6 +9424,39 @@ add('room',null,'学校（校舎と校庭）','School campus','3階建ての校�
 if(typeof TPL!=='undefined') TPL.unshift('Playground park','Japanese castle','School campus');
 window.NW6=NW; window.NW6add=add;
 })();
+
+/* ================= 記念写真：フレーム・スタンプ・記念写真スポット ================= */
+const PHFR=[['simple','シンプル','Simple'],['polaroid','ポラロイド','Polaroid'],['film','フィルム','Film'],['heart','ハート','Hearts'],['star','キラキラ','Sparkle'],['wa','和風','Japanese'],['spot','記念写真','Memorial'],['none','なし','None']];
+const PHST=['','⭐','💖','🎉','👑','🌸','🐱','🍀','🌈','✌️','😆','🔥'];
+PH.frame='simple'; PH.stamp=''; PH.stamps=[];
+function phDecor(ctx,w,hh){ const f=PH.frame===true?'simple':PH.frame; const wn=(W3.data&&W3.data.name||'').slice(0,24), dt=new Date().toLocaleDateString();
+  const txt=(t,x,y,sz,col,al='left',font='system-ui,sans-serif')=>{ ctx.save(); ctx.fillStyle=col; ctx.font=`bold ${sz}px ${font}`; ctx.textAlign=al; ctx.textBaseline='middle'; ctx.fillText(t,x,y); ctx.restore(); };
+  if(f==='simple'){ const bar=Math.round(hh*.075); ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(0,hh-bar,w,bar); txt('Home XR  ·  '+wn,bar*.4,hh-bar/2,Math.round(bar*.42),'#fff'); txt(dt,w-bar*.4,hh-bar/2,Math.round(bar*.42),'#fff','right'); }
+  else if(f==='polaroid'){ const c=document.createElement('canvas'); c.width=w; c.height=hh; c.getContext('2d').drawImage(ctx.canvas,0,0); const m=Math.round(w*.05), bot=Math.round(hh*.2); ctx.fillStyle='#fafaf9'; ctx.fillRect(0,0,w,hh); ctx.drawImage(c,0,0,w,hh,m,m,w-m*2,hh-m-bot); txt(wn||'Home XR',w/2,hh-bot/2-hh*.02,Math.round(bot*.32),'#334155','center','"Comic Sans MS",cursive,system-ui'); txt(dt,w/2,hh-bot*.18,Math.round(bot*.18),'#94a3b8','center'); }
+  else if(f==='film'){ const b=Math.round(hh*.09); ctx.fillStyle='#111'; ctx.fillRect(0,0,w,b); ctx.fillRect(0,hh-b,w,b); ctx.fillStyle='#f8fafc'; for(let x=b*.3;x<w;x+=b*.7){ ctx.fillRect(x,b*.3,b*.36,b*.4); ctx.fillRect(x,hh-b*.7,b*.36,b*.4); } txt('HOME XR FILM  '+dt,w-b*.4,b*.5,Math.round(b*.3),'#fb923c','right','monospace'); }
+  else if(f==='heart'||f==='star'){ const n=26; for(let i=0;i<n;i++){ const t=i/n, edge=i%4; const x=edge%2?(edge===1?w*.04:w*.96):w*(.05+((i*37)%90)/100), y=edge%2?hh*(.05+((i*53)%90)/100):(edge===0?hh*.05:hh*.95); txt(f==='heart'?(i%3?'💗':'💖'):(i%3?'✨':'⭐'),x,y,Math.round(hh*(.05+((i*7)%5)/100)),'#fff','center'); } ctx.strokeStyle=f==='heart'?'#f472b6':'#facc15'; ctx.lineWidth=hh*.012; ctx.strokeRect(hh*.02,hh*.02,w-hh*.04,hh-hh*.04); txt(wn,w/2,hh*.9,Math.round(hh*.05),'#fff','center'); }
+  else if(f==='wa'){ const b=Math.round(hh*.05); ctx.fillStyle='#7f1d1d'; ctx.fillRect(0,0,w,b); ctx.fillRect(0,hh-b,w,b); ctx.fillRect(0,0,b,hh); ctx.fillRect(w-b,0,b,hh); ctx.strokeStyle='#facc15'; ctx.lineWidth=b*.18; ctx.strokeRect(b*1.2,b*1.2,w-b*2.4,hh-b*2.4); ctx.fillStyle='rgba(255,255,255,.85)'; ctx.fillRect(w-b*4.2,b*1.6,b*2.6,hh*.42); ctx.save(); ctx.fillStyle='#111'; ctx.font=`bold ${Math.round(b*1.4)}px serif`; ctx.textAlign='center'; [...(wn||'思い出').slice(0,8)].forEach((ch,i)=>ctx.fillText(ch,w-b*2.9,b*3.4+i*b*1.6)); ctx.restore(); ctx.fillStyle='#dc2626'; ctx.beginPath(); ctx.arc(b*3,hh-b*3,b*1.3,0,TAU); ctx.fill(); txt('記念',b*3,hh-b*3,Math.round(b*.9),'#fff','center','serif'); }
+  else if(f==='spot'){ const g=ctx.createLinearGradient(0,0,w,0); ['#f43f5e','#f59e0b','#22c55e','#3b82f6','#a855f7'].forEach((c,i)=>g.addColorStop(i/4,c)); const b=Math.round(hh*.035); ctx.fillStyle=g; ctx.fillRect(0,0,w,b); ctx.fillRect(0,hh-b*3.2,w,b*3.2); ctx.fillRect(0,0,b,hh); ctx.fillRect(w-b,0,b,hh); txt('📸 '+(wn||'Home XR')+' 記念写真',w/2,hh-b*1.6,Math.round(b*1.25),'#fff','center'); txt(dt,w-b*1.5,hh-b*1.6,Math.round(b*.8),'#fff','right'); }
+  PH.stamps.forEach(s=>txt(s.e,s.x*w,s.y*hh,Math.round(hh*s.sz),'#fff','center')); }
+// 撮影：わくとスタンプを描く
+phShoot=async function(){ if(!W3.on) return; W3.R.render(W3.scene,W3.cam); const src=W3.R.domElement; const W0=src.width, H0=src.height, s=Math.min(1,1600/Math.max(W0,H0)); const w=Math.round(W0*s), hh=Math.round(H0*s);
+  const c=document.createElement('canvas'); c.width=w; c.height=hh; const ctx=c.getContext('2d'); ctx.drawImage(src,0,0,w,hh); phFilter(ctx,w,hh,PH.filter); phDecor(ctx,w,hh);
+  const url=c.toDataURL('image/jpeg',.88); await phSave({id:Date.now(),at:Date.now(),wname:(W3.data&&W3.data.name||'').slice(0,30),url});
+  const fl=h('div','phFlash'); W3.ov.appendChild(fl); setTimeout(()=>fl.remove(),450); AU.tone(2200,.03,'square',.05); setTimeout(()=>AU.tone(1400,.04,'square',.04),60);
+  const th=W3.ov.querySelector('.phLast'); if(th){ th.style.backgroundImage=`url(${url})`; th.classList.add('pop'); setTimeout(()=>th.classList.remove('pop'),400); } if(typeof ACHS!=='undefined') ACHS.bump('photo'); };
+// 撮影画面に「わく」と「スタンプ」の選択を足す
+const _phMode53=phMode; phMode=function(on){ _phMode53(on); if(!on||!W3.ov) return; const ui=W3.ov.querySelector('.phUI'); if(!ui) return;
+  const fr=ui.querySelector('.phFr'); if(fr) fr.onclick=()=>{ const i=PHFR.findIndex(f=>f[0]===PH.frame); PH.frame=PHFR[(i+1)%PHFR.length][0]; const f=PHFR.find(f=>f[0]===PH.frame); w3Hint(L('わく：','Frame: ')+L(f[1],f[2])); prev(); };
+  const bar=h('div','phStamps'); PHST.forEach(e=>{ const b=h('button',PH.stamp===e?'on':'',e||L('なし','None')); b.onclick=()=>{ PH.stamp=e; bar.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); if(!e){ PH.stamps=[]; prev(); return; } w3Hint(L('画面をタップした場所にスタンプを置きます','Tap the view to place it')); }; bar.appendChild(b); });
+  const clr=h('button','',IC('eraser')); clr.onclick=()=>{ PH.stamps=[]; prev(); }; bar.appendChild(clr); ui.appendChild(bar);
+  const pv=h('div','phPrev'); ui.appendChild(pv); const prev=()=>{ pv.innerHTML=''; const f=PHFR.find(f=>f[0]===PH.frame); pv.appendChild(h('span','phFrName',`${IC('frame')} ${L(f[1],f[2])}`)); PH.stamps.forEach(s=>{ const e=h('i','',s.e); e.style.cssText=`left:${s.x*100}%;top:${s.y*100}%;font-size:${s.sz*100}vh`; pv.appendChild(e); }); };
+  const cv2=W3.ov.querySelector('.w3c'); const place=e=>{ if(!PH.on||!PH.stamp) return; const r=cv2.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height; if(x<0||y<0||x>1||y>1) return; if(PH.stamps.length>=8) PH.stamps.shift(); PH.stamps.push({e:PH.stamp,x,y,sz:.09}); AU.tone(1200,.03,'sine',.04); prev(); };
+  pv.onpointerdown=place; prev(); };
+// 「記念写真」という名前のものをタップすると、じどりモード＋記念写真のわくで撮影画面が開く
+const _se53=w3ScriptEvent; w3ScriptEvent=function(m){ try{ if(m&&m.ev==='click'&&W3.data){ const o=W3.data.objs.find(x=>x.id===m.id); if(o&&/記念写真|photo ?spot/i.test(o.name||'')&&!PH.on){ PH.selfie=true; PH.frame='spot'; phMode(true); w3Hint(L('記念写真スポット！じどりで撮ってみよう','Photo spot! Take a selfie')); } } }catch(e){} return _se53(m); };
+// 新しいワールドに記念写真スポットを置く
+(function(){ const add=(ja,p)=>{ const s=SWLIST.find(x=>x.ja===ja); if(!s) return; const f0=s.f; s.f=()=>{ const d=f0(); d.objs.push({id:'phs1',t:'panel',p,r:[0,0,0],s:[2.4,2.4,1],c:'#f472b6',solid:1,name:'記念写真',glow:1},{id:'phs2',t:'text',p:[p[0],p[1]+1.7,p[2]],r:[0,0,0],s:[3,1,1],c:'#ffffff',txt:'📸 記念写真スポット',solid:0,op:{billboard:1}}); return d; }; };
+  add('Home-XR 水族館',[-4,1.4,2]); add('Home-XR 夏祭り',[4,1.4,1]); add('日本のお城',[6,1.4,8]); add('公園（遊具つき）',[-5,1.4,6]); add('プラネタリウム',[-3,1.4,7]); add('雪合戦',[-6,1.4,8]); })();
 
 </script>
 </body>
