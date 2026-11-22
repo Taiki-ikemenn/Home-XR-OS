@@ -634,6 +634,12 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 #errPill,#errList,#rescue{transform:translateZ(100000px)}#errList,#rescue{transform:translateX(-50%) translateZ(100000px)}
 .dtCv{height:min(60vh,580px);width:auto;border-radius:50%;touch-action:none;cursor:none}
 .jgCv{height:min(54vh,560px);width:auto;max-width:96%;border-radius:14px;touch-action:none}.jgSrc{display:flex;gap:4px}.jgT{padding:2px;border:2px solid transparent;border-radius:10px;background:none;cursor:pointer}.jgT.on{border-color:#38bdf8}.jgT img,.jgT canvas{width:44px;height:44px;object-fit:cover;border-radius:7px;display:block}
+.sgWrap{display:flex;gap:14px;align-items:stretch;position:relative}.sgBoard{display:grid;grid-template-columns:repeat(9,1fr);width:min(500px,58vh);aspect-ratio:9/9.6;background:linear-gradient(135deg,#f3d08a,#d9a75a);padding:6px;border-radius:8px;gap:0;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.sgC{border:0;border-right:1px solid rgba(80,40,0,.55);border-bottom:1px solid rgba(80,40,0,.55);background:none;padding:0;display:grid;place-items:center;cursor:pointer;position:relative}.sgC:nth-child(9n+1){border-left:1px solid rgba(80,40,0,.55)}.sgC:nth-child(-n+9){border-top:1px solid rgba(80,40,0,.55)}
+.sgC.last{background:rgba(234,88,12,.25)}.sgC.sel{background:rgba(59,130,246,.35)}.sgC.opt::after{content:'';position:absolute;width:26%;height:26%;border-radius:50%;background:rgba(37,99,235,.55)}.sgC.chk{background:rgba(239,68,68,.45)}
+.sgP{display:grid;place-items:center;width:84%;height:88%;background:linear-gradient(#fbe3b0,#e8c27e);clip-path:polygon(50% 0,88% 18%,100% 100%,0 100%,12% 18%);color:#1c1917;font:900 clamp(14px,2.6vh,24px)/1 serif;padding-top:12%}.sgP.g{transform:rotate(180deg)}.sgP.pr{color:#b91c1c}
+.sgHand{display:flex;flex-direction:column;gap:4px;width:70px;align-items:center;justify-content:flex-start}.sgHand.s{justify-content:flex-end}.sgHand small{opacity:.7;font-size:12px}.sgHB{position:relative;width:52px;height:56px;border:2px solid transparent;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;cursor:pointer}.sgHB.sel{border-color:#3b82f6}.sgHB em{position:absolute;right:2px;bottom:0;font-style:normal;font-weight:900;font-size:13px}
+.sgAsk{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#1e293b;padding:16px 20px;border-radius:16px;display:flex;gap:10px;align-items:center;box-shadow:0 10px 40px rgba(0,0,0,.6);z-index:2}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -711,7 +717,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.1';
+const APP_VERSION='5.11.2';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -8290,6 +8296,63 @@ regApp('jigsaw',{name:'ジグソーパズル',en:'Jigsaw',g:'puzzle',bg:G1+'#38b
     if(done){ x.fillStyle='rgba(0,0,0,.5)'; x.fillRect(BX,BY+S/2-40,S,80); x.fillStyle='#fff'; x.font='900 40px system-ui'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(L('完成！','Complete!')+' '+fmtT(Math.floor(done)),BX+S/2,BY+S/2); } });
   pick(src); }});
 INST6('jigsaw');
+// ---------- 将棋 ----------
+const SG={ KJ:{K:['王','玉'],R:['飛','龍'],B:['角','馬'],G:['金','金'],S:['銀','全'],N:['桂','圭'],L:['香','杏'],P:['歩','と']}, V:{P:1,L:3,N:4,S:5,G:6,B:8,R:10,K:0}, PV:{P:6,L:6,N:6,S:6,B:11,R:13},
+  init(){ const b=Array(81).fill(null), back='LNSGKGSNL'; for(let c=0;c<9;c++){ b[c]={t:back[c],s:-1,p:0}; b[72+c]={t:back[c],s:1,p:0}; b[18+c]={t:'P',s:-1,p:0}; b[54+c]={t:'P',s:1,p:0}; }
+    b[10]={t:'B',s:-1,p:0}; b[16]={t:'R',s:-1,p:0}; b[64]={t:'B',s:1,p:0}; b[70]={t:'R',s:1,p:0}; return {b,h:{'1':{},'-1':{}},turn:1}; },
+  clone(st){ return {b:st.b.map(x=>x&&{...x}),h:{'1':{...st.h['1']},'-1':{...st.h['-1']}},turn:st.turn}; },
+  gold(f){ return [[f,-1],[f,0],[f,1],[0,-1],[0,1],[-f,0]]; },
+  // 動ける場所（王手の確認はしない）
+  pmoves(st,s,out=[]){ const b=st.b, f=-s;
+    for(let i=0;i<81;i++){ const q=b[i]; if(!q||q.s!==s) continue; const r=Math.floor(i/9), c=i%9;
+      const add=(rr,cc)=>{ if(rr<0||rr>8||cc<0||cc>8) return false; const j=rr*9+cc, t=b[j]; if(t&&t.s===s) return false; SG.pushMove(out,q,i,j,s); return !t; };
+      const steps=d=>d.forEach(([dr,dc])=>add(r+dr,c+dc)), slide=d=>d.forEach(([dr,dc])=>{ let rr=r+dr, cc=c+dc; while(add(rr,cc)){ rr+=dr; cc+=dc; } });
+      const T=q.t, P=q.p; const ORT=[[1,0],[-1,0],[0,1],[0,-1]], DIA=[[1,1],[1,-1],[-1,1],[-1,-1]];
+      if(T==='K') steps([...ORT,...DIA]); else if(T==='R'){ slide(ORT); if(P) steps(DIA); } else if(T==='B'){ slide(DIA); if(P) steps(ORT); }
+      else if(T==='G'||P) steps(SG.gold(f)); else if(T==='S') steps([[f,-1],[f,0],[f,1],[-f,-1],[-f,1]]); else if(T==='N') steps([[2*f,-1],[2*f,1]]); else if(T==='L') slide([[f,0]]); else if(T==='P') steps([[f,0]]); }
+    const hd=st.h[s]; for(const t in hd){ if(!hd[t]) continue; for(let j=0;j<81;j++){ if(b[j]) continue; const r=Math.floor(j/9), rel=s===1?r:8-r;
+        if((t==='P'||t==='L')&&rel===0) continue; if(t==='N'&&rel<2) continue; if(t==='P'){ let dup=false; for(let rr=0;rr<9;rr++){ const q=b[rr*9+j%9]; if(q&&q.s===s&&q.t==='P'&&!q.p){ dup=true; break; } } if(dup) continue; }
+        out.push({d:t,to:j}); } } return out; },
+  pushMove(out,q,i,j,s){ const ri=Math.floor(i/9), rj=Math.floor(j/9), zone=r=>s===1?r<=2:r>=6, rel=s===1?rj:8-rj;
+    const canP=!q.p&&q.t!=='K'&&q.t!=='G'&&(zone(ri)||zone(rj)); const must=canP&&(((q.t==='P'||q.t==='L')&&rel===0)||(q.t==='N'&&rel<=1));
+    if(canP) out.push({fr:i,to:j,pr:1}); if(!must) out.push({fr:i,to:j,pr:0}); },
+  play(st,m){ const s=st.turn; if(m.d){ st.b[m.to]={t:m.d,s,p:0}; st.h[s][m.d]--; } else { const q=st.b[m.fr], cap=st.b[m.to]; if(cap){ if(cap.t==='K') st.kcap=s; st.h[s][cap.t]=(st.h[s][cap.t]||0)+1; } st.b[m.to]={t:q.t,s,p:q.p||m.pr}; st.b[m.fr]=null; } st.turn=-s; return st; },
+  kingAt(st,s){ return st.b.findIndex(q=>q&&q.t==='K'&&q.s===s); },
+  attacked(st,sq,by){ const save=st.h[by]; st.h[by]={}; const ms=SG.pmoves(st,by); st.h[by]=save; return ms.some(m=>m.to===sq); },
+  inCheck(st,s){ return SG.attacked(st,SG.kingAt(st,s),-s); },
+  legal(st){ const s=st.turn; return SG.pmoves(st,s).filter(m=>{ const n=SG.play(SG.clone(st),m); if(SG.inCheck(n,s)) return false;
+      if(m.d==='P'){ const ok=n.b[m.to+(s===1?-9:9)]; if(ok&&ok.t==='K'&&ok.s===-s&&SG.legal(n).length===0) return false; } return true; }); },
+  evalS(st){ let v=0; for(let i=0;i<81;i++){ const q=st.b[i]; if(!q||q.t==='K') continue; v+=q.s*(q.p?SG.PV[q.t]:SG.V[q.t]); const r=Math.floor(i/9); if(q.t==='P'&&!q.p) v+=q.s*.04*(q.s===1?8-r:r); }
+    for(const s of [1,-1]) for(const t in st.h[s]) v+=s*st.h[s][t]*SG.V[t]*1.12; return v; },
+  search(st,d,a,bt){ if(st.kcap) return st.kcap*st.turn*-1e5*-1*(st.kcap===st.turn?1:-1)*0+ (st.kcap===st.turn?1e5:-1e5); if(d===0) return st.turn*SG.evalS(st);
+    const ms=SG.pmoves(st,st.turn); ms.sort((x,y)=>(st.b[y.to]?SG.V[st.b[y.to].t]||20:0)-(st.b[x.to]?SG.V[st.b[x.to].t]||20:0)+(y.pr||0)-(x.pr||0));
+    let best=-1e9; for(const m of ms){ const v=-SG.search(SG.play(SG.clone(st),m),d-1,-bt,-a); if(v>best) best=v; if(v>a) a=v; if(a>=bt) break; } return ms.length?best:-1e5; },
+  cpu(st,lv){ const ms=SG.legal(st); if(!ms.length) return null; const D={easy:1,normal:2,hard:3}[lv]; let best=-1e9, bm=ms[0];
+    ms.sort((x,y)=>(st.b[y.to]?1:0)-(st.b[x.to]?1:0)); for(const m of ms){ const v=-SG.search(SG.play(SG.clone(st),m),D-1,-1e9,1e9)+Math.random()*(lv==='easy'?2.5:.3); if(v>best){ best=v; bm=m; } } return bm; } };
+regApp('shogi',{name:'将棋',en:'Shogi',g:'crown',bg:G1+'#e2b26b,#7c2d12)',cat:'game',w:1000,h:720,desc:'本物のルールの将棋。持ち駒・成り・二歩・打ち歩詰めにも対応。CPU（3段階）か、ふたりで対戦できます。',den:'Full-rule shogi vs CPU or 2 players.',
+ impl(body){ body.classList.add('gmBody'); let lv=LOAD('sg6','normal'), st, sel=null, opts=[], hist=[], last=null, over=null, think=false;
+  const top=h('div'), wrap=h('div','sgWrap'), ctl=h('div','gmCtl'); const hG=h('div','sgHand g'), bd=h('div','sgBoard'), hS=h('div','sgHand s'); wrap.append(hG,bd,hS); body.append(top,wrap,ctl);
+  const reset=()=>{ st=SG.init(); sel=null; opts=[]; hist=[]; last=null; over=null; think=false; draw(); };
+  const doMove=m=>{ hist.push(SG.clone(st)); const s=st.turn; SG.play(st,m); last=m.to; sel=null; opts=[]; AU.tone(m.d?520:420,.05,'triangle',.07);
+    const L2=SG.legal(st); if(!L2.length){ over=s; if(s===1&&lv!=='2p') gWin('shogi',{easy:50,normal:100,hard:200}[lv]); [523,659,784,1046].forEach((f,i)=>setTimeout(()=>AU.tone(f,.12,'triangle',.08),i*100)); }
+    else if(SG.inCheck(st,st.turn)){ toastW(L('王手！','Check!')); AU.tone(880,.15,'square',.05); } draw(); if(!over&&lv!=='2p'&&st.turn===-1) cpuMove(); };
+  const cpuMove=()=>{ think=true; draw(); setTimeout(()=>{ if(!body.isConnected) return; const m=SG.cpu(st,lv); think=false; if(m) doMove(m); else draw(); },60); };
+  const ask=(cands)=>{ const d=h('div','sgAsk'); d.append(h('b','',L('成りますか？','Promote?')),btn(L('成る','Promote'),()=>{ d.remove(); doMove(cands.find(m=>m.pr)); },'pri'),btn(L('成らない','Keep'),()=>{ d.remove(); doMove(cands.find(m=>!m.pr)); })); wrap.appendChild(d); };
+  const click=i=>{ if(over||think||(lv!=='2p'&&st.turn!==1)) return; const q=st.b[i];
+    const cands=opts.filter(m=>m.to===i); if(sel!=null&&cands.length){ if(cands.length>1) ask(cands); else doMove(cands[0]); return; }
+    if(q&&q.s===st.turn){ sel=i; opts=SG.legal(st).filter(m=>m.fr===i); AU.tone(600,.02,'sine',.03); } else { sel=null; opts=[]; } draw(); };
+  const clickHand=(s,t)=>{ if(over||think||s!==st.turn||(lv!=='2p'&&s!==1)) return; sel='d'+t; opts=SG.legal(st).filter(m=>m.d===t); draw(); };
+  const pc=(q)=>{ const e=h('span','sgP'+(q.s===-1?' g':'')+(q.p?' pr':''),SG.KJ[q.t][q.p?1:(q.t==='K'&&q.s===-1?1:0)]); return e; };
+  const hand=(el,s)=>{ el.innerHTML=''; el.appendChild(h('small','',s===1?(lv==='2p'?L('先手（下）','Sente'):L('あなた','You')):(lv==='2p'?L('後手（上）','Gote'):'CPU'))); const hd=st.h[s];
+    ['R','B','G','S','N','L','P'].forEach(t=>{ if(!hd[t]) return; const b=h('button','sgHB'+(sel==='d'+t&&st.turn===s?' sel':'')); b.appendChild(pc({t,s,p:0})); if(hd[t]>1) b.appendChild(h('em','',hd[t])); b.onclick=()=>clickHand(s,t); el.appendChild(b); }); };
+  const draw=()=>{ bd.innerHTML=''; const chk=!over&&SG.inCheck(st,st.turn)?SG.kingAt(st,st.turn):-1;
+    for(let i=0;i<81;i++){ const c=h('button','sgC'+(i===sel?' sel':'')+(i===last?' last':'')+(opts.some(m=>m.to===i)?' opt':'')+(i===chk?' chk':'')); if(st.b[i]) c.appendChild(pc(st.b[i])); c.onclick=()=>click(i); bd.appendChild(c); }
+    hand(hG,-1); hand(hS,1);
+    top.innerHTML=gTop([['',over?(over===1?(lv==='2p'?L('先手の勝ち！','Sente wins!'):L('あなたの勝ち！','You win!')):(lv==='2p'?L('後手の勝ち！','Gote wins!'):L('CPUの勝ち','CPU wins'))):think?L('CPUが考え中…','CPU thinking…'):(lv!=='2p'?(st.turn===1?L('あなたの番','Your turn'):L('CPUの番','CPU turn')):(st.turn===1?L('先手（下）の番','Sente to move'):L('後手（上）の番','Gote to move')))],[L('手数','Moves'),hist.length]]);
+    ctl.innerHTML=''; ctl.append(gSeg([['easy','やさしい','Easy'],['normal','ふつう','Normal'],['hard','つよい','Hard'],['2p','ふたりで','2 players']],lv,k=>{ lv=k; SAVE('sg6',k); reset(); }),
+      btn(IC('undo-2')+L('待った','Undo'),()=>{ if(think||!hist.length) return; st=hist.pop(); if(lv!=='2p'&&st.turn===-1&&hist.length) st=hist.pop(); over=null; sel=null; opts=[]; last=null; draw(); }),btn(IC('rotate-ccw')+L('はじめから','Restart'),reset,'pri')); };
+  reset(); }});
+INST6('shogi');
 
 </script>
 </body>
