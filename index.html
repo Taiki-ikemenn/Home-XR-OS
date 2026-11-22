@@ -751,6 +751,7 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .bpB{display:block;text-align:left;border:0;border-radius:10px 10px 10px 4px;padding:8px 12px;background:var(--c);color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.25);position:relative}.bpB u{text-decoration:none;background:#fff;color:#111;border-radius:999px;padding:0 8px;margin:0 2px;font-weight:800}.bpB.sel{outline:3px solid #fff}.bpB.run{filter:brightness(1.35);box-shadow:0 0 0 3px #facc15}.bpB.end{opacity:.75;font-size:12px;padding:4px 12px}
 .bpScript{flex:1;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}.bpHead{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.bpList{flex:1;overflow:auto;display:flex;flex-direction:column;gap:4px;padding:4px}.bpHat{align-self:flex-start;background:#eab308;color:#111;font-weight:800;padding:8px 14px;border-radius:16px 16px 8px 8px;display:flex;gap:6px;align-items:center;cursor:pointer}.bpTools{display:flex;gap:6px;flex-wrap:wrap}
 .bpRight{width:500px;padding:10px;display:flex;flex-direction:column;gap:8px;border-left:1px solid var(--line)}.bpStage{width:480px;height:360px;border-radius:12px}.bpCtl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msStage{position:relative;width:min(900px,96%);height:min(52vh,500px);border-radius:16px;overflow:hidden;background:#111}.msStage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.msOv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -828,7 +829,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.41';
+const APP_VERSION='5.11.42';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9794,6 +9795,33 @@ regApp('blockcode',{name:'プログラミング',en:'Block Coding',g:'blocks',bg
   const drawCtl=()=>{ rc.innerHTML=''; rc.append(btn(IC(running?'square':'play')+(running?L('止める','Stop'):L('スタート','Run')),run,running?'danger':'pri'),btn(IC('rotate-ccw')+L('リセット','Reset'),()=>{ if(!running) reset(); }),h('small','sub',L('▶で上から順番に動きます。「くりかえす」は「おわり」までをくりかえします。下線の数字や文字はタップで変えられます','Runs top to bottom. Tap underlined values to edit'))); };
   drawPal(); drawMid(); drawCtl(); }});
 INST6('blockcode');
+// ---------- 巻き尺（AR） ----------
+regApp('measure',{name:'巻き尺',en:'Measure',g:'ruler',bg:G1+'#facc15,#a16207)',cat:'tool',w:980,h:720,desc:'カメラで長さをはかります。「くらべて測る」は、長さがわかる物（お札・カード・A4の紙など）を基準にして、同じ平面の長さをはかります。「床までの距離」は、ジャイロで床の点までの距離をはかります。どちらも目安です。',den:'Estimate lengths with the camera (reference object or gyro distance).',
+ impl(body,w){ body.classList.add('gmBody'); let mode=LOAD('ms6m','ref'), stream=null, ref=LOAD('ms6ref',[8.56,'カード（横）']), pts=[], scale=null, eye=LOAD('ms6eye',120), gy={b:null}, frozen=false, hist=[];
+  const REFS=[[8.56,'カード（横）'],[15,'1000円札（横）'],[16,'1万円札（横）'],[29.7,'A4（長い辺）'],[21,'A4（短い辺）'],[2.65,'500円玉'],[30,'30cmものさし']];
+  const top=h('div'), stage=h('div','msStage'), v=document.createElement('video'), cvs=document.createElement('canvas'), ctl=h('div','gmCtl'); v.playsInline=true; v.muted=true; cvs.className='msOv'; stage.append(v,cvs); body.append(top,stage,ctl); const x=cvs.getContext('2d');
+  const stop=()=>{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } removeEventListener('deviceorientation',onG); }; onCloseAdd(w,stop);
+  const onG=e=>{ if(e.beta!=null) gy.b=e.beta; };
+  (async()=>{ try{ stream=await openCam('environment'); v.srcObject=stream; await v.play(); }catch(e){ toastW(L('カメラが使えませんでした','Camera unavailable')); } })();
+  const gyOn=async()=>{ try{ if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){ const r=await DeviceOrientationEvent.requestPermission(); if(r!=='granted') return; } }catch(e){} addEventListener('deviceorientation',onG); };
+  const pos=e=>{ const r=cvs.getBoundingClientRect(); return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]; };
+  const tap=(nx,ny)=>{ if(mode!=='ref') return; if(pts.length>=4) pts=[]; pts.push([nx,ny]); AU.tone(900,.04,'sine',.05); if(pts.length===2){ toastW(L(`基準（${ref[1]}）の両はしをタップしました。次に、はかりたい物の両はしをタップ`,'Reference set. Now tap the two ends to measure')); } if(pts.length===4){ const d=(a,b)=>Math.hypot((a[0]-b[0])*cvs.width,(a[1]-b[1])*cvs.height); const cm=d(pts[2],pts[3])/d(pts[0],pts[1])*ref[0]; hist.unshift(cm); hist=hist.slice(0,5); AU.tone(1318,.1,'triangle',.07); } draw(); };
+  cvs.onpointerdown=e=>tap(...pos(e)); cvs.dataset.canvas=''; cvs._xr={down:tap,move:()=>{},up:()=>{}};
+  const resize=()=>{ const r=stage.getBoundingClientRect(); cvs.width=r.width; cvs.height=r.height; };
+  loopOn(body,()=>{ if(cvs.width!==Math.round(stage.clientWidth)) resize(); const W=cvs.width, H=cvs.height; x.clearRect(0,0,W,H);
+    if(mode==='ref'){ const P=pts.map(([a,b])=>[a*W,b*H]); const seg=(a,b,col,lab)=>{ x.strokeStyle=col; x.lineWidth=4; x.setLineDash([]); x.beginPath(); x.moveTo(...a); x.lineTo(...b); x.stroke(); [a,b].forEach(p=>{ x.fillStyle=col; x.beginPath(); x.arc(p[0],p[1],9,0,TAU); x.fill(); x.strokeStyle='#fff'; x.lineWidth=2; x.stroke(); });
+        if(lab){ const mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2; x.font='bold 22px system-ui'; const tw=x.measureText(lab).width+20; x.fillStyle='rgba(0,0,0,.7)'; x.beginPath(); x.roundRect(mx-tw/2,my-40,tw,32,12); x.fill(); x.fillStyle='#fff'; x.textAlign='center'; x.fillText(lab,mx,my-17); } };
+      if(P[0]) { if(P[1]) seg(P[0],P[1],'#38bdf8',`${L('基準','Ref')} ${ref[0]}cm`); else { x.fillStyle='#38bdf8'; x.beginPath(); x.arc(...P[0],9,0,TAU); x.fill(); } }
+      if(P[2]) { if(P[3]) seg(P[2],P[3],'#facc15',`${hist[0].toFixed(1)} cm`); else { x.fillStyle='#facc15'; x.beginPath(); x.arc(...P[2],9,0,TAU); x.fill(); } } }
+    else { x.strokeStyle='#facc15'; x.lineWidth=3; x.beginPath(); x.arc(W/2,H/2,26,0,TAU); x.moveTo(W/2-40,H/2); x.lineTo(W/2+40,H/2); x.moveTo(W/2,H/2-40); x.lineTo(W/2,H/2+40); x.stroke();
+      let txt=L('ジャイロを使うボタンを押してください','Tap "Use gyro"'); if(gy.b!=null){ const tilt=(90-gy.b)*Math.PI/180; if(tilt>.05&&tilt<1.45){ const dcm=eye*Math.tan(Math.PI/2-tilt); txt=L(`床の点まで 約 ${(dcm/100).toFixed(2)} m`,`About ${(dcm/100).toFixed(2)} m to the floor point`); } else txt=L('もっと下（床）に向けてください','Aim lower at the floor'); }
+      x.font='bold 26px system-ui'; const tw=x.measureText(txt).width+28; x.fillStyle='rgba(0,0,0,.7)'; x.beginPath(); x.roundRect(W/2-tw/2,H/2+60,tw,44,14); x.fill(); x.fillStyle='#fde68a'; x.textAlign='center'; x.fillText(txt,W/2,H/2+90); } });
+  const draw=()=>{ top.innerHTML=gTop(mode==='ref'?[[L('基準','Reference'),`${ref[1]} ${ref[0]}cm`],[L('はかった長さ','Measured'),hist[0]?hist[0].toFixed(1)+'cm':'—'],[L('前の記録','History'),hist.slice(1,4).map(v=>v.toFixed(1)).join(' / ')||'—']]:[[L('目の高さ（端末の高さ）','Device height'),eye+'cm']]);
+    ctl.innerHTML=''; ctl.append(gSeg([['ref','くらべて測る','By reference'],['floor','床までの距離','Floor distance']],mode,k=>{ mode=k; SAVE('ms6m',k); pts=[]; draw(); }));
+    if(mode==='ref'){ const s=h('div','seg'); REFS.forEach(r=>{ const b=h('button',r[1]===ref[1]?'on':'',`${r[1]}`); b.onclick=()=>{ ref=r; SAVE('ms6ref',r); pts=[]; draw(); }; s.appendChild(b); }); ctl.append(s,btn(IC('rotate-ccw')+L('やり直す','Reset'),()=>{ pts=[]; draw(); }),h('span','sub',L('① 基準の物の両はし → ② はかりたい物の両はし の順にタップ。同じ平面・同じ距離にある物だけ正しくはかれます','Tap the reference ends, then the target ends (same plane)'))); }
+    else ctl.append(btn('−',()=>{ eye=Math.max(30,eye-5); SAVE('ms6eye',eye); draw(); }),h('b','',`${eye}cm`),btn('＋',()=>{ eye=Math.min(200,eye+5); SAVE('ms6eye',eye); draw(); }),btn(IC('smartphone')+L('ジャイロを使う','Use gyro'),gyOn,'pri'),h('span','sub',L('端末の床からの高さを合わせて、真ん中の印を床の点に向けます','Set the device height and aim at a floor point'))); };
+  draw(); }});
+INST6('measure');
 
 </script>
 </body>
