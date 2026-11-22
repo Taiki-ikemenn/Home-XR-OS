@@ -640,6 +640,13 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .sgP{display:grid;place-items:center;width:84%;height:88%;background:linear-gradient(#fbe3b0,#e8c27e);clip-path:polygon(50% 0,88% 18%,100% 100%,0 100%,12% 18%);color:#1c1917;font:900 clamp(14px,2.6vh,24px)/1 serif;padding-top:12%}.sgP.g{transform:rotate(180deg)}.sgP.pr{color:#b91c1c}
 .sgHand{display:flex;flex-direction:column;gap:4px;width:70px;align-items:center;justify-content:flex-start}.sgHand.s{justify-content:flex-end}.sgHand small{opacity:.7;font-size:12px}.sgHB{position:relative;width:52px;height:56px;border:2px solid transparent;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;cursor:pointer}.sgHB.sel{border-color:#3b82f6}.sgHB em{position:absolute;right:2px;bottom:0;font-style:normal;font-weight:900;font-size:13px}
 .sgAsk{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#1e293b;padding:16px 20px;border-radius:16px;display:flex;gap:10px;align-items:center;box-shadow:0 10px 40px rgba(0,0,0,.6);z-index:2}
+.tTable{width:min(920px,96%);min-height:420px;background:radial-gradient(ellipse at center,#166534,#14532d);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;box-shadow:inset 0 0 40px rgba(0,0,0,.4)}
+.tcard{width:58px;height:84px;border-radius:8px;background:#fff;color:#111;position:relative;box-shadow:0 2px 6px rgba(0,0,0,.4);flex:none;transition:transform .15s}.tcard b{position:absolute;left:5px;top:4px;font-size:14px;line-height:1.05;text-align:center}.tcard i{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:30px}.tcard.red{color:#dc2626}
+.tcard.back{background:repeating-linear-gradient(45deg,#1d4ed8 0 6px,#2563eb 6px 12px);border:3px solid #fff}.tcard.sm{width:44px;height:64px}.tcard.sm b{font-size:11px}.tcard.sm i{font-size:22px}.tcard.big{width:84px;height:120px}.tcard.big b{font-size:18px}.tcard.big i{font-size:44px}
+.tcard.pick{cursor:pointer}.tcard.pick:hover{transform:translateY(-6px)}.tcard.new{box-shadow:0 0 0 3px #facc15}.tcard.sel{transform:translateY(-12px);box-shadow:0 0 0 3px #38bdf8}.tcard.tgt{box-shadow:0 0 0 4px #38bdf8;cursor:pointer}.tcard.ng{animation:gshake .25s}.tcard.gone{background:rgba(255,255,255,.05);box-shadow:none}.tcard.gone.me{background:rgba(56,189,248,.25)}.tcard.gone.cpu{background:rgba(244,63,94,.25)}
+.tbRow{display:flex;gap:12px;justify-content:center;width:100%}.tbSeat{flex:1;background:rgba(0,0,0,.18);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;align-items:center;border:2px solid transparent}.tbSeat.on{border-color:#facc15}.tbSeat.tgt{border-color:#38bdf8}.tbSeat b{font-size:13px}.tbSeat.me{width:100%}
+.tFan{display:flex;justify-content:center;flex-wrap:wrap}.tFan .tcard{margin-left:-24px}.tFan .tcard:first-child{margin-left:0}.tFan.big .tcard{margin-left:-14px}.tFan.big .tcard:first-child{margin-left:0}
+.tMem{display:grid;gap:6px}.spRow{display:flex;gap:10px;align-items:center}.spRow small{width:110px;opacity:.85}.spMid{display:flex;gap:30px;margin:6px 0}@keyframes gshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -717,7 +724,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.2';
+const APP_VERSION='5.11.3';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -8353,6 +8360,62 @@ regApp('shogi',{name:'将棋',en:'Shogi',g:'crown',bg:G1+'#e2b26b,#7c2d12)',cat:
       btn(IC('undo-2')+L('待った','Undo'),()=>{ if(think||!hist.length) return; st=hist.pop(); if(lv!=='2p'&&st.turn===-1&&hist.length) st=hist.pop(); over=null; sel=null; opts=[]; last=null; draw(); }),btn(IC('rotate-ccw')+L('はじめから','Restart'),reset,'pri')); };
   reset(); }});
 INST6('shogi');
+// ---------- トランプ（ババ抜き・神経衰弱・スピード） ----------
+const CARD={ S:['♠','♥','♦','♣'], R:['','A','2','3','4','5','6','7','8','9','10','J','Q','K'],
+  deck(j){ const d=[]; for(let s=0;s<4;s++) for(let r=1;r<=13;r++) d.push({s,r}); if(j) d.push({s:4,r:0}); return d.sort(()=>Math.random()-.5); },
+  el(c,up=true,cls=''){ const e=h('div','tcard '+cls+(up?'':' back')+(up&&(c.s===1||c.s===2)?' red':'')); if(up){ if(c.s===4) e.innerHTML='<b>JOKER</b><i>🃏</i>'; else e.innerHTML=`<b>${CARD.R[c.r]}<br>${CARD.S[c.s]}</b><i>${CARD.S[c.s]}</i>`; } return e; } };
+regApp('cards',{name:'トランプ',en:'Cards',g:'spade',bg:G1+'#22c55e,#14532d)',cat:'game',w:1000,h:720,desc:'ババ抜き（CPU3人と）・神経衰弱（CPUと対戦）・スピード（CPUと早出し）が遊べます。',den:'Old Maid, Concentration and Speed vs CPU.',
+ impl(body){ body.classList.add('gmBody'); let game=LOAD('cd6','baba'), stopFn=null; const top=h('div'), tb=h('div','tTable'), ctl=h('div','gmCtl'); body.append(top,tb,ctl);
+  const sel=()=>{ ctl.innerHTML=''; ctl.append(gSeg([['baba','ババ抜き','Old Maid'],['mem','神経衰弱','Concentration'],['speed','スピード','Speed']],game,k=>{ game=k; SAVE('cd6',k); start(); }),btn(IC('rotate-ccw')+L('はじめから','Restart'),start,'pri')); };
+  const start=()=>{ if(stopFn) stopFn(); stopFn=null; tb.innerHTML=''; sel(); ({baba,mem,speed})[game](); };
+  const say=t=>{ top.innerHTML=gTop([['',t]]); };
+  // ババ抜き
+  const baba=()=>{ const N=['あなた','CPU 1','CPU 2','CPU 3'], hands=[[],[],[],[]]; CARD.deck(true).forEach((c,i)=>hands[i%4].push(c)); let turn=0, done=[], busy=false, picked=null;
+    const pairs=hd=>{ const out=[]; const by={}; hd.forEach(c=>{ if(c.s===4){ out.push(c); return; } (by[c.r]=by[c.r]||[]).push(c); }); for(const r in by){ const l=by[r]; while(l.length>=2) l.splice(0,2); out.push(...l); } return out.sort(()=>Math.random()-.5); };
+    for(let i=0;i<4;i++) hands[i]=pairs(hands[i]); hands[0].sort((a,b)=>a.r-b.r);
+    const next=i=>{ let j=(i+1)%4; while(hands[j].length===0&&j!==i) j=(j+1)%4; return j; };
+    const finish=i=>{ if(!hands[i].length&&!done.includes(i)){ done.push(i); toastW(L(`${N[i]} あがり！（${done.length}位）`,`${N[i]} out (#${done.length})`)); if(i===0) gWin('cards',[0,100,60,30][done.length]||10); } };
+    const draw=()=>{ tb.innerHTML=''; const alive=[0,1,2,3].filter(i=>hands[i].length); if(alive.length<=1){ const loser=alive[0]; say(loser===0?L('あなたがババを持っていました…','You got the Joker…'):L(`${N[loser]}の負け！ あなたは${done.indexOf(0)+1}位`,`${N[loser]} loses! You: #${done.indexOf(0)+1}`)); }
+      else say(turn===0?L(`あなたの番：${N[next(0)]}からカードを1枚引きます`,`Your turn: draw from ${N[next(0)]}`):L(`${N[turn]}の番…`,`${N[turn]}'s turn…`));
+      const row=h('div','tbRow'); [1,2,3].forEach(i=>{ const z=h('div','tbSeat'+(turn===i?' on':'')+(next(0)===i&&turn===0&&alive.length>1?' tgt':'')); z.appendChild(h('b','',`${N[i]}${done.includes(i)?' 🏁':''} (${hands[i].length})`)); const fan=h('div','tFan');
+        hands[i].forEach((c,k)=>{ const e=CARD.el(c,false,'sm'); if(turn===0&&next(0)===i&&!busy){ e.classList.add('pick'); e.onclick=()=>take(0,i,k); } fan.appendChild(e); }); z.appendChild(fan); row.appendChild(z); }); tb.appendChild(row);
+      const me=h('div','tbSeat me'+(turn===0?' on':'')); me.appendChild(h('b','',L(`あなた (${hands[0].length})`,`You (${hands[0].length})`)+(done.includes(0)?' 🏁':''))); const f2=h('div','tFan big'); hands[0].forEach(c=>{ const e=CARD.el(c,true); if(picked===c) e.classList.add('new'); f2.appendChild(e); }); me.appendChild(f2); tb.appendChild(me); };
+    const take=(i,from,k)=>{ if(busy) return; const c=hands[from].splice(k,1)[0]; const had=hands[i].findIndex(x=>x.s!==4&&c.s!==4&&x.r===c.r); AU.tone(500,.04,'sine',.05);
+      if(had>=0){ hands[i].splice(had,1); if(i===0) toastW(L(`${CARD.R[c.r]}がそろった！`,`Pair of ${CARD.R[c.r]}!`)); AU.tone(880,.06,'triangle',.06); } else { hands[i].push(c); if(i===0){ picked=c; if(c.s===4) toastW(L('ババを引いた…！','You drew the Joker!')); } }
+      if(i===0) hands[0].sort((a,b)=>a.r-b.r); else hands[i].sort(()=>Math.random()-.5); finish(from); finish(i);
+      const alive=[0,1,2,3].filter(q=>hands[q].length); if(alive.length<=1){ draw(); return; } turn=next(i); draw(); if(turn!==0){ busy=true; setTimeout(cpuTurn,700); } };
+    const cpuTurn=()=>{ if(!tb.isConnected) return; busy=false; const from=next(turn); take(turn,from,Math.floor(Math.random()*hands[from].length)); };
+    draw(); };
+  // 神経衰弱
+  const mem=()=>{ let cnt=LOAD('cd6m',24); const pick=[]; const all=CARD.deck(false); const by={}; all.forEach(c=>(by[c.r]=by[c.r]||[]).push(c)); let cards=[]; for(let r=1;r<=13&&cards.length<cnt;r++) cards.push(...by[r].slice(0,2)); if(cnt===52) cards=all.slice(); cards.sort(()=>Math.random()-.5);
+    const st=cards.map(c=>({c,up:false,got:0})); let turn=0, sc=[0,0], open=[], busy=false, seen={};
+    const seg=gSeg([[24,'24枚','24'],[36,'36枚','36'],[52,'52枚','52']],cnt,k=>{ SAVE('cd6m',k); start(); }); ctl.insertBefore(seg,ctl.lastChild);
+    const draw=()=>{ tb.innerHTML=''; const g=h('div','tMem'); g.style.gridTemplateColumns=`repeat(${cnt===24?8:cnt===36?9:13},1fr)`; st.forEach((q,i)=>{ const e=q.got?h('div','tcard gone'):CARD.el(q.c,q.up,'sm'); if(!q.up&&!q.got){ e.classList.add('pick'); e.onclick=()=>flip(i); } if(q.got) e.classList.add(q.got===1?'me':'cpu'); g.appendChild(e); }); tb.appendChild(g);
+      const left=st.filter(q=>!q.got).length; say(left?(turn===0?L('あなたの番：2枚めくります','Your turn'):L('CPUの番…','CPU…'))+`　${L('あなた','You')} ${sc[0]} − ${sc[1]} CPU`:(sc[0]>sc[1]?L('あなたの勝ち！','You win!'):sc[0]<sc[1]?L('CPUの勝ち','CPU wins'):L('ひきわけ','Draw'))+`　${sc[0]} − ${sc[1]}`); };
+    const flip=(i,cpu)=>{ if(busy&&!cpu) return; if(!cpu&&turn!==0) return; const q=st[i]; if(q.up||q.got) return; q.up=true; open.push(i); (seen[q.c.r]=seen[q.c.r]||new Set()).add(i); AU.tone(600,.03,'sine',.04); draw();
+      if(open.length===2){ busy=true; const [a,b]=open; open=[]; setTimeout(()=>{ if(!tb.isConnected) return; if(st[a].c.r===st[b].c.r){ st[a].got=st[b].got=turn+1; sc[turn]++; AU.tone(880,.08,'triangle',.06); } else { st[a].up=st[b].up=false; turn=1-turn; }
+        busy=false; const left=st.filter(q=>!q.got).length; if(!left&&sc[0]>sc[1]) gWin('cards',sc[0]*10); draw(); if(left&&turn===1) setTimeout(cpu,600); },cpu?700:900); } };
+    const cpu=()=>{ if(!tb.isConnected) return; const rem=i=>!st[i].got&&!st[i].up; const mem2=Math.random()<.7;
+      let pairI=null; if(mem2) for(const r in seen){ const l=[...seen[r]].filter(rem); if(l.length>=2){ pairI=l.slice(0,2); break; } }
+      const rnd=()=>{ const l=st.map((_,i)=>i).filter(rem); return l[Math.floor(Math.random()*l.length)]; };
+      const a=pairI?pairI[0]:rnd(); flip(a,true); setTimeout(()=>{ let b=pairI?pairI[1]:null; if(b==null&&mem2){ const l=[...(seen[st[a].c.r]||[])].filter(i=>i!==a&&rem(i)); if(l.length) b=l[0]; } if(b==null) b=rnd(); flip(b,true); },500); };
+    draw(); };
+  // スピード
+  const speed=()=>{ let lv=LOAD('cd6s','normal'); const d=CARD.deck(false); const mine=d.filter(c=>c.s===1||c.s===2), his=d.filter(c=>c.s===0||c.s===3); const field=[mine.splice(0,4),his.splice(0,4)]; let pile=[mine.pop(),his.pop()], sel=null, over=false, iv=0;
+    const seg=gSeg([['easy','やさしい','Easy'],['normal','ふつう','Normal'],['hard','つよい','Hard']],lv,k=>{ SAVE('cd6s',k); start(); }); ctl.insertBefore(seg,ctl.lastChild);
+    const fits=(c,p)=>p&&c&&(Math.abs(c.r-p.r)===1||Math.abs(c.r-p.r)===12);
+    const refill=(who)=>{ const src=who?his:mine; field[who]=field[who].map(c=>c||src.pop()||null); };
+    const play=(who,fi,pi)=>{ const c=field[who][fi]; if(!fits(c,pile[pi])) return false; pile[pi]=c; field[who][fi]=null; refill(who); AU.tone(who?440:660,.04,'triangle',.06); check(); draw(); return true; };
+    const left=w=>field[w].filter(Boolean).length+(w?his:mine).length;
+    const check=()=>{ if(over) return; if(!left(0)||!left(1)){ over=true; clearInterval(iv); if(!left(0)) gWin('cards',{easy:40,normal:80,hard:150}[lv]); draw(); return; }
+      const can=w=>field[w].some(c=>fits(c,pile[0])||fits(c,pile[1])); if(!can(0)&&!can(1)){ setTimeout(()=>{ if(over) return; const a=mine.pop()||field[0].find(Boolean), b=his.pop()||field[1].find(Boolean); if(a){ const i=field[0].indexOf(a); if(i>=0) field[0][i]=null; pile[0]=a; } if(b){ const i=field[1].indexOf(b); if(i>=0) field[1][i]=null; pile[1]=b; } toastW(L('どちらも出せないので、めくり直し！','Stuck! New cards')); check(); draw(); },700); } };
+    const draw=()=>{ tb.innerHTML=''; const mk=(w)=>{ const r=h('div','spRow'+(w?' cpu':'')); r.appendChild(h('small','',(w?'CPU':L('あなた','You'))+` ${L('のこり','left')} ${left(w)}`)); field[w].forEach((c,i)=>{ const e=c?CARD.el(c,true):h('div','tcard gone'); if(!w&&c){ e.classList.add('pick'); if(sel===i) e.classList.add('sel'); e.onclick=()=>{ if(over) return; const ok=[0,1].filter(p=>fits(c,pile[p])); if(ok.length===1){ play(0,i,ok[0]); sel=null; } else if(ok.length===2){ sel=i; draw(); } else { AU.tone(160,.06,'sawtooth',.04); e.classList.add('ng'); } }; } r.appendChild(e); }); return r; };
+      tb.appendChild(mk(1)); const mid=h('div','spMid'); pile.forEach((c,p)=>{ const e=CARD.el(c,true,'big'); if(sel!=null&&fits(field[0][sel],c)){ e.classList.add('tgt'); e.onclick=()=>{ play(0,sel,p); sel=null; }; } mid.appendChild(e); }); tb.appendChild(mid); tb.appendChild(mk(0));
+      say(over?(!left(0)?L('あなたの勝ち！','You win!'):L('CPUの勝ち','CPU wins')):L('場のカードと「1つちがい」の数を、早く出しましょう（KとAもつながります）','Play cards one higher or lower (K↔A)')); };
+    iv=setInterval(()=>{ if(!tb.isConnected||over){ clearInterval(iv); return; } if(Math.random()<{easy:.35,normal:.6,hard:.9}[lv]){ for(let i=0;i<4;i++) for(let p=0;p<2;p++) if(fits(field[1][i],pile[p])){ play(1,i,p); return; } } },{easy:1500,normal:1000,hard:650}[lv]);
+    stopFn=()=>clearInterval(iv); draw(); };
+  start(); }});
+INST6('cards');
 
 </script>
 </body>
