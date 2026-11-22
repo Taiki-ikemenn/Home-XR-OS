@@ -709,7 +709,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.10.4';
+const APP_VERSION='5.10.5';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -7935,6 +7935,14 @@ APPIMPL.hanoi=(body)=>{ body.classList.add('gmBody'); let n=LOAD('hn5',4), pegs,
     row.append(b1,b2,b3); d.appendChild(row); document.body.appendChild(d); };
   const check=()=>{ if(!healthy()){ try{ PANO.tiles=null; buildEnv(); }catch(e){ __ERRS.push('buildEnv: '+(e&&e.message||e)); } if(!healthy()) card(); } };
   setTimeout(check,3000); setInterval(()=>{ if(!document.hidden&&!healthy()) check(); },8000);
+})();
+// ブラウザの「戻る」やタブの切り替えから帰ってきたとき：iPadは裏にいるページの画像を捨てることがあるので、作り直す
+(function(){
+  const lost=()=>{ try{ const row=PANO.tiles&&PANO.tiles[Math.floor(PANO.tiles.length/2)]; if(!row) return true; const t=row[1]; if(!t.width) return true; const d=t.getContext('2d').getImageData(t.width>>1,t.height>>1,1,1).data; return d[3]===0; }catch(e){ return false; } };
+  const fix=()=>{ if(lost()){ try{ PANO.tiles=null; buildEnv(); }catch(e){ (window.__ERRS||[]).push('rebuild: '+(e&&e.message||e)); } } };
+  addEventListener('pageshow',e=>{ if(e.persisted){ location.reload(); } });
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) setTimeout(fix,300); });
+  addEventListener('focus',()=>setTimeout(fix,300));
 })();
 
 

@@ -1,6 +1,12 @@
 {
- "latest": "5.10.4",
+ "latest": "5.10.5",
  "versions": [
+  {
+   "v": "5.10.5",
+   "date": "2026-11-22",
+   "notes_ja": "ブラウザの「戻る」やタブの切り替えのあとに真っ暗になる問題に対応しました。「戻る」で表示されたときは自動で読み込み直します。ほかのタブから戻ってきたときは、景色の画像が消えていないか確認し、消えていたら作り直します。",
+   "notes_en": "Auto-recover after browser back / tab switch (reload from bfcache, rebuild lost panorama)."
+  },
   {
    "v": "5.10.4",
    "date": "2026-11-22",
