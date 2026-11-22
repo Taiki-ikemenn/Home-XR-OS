@@ -655,6 +655,10 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .gcFig{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px;border-radius:16px;background:rgba(255,255,255,.06);border:2px solid var(--c);box-shadow:0 0 18px color-mix(in srgb,var(--c) 40%,transparent);animation:gcIn .4s backwards}@keyframes gcIn{from{transform:scale(.3);opacity:0}}
 .gcFig i{font-style:normal;font-size:52px}.gcFig b{font-size:13px}.gcFig span{color:var(--c);font-size:12px}.gcFig small{font-size:11px;opacity:.7}.gcFig em{position:absolute;top:-8px;right:-6px;background:#ef4444;border-radius:999px;padding:1px 8px;font-size:11px;font-style:normal;font-weight:900}.gcFig.r5{background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(244,114,182,.2))}
 .gcBook{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;width:100%;max-height:52vh;overflow:auto;padding:4px}.gcFig.sm{padding:6px;animation:none}.gcFig.sm i{font-size:34px}.gcFig.no{opacity:.45;filter:grayscale(1)}.gcFig.trade{cursor:pointer}.gcFig.trade:hover{opacity:.8}
+.tpMain{width:min(900px,96%);display:flex;flex-direction:column;align-items:center;gap:12px;max-height:100%;overflow:auto;padding:8px}.tpMain h2{margin:4px 0;display:flex;gap:8px;align-items:center}.tpNames{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.tpPass{text-align:center;padding:30px}.tpPass i{font-size:60px;display:block}.tpPass i svg{width:64px;height:64px}.tpPass small{opacity:.6}.tpWord{background:#facc15;color:#111;padding:2px 14px;border-radius:999px}
+.tpCv{height:min(42vh,420px);width:auto;max-width:90%;background:#fff;border-radius:14px;touch-action:none;cursor:crosshair}.tpImg{width:min(560px,90%);border-radius:14px;background:#fff}.tpTools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}.tpCol{width:32px;height:32px;border-radius:50%;border:3px solid rgba(255,255,255,.2);cursor:pointer}.tpCol.on{border-color:#fff;transform:scale(1.15)}
+.tpTime{font-size:22px;font-variant-numeric:tabular-nums}.tpTime.hurry{color:#ef4444;animation:gpl .5s infinite alternate}.tpChain{display:flex;flex-direction:column;gap:10px;width:100%;align-items:center}.tpStep{background:rgba(255,255,255,.06);border-radius:16px;padding:10px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;animation:gcIn .4s}.tpStep img{width:min(420px,80vw);border-radius:10px}.tpStep b{font-size:30px}.tpVerdict{font-size:20px;font-weight:900}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -732,7 +736,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.4';
+const APP_VERSION='5.11.5';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -8450,6 +8454,40 @@ regApp('gacha',{name:'ガチャ',en:'Gacha',g:'gift',bg:G1+'#fb7185,#a21caf)',ca
   main.appendChild(h('div','gcIntro',`<div class="gcMachine"><div class="gcGlobe">${GACHA.slice(0,14).map((f,i)=>`<span style="--i:${i}">${f.e}</span>`).join('')}</div><div class="gcBase"><i></i></div></div><p>${L('★1〜★5の58種類！かぶるとかけらがもらえます','58 figures, ★1–★5')}</p>`));
   draw(); }});
 INST6('gacha');
+// ---------- お絵かき伝言ゲーム ----------
+const ODAI=['ねこ','いぬ','うさぎ','ぞう','きりん','ペンギン','かたつむり','たこ','くじら','恐竜','ロボット','宇宙人','おばけ','忍者','王様','お姫さま','魔法使い','サンタクロース','雪だるま','おにぎり','ラーメン','すし','ケーキ','アイスクリーム','ハンバーガー','ピザ','バナナ','すいか','りんご','ぶどう','新幹線','飛行機','ロケット','自転車','消防車','船','信号','東京タワー','富士山','火山','虹','雷','台風','花火','お祭り','運動会','海水浴','キャンプ','雪合戦','サッカー','野球','水泳','ピアノ','ギター','カメラ','スマホ','テレビ','冷蔵庫','掃除機','歯みがき','お風呂','目覚まし時計','傘','長ぐつ','めがね','帽子','リュック','ランドセル','えんぴつ','けしゴム','学校','病院','動物園','遊園地','観覧車','ジェットコースター','お化け屋敷','図書館','コンビニ','宝箱','海賊','人魚','ドラゴン','ユニコーン','天使','鬼','かっぱ','だるま','招き猫'];
+regApp('telephone',{name:'お絵かき伝言',en:'Draw Telephone',g:'brush',bg:G1+'#facc15,#ec4899)',cat:'game',w:1000,h:720,desc:'3〜8人で1台を順番に回して遊びます。お題→絵→答え→絵…と伝えていき、最後に「どう変わったか」を見て大笑い！',den:'Pass-and-play drawing telephone for 3–8 players.',
+ impl(body){ body.classList.add('gmBody'); let n=LOAD('tp6n',4), tmr=LOAD('tp6t',60), names=LOAD('tp6names',[]), chain=[], step=0, iv=0;
+  const main=h('div','tpMain'); body.appendChild(main); const nm=i=>names[i]||L(`プレイヤー${i+1}`,`Player ${i+1}`);
+  const setup=()=>{ clearInterval(iv); main.innerHTML=''; main.appendChild(h('h2','',`${IC('brush')} ${L('お絵かき伝言ゲーム','Draw Telephone')}`)); main.appendChild(h('p','sub',L('1台を順番に回します。前の人のものだけ見て、絵か言葉で次へ伝えましょう。','Pass one device around. See only the previous turn.')));
+    const r=h('div','row'); r.style.cssText='gap:10px;flex-wrap:wrap;justify-content:center'; r.append(h('b','',L('人数','Players')),gSeg([3,4,5,6,7,8].map(k=>[k,k+'人',k+'']),n,k=>{ n=k; SAVE('tp6n',k); setup(); }),h('b','',L('描く時間','Draw time')),gSeg([[30,'30秒','30s'],[60,'60秒','60s'],[90,'90秒','90s'],[0,'なし','None']],tmr,k=>{ tmr=k; SAVE('tp6t',k); setup(); })); main.appendChild(r);
+    const g=h('div','tpNames'); for(let i=0;i<n;i++){ const f=inputField(160,nm(i),{value:names[i]||''}); f.el?g.appendChild(f.el):g.appendChild(f); f._i=i; g._fs=(g._fs||[]).concat(f); } main.appendChild(g);
+    main.appendChild(btn(IC('play')+L('はじめる','Start'),()=>{ (g._fs||[]).forEach(f=>{ const v=(f.get?f.get():f.value||'').trim(); names[f._i]=v; }); SAVE('tp6names',names); hideKB&&hideKB(); chain=[]; step=0; handoff(); },'pri big')); };
+  const handoff=()=>{ clearInterval(iv); main.innerHTML=''; if(step>=n){ reveal(); return; } const kind=step===0?'word':step%2?'draw':'guess';
+    main.append(h('div','tpPass',`<i>${IC('hand')}</i><h2>${esc(nm(step))}${L('さんの番です','\'s turn')}</h2><p>${kind==='word'?L('お題を決めます','Choose a word'):kind==='draw'?L('前の人の言葉を絵にします','Draw the word'):L('前の人の絵を見て、何の絵か答えます','Guess the drawing')}</p><small>${L('ほかの人は見ないでね！','No peeking!')}</small>`),btn(L('準備OK','Ready'),()=>({word,draw:drawT,guess})[kind](),'pri big')); };
+  const word=()=>{ main.innerHTML=''; main.appendChild(h('h2','',L('お題を入れてください','Enter a word'))); const f=inputField(360,L('例：かたつむり','e.g. snail'),{onEnter:()=>ok()}); main.appendChild(f.el||f);
+    const r=h('div','row'); r.style.gap='8px'; r.append(btn(IC('dices')+L('おまかせ','Random'),()=>{ const v=ODAI[Math.floor(Math.random()*ODAI.length)]; f.set?f.set(v):(f.value=v); }),btn(L('決定','OK'),()=>ok(),'pri')); main.appendChild(r);
+    const ok=()=>{ const v=(f.get?f.get():f.value||'').trim(); if(!v){ toastW(L('お題を入れてください','Enter a word')); return; } hideKB&&hideKB(); chain.push({t:'word',v,by:step}); step++; handoff(); }; };
+  const guess=()=>{ main.innerHTML=''; const prev=chain[chain.length-1]; const im=new Image(); im.src=prev.v; im.className='tpImg'; main.append(h('h2','',L('これは何の絵？','What is this?')),im); const f=inputField(360,L('答えを入れる','Your guess'),{onEnter:()=>ok()}); main.append(f.el||f,btn(L('決定','OK'),()=>ok(),'pri'));
+    const ok=()=>{ const v=(f.get?f.get():f.value||'').trim(); if(!v){ toastW(L('答えを入れてください','Enter a guess')); return; } hideKB&&hideKB(); chain.push({t:'guess',v,by:step}); step++; handoff(); }; };
+  const drawT=()=>{ main.innerHTML=''; const prev=chain[chain.length-1]; main.appendChild(h('h2','',`${L('お題','Draw')}：<span class="tpWord">${esc(prev.v)}</span>`));
+    const c=cv(720,480); c.className='tpCv'; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,720,480); x.lineCap=x.lineJoin='round'; let col='#111', sz=6, er=false, cur=null; const undo=[];
+    const pt=(nx,ny)=>[nx*720,ny*480]; const dn=(a,b)=>{ undo.push(x.getImageData(0,0,720,480)); if(undo.length>20) undo.shift(); cur=pt(a,b); x.strokeStyle=er?'#fff':col; x.lineWidth=er?sz*4:sz; x.beginPath(); x.moveTo(...cur); x.lineTo(cur[0]+.1,cur[1]); x.stroke(); };
+    const mv=(a,b)=>{ if(!cur) return; const p=pt(a,b); x.beginPath(); x.moveTo(...cur); x.lineTo(...p); x.stroke(); cur=p; }; const upF=()=>cur=null;
+    const nrm=e=>{ const r=c.getBoundingClientRect(); return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]; };
+    c.onpointerdown=e=>{ c.setPointerCapture(e.pointerId); dn(...nrm(e)); }; c.onpointermove=e=>mv(...nrm(e)); c.onpointerup=upF; c.dataset.canvas=''; c._xr={down:dn,move:mv,up:upF};
+    const tools=h('div','tpTools'); ['#111','#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#a855f7','#92400e','#f9a8d4'].forEach(cl=>{ const b=h('button','tpCol'+(cl===col?' on':'')); b.style.background=cl; b.onclick=()=>{ col=cl; er=false; tools.querySelectorAll('.tpCol').forEach(q=>q.classList.toggle('on',q===b)); }; tools.appendChild(b); });
+    tools.append(gSeg([[3,'細','S'],[6,'中','M'],[14,'太','L']],sz,k=>{ sz=k; tools.querySelectorAll('.seg button').forEach((q,i)=>q.classList.toggle('on',[3,6,14][i]===k)); }),btn(IC('eraser'),()=>{ er=!er; toastW(er?L('消しゴム','Eraser'):L('ペン','Pen')); }),btn(IC('undo-2'),()=>{ const d=undo.pop(); if(d) x.putImageData(d,0,0); }),btn(IC('trash-2'),()=>{ undo.push(x.getImageData(0,0,720,480)); x.fillStyle='#fff'; x.fillRect(0,0,720,480); }));
+    const tm=h('b','tpTime'); const done=btn(L('できた！','Done!'),()=>fin(),'pri'); main.append(c,tools,h('div','row',''),done); main.lastChild.previousSibling.append(tm);
+    const fin=()=>{ clearInterval(iv); chain.push({t:'draw',v:c.toDataURL('image/jpeg',.8),by:step}); step++; handoff(); };
+    if(tmr){ let left=tmr; tm.textContent=left+L('秒','s'); iv=setInterval(()=>{ if(!main.isConnected){ clearInterval(iv); return; } left--; tm.textContent=left+L('秒','s'); tm.classList.toggle('hurry',left<=10); if(left<=5&&left>0) AU.tone(880,.05,'sine',.05); if(left<=0) fin(); },1000); } };
+  const reveal=()=>{ main.innerHTML=''; main.appendChild(h('h2','',`🎉 ${L('結果発表！','Results!')}`)); const list=h('div','tpChain'); main.appendChild(list); let k=0;
+    const next=()=>{ if(k>=chain.length){ const r=h('div','row'); r.style.gap='8px'; r.append(btn(IC('image')+L('絵を写真に保存','Save drawings'),async()=>{ for(const q of chain) if(q.t==='draw') await phAdd(q.v,'telephone',L('お絵かき伝言','Draw Telephone')); toastW(L('写真アプリに保存しました','Saved to Photos')); }),btn(IC('rotate-ccw')+L('もう一回','Play again'),setup,'pri')); main.appendChild(r);
+        const first=chain[0].v, lastQ=chain[chain.length-1]; main.appendChild(h('p','tpVerdict',lastQ.t==='guess'?(lastQ.v===first?L('最初と最後がぴったり同じ！すごい！','Perfect match!'):L(`「${esc(first)}」が「${esc(lastQ.v)}」になりました！`,`"${esc(first)}" became "${esc(lastQ.v)}"!`)):'')); if(lastQ.t==='guess'&&lastQ.v===first) gWin('telephone',100); return; }
+      const q=chain[k], e=h('div','tpStep'); e.appendChild(h('small','',`${k+1}. ${esc(nm(q.by))}`)); if(q.t==='draw'){ const im=new Image(); im.src=q.v; e.appendChild(im); } else e.appendChild(h('b','',esc(q.v))); list.appendChild(e); e.scrollIntoView({behavior:'smooth',block:'nearest'}); AU.tone(500+k*80,.08,'triangle',.06); k++; setTimeout(next,1300); };
+    next(); };
+  setup(); }});
+INST6('telephone');
 
 </script>
 </body>
