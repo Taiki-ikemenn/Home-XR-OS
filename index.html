@@ -647,6 +647,14 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .tbRow{display:flex;gap:12px;justify-content:center;width:100%}.tbSeat{flex:1;background:rgba(0,0,0,.18);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;align-items:center;border:2px solid transparent}.tbSeat.on{border-color:#facc15}.tbSeat.tgt{border-color:#38bdf8}.tbSeat b{font-size:13px}.tbSeat.me{width:100%}
 .tFan{display:flex;justify-content:center;flex-wrap:wrap}.tFan .tcard{margin-left:-24px}.tFan .tcard:first-child{margin-left:0}.tFan.big .tcard{margin-left:-14px}.tFan.big .tcard:first-child{margin-left:0}
 .tMem{display:grid;gap:6px}.spRow{display:flex;gap:10px;align-items:center}.spRow small{width:110px;opacity:.85}.spMid{display:flex;gap:30px;margin:6px 0}@keyframes gshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.gcMain{width:min(860px,96%);min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.gcMachine{width:220px;margin:auto}.gcGlobe{width:220px;height:220px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.5),rgba(255,255,255,.08) 60%);border:4px solid rgba(255,255,255,.4);position:relative;overflow:hidden}.gcGlobe span{position:absolute;font-size:34px;left:calc(10% + (var(--i) * 37px) % 150px);top:calc(20% + (var(--i) * 23px) % 120px);animation:gcB 1.6s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -.17s)}@keyframes gcB{to{transform:translateY(-12px) rotate(12deg)}}
+.gcBase{height:90px;background:linear-gradient(#ef4444,#991b1b);border-radius:0 0 24px 24px;margin:-10px 20px 0;display:grid;place-items:center}.gcBase i{width:50px;height:50px;border-radius:50%;background:#fde68a;box-shadow:inset 0 -6px 0 #f59e0b}.gcIntro p{text-align:center;opacity:.8}
+.gcStage{height:300px;display:grid;place-items:center}.gcCap{width:140px;height:140px;border-radius:50%;background:linear-gradient(var(--c) 50%,#f8fafc 50%);box-shadow:0 0 60px var(--c);animation:gcS .25s ease-in-out 4 alternate}.gcCap.open{animation:gcO .7s forwards}@keyframes gcS{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}@keyframes gcO{to{transform:scale(2.2);opacity:0;filter:brightness(3)}}
+.gcRes{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.gcRes.one{grid-template-columns:1fr}.gcRes.one .gcFig{width:220px;padding:20px}.gcRes.one .gcFig i{font-size:110px}
+.gcFig{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px;border-radius:16px;background:rgba(255,255,255,.06);border:2px solid var(--c);box-shadow:0 0 18px color-mix(in srgb,var(--c) 40%,transparent);animation:gcIn .4s backwards}@keyframes gcIn{from{transform:scale(.3);opacity:0}}
+.gcFig i{font-style:normal;font-size:52px}.gcFig b{font-size:13px}.gcFig span{color:var(--c);font-size:12px}.gcFig small{font-size:11px;opacity:.7}.gcFig em{position:absolute;top:-8px;right:-6px;background:#ef4444;border-radius:999px;padding:1px 8px;font-size:11px;font-style:normal;font-weight:900}.gcFig.r5{background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(244,114,182,.2))}
+.gcBook{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;width:100%;max-height:52vh;overflow:auto;padding:4px}.gcFig.sm{padding:6px;animation:none}.gcFig.sm i{font-size:34px}.gcFig.no{opacity:.45;filter:grayscale(1)}.gcFig.trade{cursor:pointer}.gcFig.trade:hover{opacity:.8}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -724,7 +732,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.3';
+const APP_VERSION='5.11.4';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -8416,6 +8424,32 @@ regApp('cards',{name:'トランプ',en:'Cards',g:'spade',bg:G1+'#22c55e,#14532d)
     stopFn=()=>clearInterval(iv); draw(); };
   start(); }});
 INST6('cards');
+// ---------- ガチャ ----------
+const GACHA=(()=>{ const L5=[
+  ['🐶','いぬ'],['🐱','ねこ'],['🐭','ねずみ'],['🐹','ハムスター'],['🐰','うさぎ'],['🦊','きつね'],['🐻','くま'],['🐼','パンダ'],['🐨','コアラ'],['🐯','とら'],['🦁','ライオン'],['🐮','うし'],['🐷','ぶた'],['🐸','かえる'],['🐵','さる'],['🐔','にわとり'],['🐧','ペンギン'],['🐦','ことり'],['🐤','ひよこ'],['🦆','あひる'],
+  ['🦉','ふくろう'],['🐺','おおかみ'],['🐴','うま'],['🐝','はち'],['🐞','てんとう虫'],['🦋','ちょうちょ'],['🐢','かめ'],['🐙','たこ'],['🦀','かに'],['🐬','いるか'],['🐳','くじら'],['🦈','さめ'],['🦩','フラミンゴ'],['🦜','オウム'],['🦔','ハリネズミ'],['🦦','カワウソ'],
+  ['🦄','ユニコーン'],['🐲','ドラゴンの子'],['🦖','ティラノ'],['🦕','首長りゅう'],['🦚','くじゃく'],['🦢','はくちょう'],['🐉','ドラゴン'],['👾','うちゅう人'],['🤖','ロボット'],['👻','おばけ'],['🧚','ようせい'],['🧜','人魚'],
+  ['🌈','にじの精'],['⭐','流れ星'],['🌙','月のうさぎ'],['☀️','太陽の王'],['❄️','雪の女王'],['🔥','ほのおの鳥'],['💎','ダイヤの竜'],['👑','黄金の王様'],['🪐','宇宙くじら'],['🌸','さくらの神']];
+  return L5.map(([e,n],i)=>({id:i,e,n,r:i<20?1:i<36?2:i<48?3:i<56?4:5})); })();
+regApp('gacha',{name:'ガチャ',en:'Gacha',g:'gift',bg:G1+'#fb7185,#a21caf)',cat:'game',w:900,h:700,desc:'コインでカプセルを回して、58種類のフィギュアを集めましょう。10連は★3以上が1つ確定。かぶったら「かけら」になって、好きなフィギュアと交換できます。',den:'Spend coins to collect 58 figures.',
+ impl(body){ body.classList.add('gmBody'); const RC=['','#94a3b8','#4ade80','#60a5fa','#c084fc','#fbbf24'], W={1:50,2:30,3:14,4:5,5:1}; let view='spin';
+  const top=h('div'), main=h('div','gcMain'), ctl=h('div','gmCtl'); body.append(top,main,ctl);
+  const col=()=>STORE.get('gacha',{}), shard=()=>STORE.get('gachaShard',0);
+  const roll=min=>{ const pool=GACHA.filter(g=>g.r>=(min||1)); let t=0; pool.forEach(g=>t+=W[g.r]); let r=Math.random()*t; for(const g of pool){ r-=W[g.r]; if(r<=0) return g; } return pool[0]; };
+  const spin=n=>{ const price=n===10?270:30; if(typeof COIN!=='undefined'&&!COIN.spend(price)) return; const got=[...Array(n)].map(()=>roll()); if(n===10&&!got.some(g=>g.r>=3)) got[9]=roll(3);
+    const c=col(); let sh=shard(); const res=got.map(g=>{ const isNew=!c[g.id]; c[g.id]=(c[g.id]||0)+1; if(!isNew) sh+=g.r; return {g,isNew}; }); STORE.set('gacha',c); STORE.set('gachaShard',sh); show(res); };
+  const show=res=>{ main.innerHTML=''; const st=h('div','gcStage'); const cap=h('div','gcCap'); st.appendChild(cap); main.appendChild(st); const best=Math.max(...res.map(x=>x.g.r)); cap.style.setProperty('--c',RC[best]); AU.tone(300,.3,'sine',.05);
+    [0,1,2].forEach(i=>setTimeout(()=>AU.tone(400+i*120,.08,'triangle',.06),300+i*220)); setTimeout(()=>{ if(!main.isConnected) return; cap.classList.add('open'); if(best>=4) [784,988,1175,1568].forEach((f,i)=>setTimeout(()=>AU.tone(f,.15,'triangle',.08),i*110)); else AU.tone(880,.12,'triangle',.07);
+      setTimeout(()=>{ main.innerHTML=''; const g=h('div','gcRes'+(res.length===1?' one':'')); res.forEach(({g:f,isNew},k)=>{ const e=h('div','gcFig r'+f.r); e.style.animationDelay=k*.08+'s'; e.style.setProperty('--c',RC[f.r]); e.innerHTML=`${isNew?`<em>NEW</em>`:''}<i>${f.e}</i><b>${f.n}</b><span>${'★'.repeat(f.r)}</span>${isNew?'':`<small>${L('かけら','Shards')} +${f.r}</small>`}`; g.appendChild(e); }); main.appendChild(g); draw(); },700); },1100); };
+  const book=()=>{ main.innerHTML=''; const c=col(), g=h('div','gcBook'); GACHA.forEach(f=>{ const e=h('div','gcFig sm r'+f.r+(c[f.id]?'':' no')); e.style.setProperty('--c',RC[f.r]); e.innerHTML=c[f.id]?`<i>${f.e}</i><b>${f.n}</b><span>${'★'.repeat(f.r)}</span><small>×${c[f.id]}</small>`:`<i>？</i><b>？？？</b><span>${'★'.repeat(f.r)}</span>`;
+      if(!c[f.id]){ const cost=[0,5,10,20,40,80][f.r]; e.title=L(`かけら${cost}個で交換`,`Trade for ${cost} shards`); e.onclick=()=>{ if(shard()<cost){ toastW(L(`かけらが${cost}個必要です（今${shard()}個）`,`Need ${cost} shards`)); return; } STORE.set('gachaShard',shard()-cost); const cc=col(); cc[f.id]=1; STORE.set('gacha',cc); toastW(L(`${f.n}と交換しました！`,`Got ${f.n}!`)); book(); draw(); }; e.classList.add('trade'); }
+      g.appendChild(e); }); main.appendChild(g); main.appendChild(h('p','sub',L('まだ持っていないフィギュアは、かけらと交換できます（★1は5個・★2は10個・★3は20個・★4は40個・★5は80個）','Trade shards for missing figures'))); };
+  const draw=()=>{ const c=col(), got=Object.keys(c).length; top.innerHTML=gTop([[L('コレクション','Collection'),`${got}/${GACHA.length}`],[L('かけら','Shards'),shard()],[L('コイン','Coins'),typeof COIN!=='undefined'?COIN.get():0]]);
+    ctl.innerHTML=''; ctl.append(btn(IC('circle-dot')+L('1回（30コイン）','1× (30)'),()=>{ view='spin'; spin(1); },'pri'),btn(IC('sparkles')+L('10連（270コイン・★3以上1つ確定）','10× (270, ★3+ guaranteed)'),()=>{ view='spin'; spin(10); },'gold'),btn(IC('book-open')+L('図鑑','Collection'),()=>{ view='book'; book(); }));
+    if(got===GACHA.length&&!STORE.get('gachaAll',false)){ STORE.set('gachaAll',true); gWin('gacha',1000); toastW(L('全部そろいました！おめでとう！','Complete collection!')); } };
+  main.appendChild(h('div','gcIntro',`<div class="gcMachine"><div class="gcGlobe">${GACHA.slice(0,14).map((f,i)=>`<span style="--i:${i}">${f.e}</span>`).join('')}</div><div class="gcBase"><i></i></div></div><p>${L('★1〜★5の58種類！かぶるとかけらがもらえます','58 figures, ★1–★5')}</p>`));
+  draw(); }});
+INST6('gacha');
 
 </script>
 </body>
