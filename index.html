@@ -782,7 +782,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.21';
+const APP_VERSION='5.11.22';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9113,6 +9113,47 @@ regApp('hoops',{name:'バスケ',en:'Basketball',g:'dribbble',bg:G1+'#fb923c,#9a
     ctl.innerHTML=''; ctl.append(h('span','sub',state==='ready'?L('タップでスタート！ ボールを下から上へ、スッとはらって投げます','Tap to start! Swipe up to shoot'):state==='over'?L(`タイムアップ！ ${score}点　タップでもう一度`,`Time! ${score} pts. Tap to replay`):L('上へはらう長さで強さ、左右のずれで向きが変わります','Swipe length = power, sideways = direction'))); };
   setBall(); draw(); }});
 INST6('hoops');
+// ---------- 卓球VR ----------
+regApp('tabletennis',{name:'卓球',en:'Table Tennis',g:'circle',bg:G1+'#22d3ee,#1e40af)',cat:'game',w:1000,h:720,desc:'3Dの卓球。ポインターや指でラケットを動かして、CPUとラリーします。ラケットを振る速さで強いショットに。11点先取（2点差）、CPUは3段階。',den:'3D table tennis vs CPU. Move the paddle with the pointer.',
+ async impl(body,w){ const A=await sport3D(body,w,{bg:0x0b1220,fov:50}); if(!A) return; const {T,sc,cam,top,ctl}=A; const TW=1.525, TL=2.74, TH=.76, NH=.1525, R=.02, G=9.8, PZ=1.55, CZ=-1.55;
+  let lv=LOAD('tt6','normal'), sc2=[0,0], serveBy=0, ball=null, last=-1, bounce={0:0,1:0}, state='ready', msg='', pad={x:0,y:1.0,vx:0,vy:0}, cpu={x:0,y:1.0}, srvN=0, rally=0, tgt={x:0,y:1};
+  { const fl=new T.Mesh(new T.PlaneGeometry(14,14),A.mat(0x1e3a8a)); fl.rotation.x=-Math.PI/2; fl.receiveShadow=true; sc.add(fl); }
+  const tb=A.box(TW,.04,TL,A.mat(0x1d4ed8,{roughness:.5}),0,TH-.02,0); const line=(w2,d,x,z)=>{ const m=new T.Mesh(new T.PlaneGeometry(w2,d),new T.MeshBasicMaterial({color:0xffffff})); m.rotation.x=-Math.PI/2; m.position.set(x,TH+.001,z); sc.add(m); }; line(TW,.02,0,TL/2-.01); line(TW,.02,0,-TL/2+.01); line(.02,TL,TW/2-.01,0); line(.02,TL,-TW/2+.01,0); line(.006,TL,0,0);
+  [[-.6,-1.1],[.6,-1.1],[-.6,1.1],[.6,1.1]].forEach(([x,z])=>A.box(.06,TH,.06,A.mat(0x111827),x,TH/2,z));
+  const net=new T.Mesh(new T.PlaneGeometry(TW+.3,NH),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.55,side:T.DoubleSide})); net.position.set(0,TH+NH/2,0); sc.add(net); A.box(TW+.3,.015,.015,A.mat(0xffffff),0,TH+NH,0);
+  const mkPad=c=>{ const g=new T.Group(); const f=new T.Mesh(new T.CylinderGeometry(.08,.08,.012,24),A.mat(c)); f.rotation.x=Math.PI/2; g.add(f); const hd=new T.Mesh(new T.BoxGeometry(.03,.1,.02),A.mat(0x92400e)); hd.position.y=-.12; g.add(hd); sc.add(g); return g; };
+  const pm=mkPad(0xdc2626), cm=mkPad(0x111827); const bm=new T.Mesh(new T.SphereGeometry(R,16,12),A.mat(0xffffff,{roughness:.3})); bm.castShadow=true; sc.add(bm); const shd=new T.Mesh(new T.CircleGeometry(.02,12),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.35})); shd.rotation.x=-Math.PI/2; sc.add(shd);
+  const plane=new T.Plane(new T.Vector3(0,0,1),-PZ);
+  A.onMove=(nx,ny)=>{ const rc=new T.Raycaster(); rc.setFromCamera(A.ndc(nx,ny),cam); const p=new T.Vector3(); if(rc.ray.intersectPlane(plane,p)){ tgt.x=Math.max(-1.1,Math.min(1.1,p.x)); tgt.y=Math.max(TH+.02,Math.min(1.6,p.y)); } };
+  A.onDown=(nx,ny)=>{ A.onMove(nx,ny); if(state==='ready'||state==='over'){ if(state==='over'){ sc2=[0,0]; srvN=0; serveBy=0; } state='serve'; draw(); return; } if(state==='serve'&&serveBy===0) serve(0); };
+  A.onUp=()=>{};
+  const launch=(fromZ,toward,spd,aimX,aimZ)=>{ const t=Math.abs(ball.z-aimZ)/spd; const vx=(aimX-ball.x)/t; const vy=(TH+R-ball.y+.5*G*t*t)/t; ball.vx=vx; ball.vz=toward*spd; ball.vy=vy;
+    const tn=Math.abs(ball.z)/spd; const yN=ball.y+ball.vy*tn-.5*G*tn*tn; if(yN<TH+NH+.04){ const need=(TH+NH+.06-ball.y+.5*G*tn*tn)/tn; ball.vy=Math.max(ball.vy,need); } };
+  const serve=who=>{ ball={x:who?cpu.x:pad.x,y:TH+.25,z:who?CZ+.1:PZ-.1,vx:0,vy:0,vz:0}; last=who; bounce={0:0,1:0}; rally=0; state='play'; const dir=who?1:-1; launch(0,dir,3.4,(Math.random()-.5)*TW*.6,dir>0?.7+Math.random()*.4:-.7-Math.random()*.4); AU.tone(700,.03,'square',.06); draw(); };
+  const point=(winner,why)=>{ sc2[winner]++; state='pause'; msg=why; toastW((winner===0?L('あなたの得点！','Your point! '):L('CPUの得点','CPU point. '))+why); AU.tone(winner===0?880:220,.15,'triangle',.07); srvN++; if(srvN%2===0) serveBy=1-serveBy;
+    const [a,b]=sc2; if((a>=11||b>=11)&&Math.abs(a-b)>=2){ state='over'; if(a>b) gWin('tabletennis',{easy:30,normal:60,hard:120}[lv]+a-b); draw(); return; } draw(); setTimeout(()=>{ if(!A.alive) return; state='serve'; draw(); if(serveBy===1) setTimeout(()=>{ if(A.alive&&state==='serve') serve(1); },700); },1100); };
+  const SPD={easy:2.6,normal:3.6,hard:5}, ERR={easy:.35,normal:.18,hard:.08};
+  A.frame=dt=>{ const ox=pad.x, oy=pad.y; pad.x+=(tgt.x-pad.x)*Math.min(1,dt*20); pad.y+=(tgt.y-pad.y)*Math.min(1,dt*20); pad.vx=(pad.x-ox)/dt; pad.vy=(pad.y-oy)/dt; pm.position.set(pad.x,pad.y,PZ); pm.rotation.z=-pad.x*.4;
+    if(state==='serve'&&serveBy===0&&ball==null) {} if(state==='serve'&&serveBy===0){ bm.position.set(pad.x,pad.y+.12,PZ-.05); }
+    if(ball&&state==='play'){ const n=5; for(let k=0;k<n;k++){ const d=dt/n; const pz=ball.z; ball.vy-=G*d; ball.x+=ball.vx*d; ball.y+=ball.vy*d; ball.z+=ball.vz*d;
+        if(ball.y<TH+R&&ball.vy<0){ if(Math.abs(ball.x)<TW/2&&Math.abs(ball.z)<TL/2){ ball.y=TH+R; ball.vy*=-.88; const side=ball.z>0?0:1; AU.tone(side?520:600,.02,'sine',.05); if(side===last){ point(1-last,L('自分のコートに入った','Hit own side')); return; } bounce[side]++; if(bounce[side]>=2){ point(1-side,L('2回バウンド','Double bounce')); return; } }
+          else if(ball.y<.05){ const hitSide=1-last; if(bounce[hitSide]===0) point(1-last,L('アウト','Out')); else point(last,L('返せなかった','Missed')); return; } }
+        if((pz>0)!==(ball.z>0)&&ball.y<TH+NH&&ball.y>TH-.02&&Math.abs(ball.x)<TW/2+.15){ ball.vz*=-.2; ball.vx*=.3; AU.tone(150,.08,'sawtooth',.04); }
+        // プレイヤーのラケット
+        if(last===1&&pz<PZ&&ball.z>=PZ-.02&&Math.hypot(ball.x-pad.x,ball.y-pad.y)<.14){ if(bounce[0]===0){ point(1,L('バウンド前に打った','Volley')); return; } last=0; bounce={0:0,1:0}; rally++; const pw=Math.min(1.8,1+Math.hypot(pad.vx,pad.vy)*.08); const aimX=Math.max(-TW/2+.08,Math.min(TW/2-.08,(ball.x-pad.x)*-4+pad.vx*.12+ball.x*.3)); launch(0,-1,3.2*pw,aimX,-.5-Math.min(.75,pad.vy>0?.3:0)-Math.random()*.3); ball.z=PZ-.03; AU.tone(900,.03,'square',.08); }
+        // CPU
+        if(last===0&&pz>CZ&&ball.z<=CZ+.02){ const reach=Math.hypot(ball.x-cpu.x,ball.y-cpu.y); if(bounce[1]>=1&&reach<.28){ last=1; bounce={0:0,1:0}; rally++; const e=ERR[lv]; const aimX=Math.max(-.75,Math.min(.75,(Math.random()-.5)*TW*.8+(Math.random()-.5)*e*2)); launch(0,1,SPD[lv]*(.85+Math.random()*.3),aimX,.5+Math.random()*.7+(Math.random()<e?.9:0)); ball.z=CZ+.03; AU.tone(800,.03,'square',.07); } } }
+      if(ball.z>PZ+1.2||ball.z<CZ-1.5||Math.abs(ball.x)>3){ const hitSide=1-last; if(state==='play'){ if(bounce[hitSide]===0) point(1-last,L('アウト','Out')); else point(last,hitSide===0?L('返せなかった','Missed'):L('CPUが返せなかった','CPU missed')); } return; }
+      bm.position.set(ball.x,ball.y,ball.z); shd.position.set(ball.x,(Math.abs(ball.x)<TW/2&&Math.abs(ball.z)<TL/2?TH:0)+.002,ball.z); }
+    // CPUの動き
+    const tx=ball&&state==='play'&&last===0?ball.x+ball.vx*Math.max(0,(ball.z-CZ)/Math.max(.5,-ball.vz)):0, ty=ball&&state==='play'?Math.max(TH+.05,Math.min(1.3,ball.y)):1; const cs={easy:1.6,normal:2.6,hard:4}[lv]*dt; cpu.x+=Math.max(-cs,Math.min(cs,tx-cpu.x)); cpu.y+=Math.max(-cs,Math.min(cs,ty-cpu.y)); cm.position.set(cpu.x,cpu.y,CZ); cm.rotation.z=cpu.x*.4;
+    if(state==='serve'&&serveBy===1) bm.position.set(cpu.x,cpu.y+.12,CZ+.05);
+    cam.position.lerp(new T.Vector3(pad.x*.3,1.45,PZ+1.15),Math.min(1,dt*3)); cam.lookAt(0,TH,-.4); };
+  const draw=()=>{ top.innerHTML=gTop([[L('あなた','You'),sc2[0]],['CPU',sc2[1]],[L('サーブ','Serve'),serveBy===0?L('あなた','You'):'CPU'],[L('ラリー','Rally'),rally]]);
+    ctl.innerHTML=''; ctl.append(gSeg([['easy','やさしい','Easy'],['normal','ふつう','Normal'],['hard','つよい','Hard']],lv,k=>{ lv=k; SAVE('tt6',k); sc2=[0,0]; state='ready'; draw(); }),h('span','sub',state==='ready'?L('タップでスタート。ポインター・指でラケットを動かします','Tap to start. Move the paddle with the pointer'):state==='serve'&&serveBy===0?L('タップでサーブ！','Tap to serve!'):state==='over'?(sc2[0]>sc2[1]?L(`あなたの勝ち！ ${sc2[0]}-${sc2[1]}（タップでもう一度）`,`You win! ${sc2[0]}-${sc2[1]}`):L(`CPUの勝ち ${sc2[0]}-${sc2[1]}（タップでもう一度）`,`CPU wins ${sc2[0]}-${sc2[1]}`)):L('ラケットを振る速さで、強く打てます','Swing faster for power'))); };
+  window.__tt=()=>({ball,state,sc2,last,bounce,pad,cpu});
+  cam.position.set(0,1.45,PZ+1.15); draw(); }});
+INST6('tabletennis');
 
 </script>
 </body>
