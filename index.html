@@ -829,7 +829,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.42';
+const APP_VERSION='5.11.43';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9822,6 +9822,54 @@ regApp('measure',{name:'巻き尺',en:'Measure',g:'ruler',bg:G1+'#facc15,#a16207
     else ctl.append(btn('−',()=>{ eye=Math.max(30,eye-5); SAVE('ms6eye',eye); draw(); }),h('b','',`${eye}cm`),btn('＋',()=>{ eye=Math.min(200,eye+5); SAVE('ms6eye',eye); draw(); }),btn(IC('smartphone')+L('ジャイロを使う','Use gyro'),gyOn,'pri'),h('span','sub',L('端末の床からの高さを合わせて、真ん中の印を床の点に向けます','Set the device height and aim at a floor point'))); };
   draw(); }});
 INST6('measure');
+// ---------- ARペット ----------
+regApp('arpet',{name:'ARペット',en:'AR Pet',g:'paw-print',bg:G1+'#fdba74,#be185d)',cat:'fun',w:1000,h:720,desc:'カメラの映像の中に、ペットがやってきます。エサ・なでる・ボール遊びで仲良くなろう。端末を動かすとペットがその場にいるように見えて、いっしょに写真も撮れます。',den:'A pet appears in your camera view. Feed, pet and play.',
+ impl(body,w){ body.classList.add('gmBody'); let kind=LOAD('ap6k','cat'), st=STORE.get('arpet',{love:0,full:60,name:''}), stream=null, pet={x:.5,y:.75,tx:.5,vx:0,face:1,act:'idle',t:0,jy:0,heart:0,eat:0}, ball=null, food=null, gy={a:null,b:null,a0:null,b0:null}, par={x:0,y:0}, msgT=0, msg='';
+  const top=h('div'), stage=h('div','msStage apStage'), v=document.createElement('video'), cvs=document.createElement('canvas'), ctl=h('div','gmCtl'); v.playsInline=true; v.muted=true; cvs.className='msOv'; stage.append(v,cvs); body.append(top,stage,ctl); const x=cvs.getContext('2d');
+  const save=()=>STORE.set('arpet',st); const onG=e=>{ if(e.alpha==null) return; if(gy.a0==null){ gy.a0=e.alpha; gy.b0=e.beta; } gy.a=e.alpha; gy.b=e.beta; };
+  const stop=()=>{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } removeEventListener('deviceorientation',onG); }; onCloseAdd(w,stop);
+  (async()=>{ try{ stream=await openCam('environment'); v.srcObject=stream; await v.play(); }catch(e){ toastW(L('カメラが使えないので、お部屋の背景で遊びます','No camera: using a room background')); } try{ if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){} else addEventListener('deviceorientation',onG); }catch(e){} })();
+  const say=t=>{ msg=t; msgT=2.2; };
+  const PAL={cat:['#f59e0b','#fde68a','#7c2d12'],dog:['#d6a86c','#fef3c7','#422006'],hamster:['#fdba74','#fff7ed','#7c2d12'],bunny:['#f1f5f9','#fbcfe8','#64748b']};
+  const drawPet=(px,py,s)=>{ const [c1,c2,c3]=PAL[kind]; x.save(); x.translate(px,py-pet.jy*s); x.scale(pet.face*s,s);
+    x.fillStyle='rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(0,pet.jy*1+4,60,14,0,0,TAU); x.fill();
+    const bob=pet.act==='walk'?Math.sin(pet.t*14)*3:Math.sin(pet.t*2)*1.5; x.translate(0,bob);
+    x.fillStyle=c1; if(kind!=='hamster'){ x.save(); x.translate(-48,-36); x.rotate(Math.sin(pet.t*(pet.heart>0?14:4))*.4-.6); x.beginPath(); x.ellipse(0,-14,kind==='bunny'?10:8,kind==='bunny'?10:22,0,0,TAU); x.fill(); x.restore(); }
+    x.beginPath(); x.ellipse(0,-30,kind==='hamster'?52:48,kind==='hamster'?38:30,0,0,TAU); x.fill(); x.fillStyle=c2; x.beginPath(); x.ellipse(6,-22,26,16,0,0,TAU); x.fill();
+    x.fillStyle=c1; const lg=pet.act==='walk'?Math.sin(pet.t*14)*6:0; [[-28,lg],[-12,-lg],[14,lg],[30,-lg]].forEach(([lx,o])=>{ x.beginPath(); x.roundRect(lx-6,-12+o*.2,12,16,6); x.fill(); });
+    x.beginPath(); x.arc(40,-62,30,0,TAU); x.fill(); x.fillStyle=c2; x.beginPath(); x.ellipse(48,-52,15,11,0,0,TAU); x.fill();
+    x.fillStyle=c1; if(kind==='cat'){ [[22,-86],[54,-88]].forEach(([ex,ey])=>{ x.beginPath(); x.moveTo(ex-10,ey+12); x.lineTo(ex,ey-10); x.lineTo(ex+10,ey+12); x.fill(); }); }
+    else if(kind==='dog'){ x.fillStyle=c3; [[18,-74],[60,-74]].forEach(([ex,ey],i)=>{ x.beginPath(); x.ellipse(ex,ey,9,18,i?-.4:.4,0,TAU); x.fill(); }); }
+    else if(kind==='bunny'){ [[28,-112],[48,-114]].forEach(([ex,ey],i)=>{ x.fillStyle=c1; x.beginPath(); x.ellipse(ex,ey,9,28,i?.15:-.15,0,TAU); x.fill(); x.fillStyle=c2; x.beginPath(); x.ellipse(ex,ey,4,20,i?.15:-.15,0,TAU); x.fill(); }); }
+    else { [[22,-86],[58,-86]].forEach(([ex,ey])=>{ x.beginPath(); x.arc(ex,ey,9,0,TAU); x.fill(); }); }
+    x.fillStyle='#111'; const blink=Math.sin(pet.t*1.3)>.97||pet.heart>0; [[32,-66],[56,-66]].forEach(([ex,ey])=>{ if(blink){ x.strokeStyle='#111'; x.lineWidth=3; x.beginPath(); x.arc(ex,ey,5,Math.PI,0,true); x.stroke(); } else { x.beginPath(); x.arc(ex,ey,5,0,TAU); x.fill(); x.fillStyle='#fff'; x.beginPath(); x.arc(ex+1.5,ey-2,1.6,0,TAU); x.fill(); x.fillStyle='#111'; } });
+    x.fillStyle='#f472b6'; x.beginPath(); x.arc(50,-54,4,0,TAU); x.fill(); if(pet.eat>0){ x.fillStyle='#7f1d1d'; x.beginPath(); x.ellipse(50,-44,6,4+Math.abs(Math.sin(pet.t*16))*3,0,0,TAU); x.fill(); }
+    x.fillStyle='rgba(244,114,182,.45)'; [[24,-56],[64,-56]].forEach(([ex,ey])=>{ x.beginPath(); x.ellipse(ex,ey,7,4,0,0,TAU); x.fill(); }); x.restore(); };
+  const resize=()=>{ const r=stage.getBoundingClientRect(); cvs.width=r.width; cvs.height=r.height; };
+  const tap=(nx,ny)=>{ const W=cvs.width, H=cvs.height, s=H/420, px=(pet.x+par.x)*W, py=(pet.y+par.y)*H; if(Math.hypot(nx*W-px,ny*H-(py-50*s))<80*s){ pet.heart=1.6; pet.act='happy'; st.love=Math.min(100,st.love+2); save(); AU.tone(880,.08,'triangle',.06); setTimeout(()=>AU.tone(1175,.08,'triangle',.06),90); say(['ゴロゴロ…♡','うれしい！','もっとなでて！'][Math.floor(Math.random()*3)]); } else { pet.tx=Math.max(.12,Math.min(.88,nx-par.x)); pet.act='walk'; } };
+  cvs.onpointerdown=e=>{ const r=cvs.getBoundingClientRect(); tap((e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height); }; cvs.dataset.canvas=''; cvs._xr={down:tap,move:()=>{},up:()=>{}};
+  loopOn(body,dt=>{ if(cvs.width!==Math.round(stage.clientWidth)) resize(); const W=cvs.width, H=cvs.height, s=H/420; pet.t+=dt;
+    if(gy.a!=null){ let da=gy.a-gy.a0; if(da>180) da-=360; if(da<-180) da+=360; par.x+=((da/60)-par.x)*Math.min(1,dt*8); par.y+=((-(gy.b-gy.b0)/80)-par.y)*Math.min(1,dt*8); }
+    if(v.readyState<2){ const g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,'#e7e5e4'); g.addColorStop(.62,'#d6d3d1'); g.addColorStop(.62,'#a8a29e'); g.addColorStop(1,'#78716c'); x.fillStyle=g; x.fillRect(0,0,W,H); } else x.clearRect(0,0,W,H);
+    st.full=Math.max(0,st.full-dt*.08);
+    if(ball){ ball.t+=dt; ball.x+=ball.vx*dt; ball.y+=ball.vy*dt; ball.vy+=1.6*dt; if(ball.y>.8){ ball.y=.8; ball.vy*=-.5; ball.vx*=.7; } pet.tx=ball.x; pet.act='walk'; if(Math.abs(pet.x-ball.x)<.05&&ball.y>.7){ ball=null; pet.heart=1.2; pet.act='happy'; st.love=Math.min(100,st.love+3); save(); say(L('ボールとったよ！','Got it!')); AU.tone(988,.1,'triangle',.07); } }
+    if(food){ pet.tx=food.x; pet.act='walk'; if(Math.abs(pet.x-food.x)<.06){ pet.eat=2; pet.act='happy'; food=null; st.full=Math.min(100,st.full+30); st.love=Math.min(100,st.love+1); save(); say(L('もぐもぐ…おいしい！','Yum!')); } }
+    const dx=pet.tx-pet.x; if(Math.abs(dx)>.01){ pet.x+=Math.sign(dx)*Math.min(Math.abs(dx),dt*.22); pet.face=dx>0?1:-1; if(pet.act!=='walk'&&pet.eat<=0) pet.act='walk'; } else if(pet.act==='walk') pet.act='idle';
+    if(pet.act==='idle'&&Math.random()<dt*.15){ pet.tx=.15+Math.random()*.7; }
+    if(pet.heart>0){ pet.heart-=dt; pet.jy=Math.abs(Math.sin(pet.heart*8))*16; } else pet.jy=0; if(pet.eat>0) pet.eat-=dt;
+    const px=(pet.x+par.x)*W, py=(pet.y+par.y)*H; if(food){ x.font=`${40*s}px system-ui`; x.textAlign='center'; x.fillText('🍖',(food.x+par.x)*W,(.8+par.y)*H); } if(ball){ x.font=`${32*s}px system-ui`; x.textAlign='center'; x.fillText('⚽',(ball.x+par.x)*W,(ball.y+par.y)*H); }
+    drawPet(px,py,s*1.3); if(pet.heart>0){ x.font=`${30*s}px system-ui`; x.textAlign='center'; for(let i=0;i<3;i++) x.fillText('💗',px+(i-1)*40*s+Math.sin(pet.t*3+i)*6,py-170*s-(1.6-pet.heart)*60*s); }
+    if(msgT>0){ msgT-=dt; x.font=`bold ${20*s}px system-ui`; const tw=x.measureText(msg).width+24; x.fillStyle='rgba(255,255,255,.95)'; x.beginPath(); x.roundRect(px-tw/2,py-210*s,tw,38*s,14); x.fill(); x.fillStyle='#111'; x.textAlign='center'; x.fillText(msg,px,py-185*s); }
+    if(Math.random()<.05) drawTop(); });
+  const NM={cat:['ねこ','Cat'],dog:['いぬ','Dog'],hamster:['ハムスター','Hamster'],bunny:['うさぎ','Bunny']};
+  const drawTop=()=>{ top.innerHTML=gTop([[L('なかよし度','Friendship'),'💗'.repeat(Math.ceil(st.love/20))+'♡'.repeat(5-Math.ceil(st.love/20))],[L('おなか','Tummy'),Math.round(st.full)+'%'],[L('レベル','Level'),1+Math.floor(st.love/10)]]); };
+  const draw=()=>{ drawTop(); ctl.innerHTML=''; ctl.append(gSeg(Object.keys(NM).map(k=>[k,NM[k][0],NM[k][1]]),kind,k=>{ kind=k; SAVE('ap6k',k); draw(); }),
+    btn('🍖'+L('エサ','Feed'),()=>{ food={x:.15+Math.random()*.7}; AU.tone(600,.05,'sine',.05); }),btn('⚽'+L('ボール','Ball'),()=>{ ball={x:.5,y:.3,vx:(Math.random()-.5)*.8,vy:-.4,t:0}; AU.tone(500,.05,'square',.05); }),
+    btn(IC('compass')+L('まっすぐを合わせる','Recenter'),()=>{ gy.a0=gy.a; gy.b0=gy.b; if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission) DeviceOrientationEvent.requestPermission().then(r=>{ if(r==='granted') addEventListener('deviceorientation',onG); }).catch(()=>{}); }),
+    btn(IC('camera')+L('写真','Photo'),async()=>{ const c=document.createElement('canvas'); c.width=cvs.width; c.height=cvs.height; const g=c.getContext('2d'); if(v.readyState>=2){ const vr=v.videoWidth/v.videoHeight, r=c.width/c.height; let sw=v.videoWidth, sh=v.videoHeight, sx=0, sy=0; if(vr>r){ sw=sh*r; sx=(v.videoWidth-sw)/2; } else { sh=sw/r; sy=(v.videoHeight-sh)/2; } g.drawImage(v,sx,sy,sw,sh,0,0,c.width,c.height); } g.drawImage(cvs,0,0); await phAdd(c.toDataURL('image/jpeg',.88),'arpet',L('ARペット','AR Pet')); toastW(L('写真アプリに保存しました','Saved to Photos')); AU.tone(2200,.03,'square',.05); }),
+    h('span','sub',L('ペットをタップでなでる・ほかの場所をタップでそこへ歩く','Tap the pet to pet it, tap elsewhere to walk'))); };
+  draw(); }});
+INST6('arpet');
 
 </script>
 </body>
