@@ -730,6 +730,9 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .gfCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,90%);background:#fffdf7;color:#1f2937;border-radius:22px;padding:24px;text-align:center;box-shadow:0 0 0 8px var(--c),0 20px 60px rgba(0,0,0,.6);z-index:5;animation:gcIn .4s}.gfCE{font-size:64px}.gfCard h2{margin:4px 0}.gfWhat{font-size:26px;font-weight:900;margin:10px 0}.gfCard small{display:block;margin-bottom:10px;opacity:.6}
 .gfSend{display:flex;flex-direction:column;gap:10px}.gfCards,.gfFigs{display:flex;flex-wrap:wrap;gap:8px}.gfCd,.gfFig{display:flex;flex-direction:column;align-items:center;gap:2px;width:96px;padding:10px 4px;border:2px solid transparent;border-radius:14px;background:rgba(255,255,255,.06);color:#fff;font:inherit;cursor:pointer}.gfCd i,.gfFig i{font-style:normal;font-size:30px}.gfCd small,.gfFig small{font-size:11px}.gfCd.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 25%,transparent)}.gfFig.on{border-color:#fbbf24}
 .gfLog{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.05)}.gfLog span{flex:1}.gfLog small{opacity:.6}
+.frkWrap{flex:1;padding:14px 22px;display:flex;flex-direction:column;gap:12px;overflow:auto}.frkCats{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.frkCats button{display:flex;gap:5px;align-items:center;border:0;border-radius:999px;padding:7px 13px;background:rgba(255,255,255,.07);color:#fff;font:inherit;cursor:pointer}.frkCats button.on{background:#d97706}
+.frkPod{display:flex;justify-content:center;align-items:flex-end;gap:14px}.frkP{display:flex;flex-direction:column;align-items:center;gap:4px;width:130px}.frkP i{display:block;width:100%;border-radius:12px 12px 0 0;background:linear-gradient(#fbbf24,#b45309)}.frkP.p1 i{height:90px}.frkP.p2 i{height:60px;background:linear-gradient(#e2e8f0,#64748b)}.frkP.p3 i{height:40px;background:linear-gradient(#fdba74,#9a3412)}.frkMed{font-size:30px}.frkP span{font-weight:900}
+.frkList{display:flex;flex-direction:column;gap:5px}.frkR{display:grid;grid-template-columns:28px 36px 160px 1fr 80px 70px;gap:8px;align-items:center;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.05)}.frkR.me{background:rgba(251,191,36,.18)}.frkR em{font-style:normal;font-weight:900;text-align:center}.frkR span{text-align:right;font-weight:900}.frkR small{opacity:.55;font-size:11px}.frkBar{height:10px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}.frkBar i{display:block;height:100%;background:#fbbf24}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -807,7 +810,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.36';
+const APP_VERSION='5.11.37';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9635,6 +9638,23 @@ regApp('gift',{name:'ギフト',en:'Gifts',g:'gift',bg:G1+'#fb7185,#ea580c)',cat
     sub(m.onSnapshot(m.query(m.collection(FB.db,'xr_gifts'),m.where('to','==',FB.user.uid),m.where('claimed','==',false),m.limit(50)),qs=>{ inbox=qs.docs.map(d=>({id:d.id,...d.data()})); if(tab==='inbox'&&!root.querySelector('.gfBox.open')) draw(); }));
     draw(); }); }});
 INST6('gift');
+// ---------- フレンドランキング ----------
+const MYSTATS=()=>{ const gs=GST.get(); const habits=STORE.get('habits',[]); const wk=[...Array(7)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return isoL(d); }); const fb=STORE.get('fishbook',{});
+  return {coins:COIN.get(),fish:Object.keys(fb).length,fishN:Object.values(fb).reduce((a,e)=>a+(e.n||0),0),plays:Object.values(gs).reduce((a,e)=>a+(e.plays||0),0),gacha:Object.keys(STORE.get('gacha',{})).length,kanji:Object.keys(STORE.get('kanjiDone',{})).length,habit:habits.reduce((a,hb)=>a+wk.filter(k=>hb.done&&hb.done[k]).length,0)}; };
+regApp('franking',{name:'ランキング',en:'Friend Ranking',g:'trophy',bg:G1+'#fbbf24,#b45309)',cat:'social',w:900,h:720,desc:'フレンドと記録をくらべられます。コイン・つった魚の種類・ゲームで遊んだ回数・ガチャ・漢字・今週の習慣の6つのランキング。',den:'Compare coins, fish, games and more with friends.',
+ impl(body,w){ const root=h('div','soRoot'); body.appendChild(root); const CAT=[['coins','コイン','Coins','coins','🪙'],['fish','魚図鑑','Fish species','fish','🐟'],['plays','ゲーム回数','Games played','gamepad-2','🎮'],['gacha','ガチャ','Gacha','gift','🎰'],['kanji','漢字','Kanji','pen-line','✍️'],['habit','今週の習慣','Habits this week','calendar-check','✅']];
+  SO.gate(root,w,async()=>{ const m=FB.m; let cat=LOAD('fr6c','coins'), rows=[]; const wrap=h('div','frkWrap'); root.appendChild(wrap); const me=SO.me(), st=MYSTATS();
+    await m.setDoc(m.doc(FB.db,'xr_stats',me.uid),{...st,name:me.name,color:me.color,at:Date.now()},{merge:true}).catch(()=>{});
+    try{ await frLoad(); }catch(e){} const ids=[me.uid,...FR.list.map(f=>f.id)];
+    const got=await Promise.all(ids.map(id=>m.getDoc(m.doc(FB.db,'xr_stats',id)).then(s=>s.exists()?{id,...s.data()}:{id,name:(FR.list.find(f=>f.id===id)||{}).name||'?',none:1}).catch(()=>({id,name:'?',none:1}))));
+    rows=got; rows[0]={...rows[0],...st,name:me.name,color:me.color};
+    const draw=()=>{ wrap.innerHTML=''; const cs=h('div','frkCats'); CAT.forEach(([k,ja,en,ic])=>{ const b=h('button',k===cat?'on':'',IC(ic)+L(ja,en)); b.onclick=()=>{ cat=k; SAVE('fr6c',k); draw(); }; cs.appendChild(b); }); wrap.appendChild(cs);
+      const c=CAT.find(x=>x[0]===cat); const l=rows.slice().sort((a,b)=>(b[cat]||0)-(a[cat]||0)); const mx=Math.max(1,...l.map(r=>r[cat]||0));
+      const pod=h('div','frkPod'); [1,0,2].forEach(i=>{ const r=l[i]; if(!r) return; pod.appendChild(h('div','frkP p'+(i+1),`<div class="frkMed">${['🥇','🥈','🥉'][i]}</div>${avDot(r.name,r.color||'#93c5fd',i?50:64)}<b>${esc(r.name)}</b><span>${c[4]} ${(r[cat]||0).toLocaleString()}</span><i></i>`)); }); wrap.appendChild(pod);
+      const ls=h('div','frkList'); l.forEach((r,i)=>ls.appendChild(h('div','frkR'+(r.id===me.uid?' me':''),`<em>${i+1}</em>${avDot(r.name,r.color||'#93c5fd',32)}<b>${esc(r.name)}${r.id===me.uid?L('（自分）',' (you)'):''}</b><div class="frkBar"><i style="width:${(r[cat]||0)/mx*100}%"></i></div><span>${(r[cat]||0).toLocaleString()}</span>${r.none?`<small>${L('まだ記録なし','no data yet')}</small>`:`<small>${SO.ago(r.at)}</small>`}`))); wrap.appendChild(ls);
+      if(!FR.list.length) wrap.appendChild(h('p','sub',L('フレンドを追加すると、ここでくらべられます（フレンドアプリ）','Add friends to compare'))); else wrap.appendChild(h('p','sub',L('記録は、それぞれの人がこのアプリを開いたときに更新されます','Records update when each person opens this app'))); };
+    draw(); }); }});
+INST6('franking');
 
 </script>
 </body>
