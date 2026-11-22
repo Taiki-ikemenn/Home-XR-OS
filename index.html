@@ -829,7 +829,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='6.0.0';
+const APP_VERSION='6.0.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -1036,6 +1036,8 @@ function pinchDown(){
   const el=S.hit||hitEl(), a=actionable(el);
   if(GAMEON&&GAMEPINCH&&!a) GAMEPINCH(el);
   DRAG={kind:'press',el,a,x0:S.cx,y0:S.cy,lx:S.cx,ly:S.cy,moved:false,t0:S.t};
+  // 押した瞬間に反応する部品（ピアノの鍵盤・パッドなど）は、ピンチした瞬間に押す
+  if(a&&a.onpointerdown&&!a.onclick){ try{ AU.init(); a.onpointerdown(new PointerEvent('pointerdown',{clientX:S.cx,clientY:S.cy,bubbles:true,cancelable:true})); DRAG.pd=true; }catch(e){} }
   if(a&&a.classList.contains('grab')){ const w=a.closest('.wo'); const o=WOS.find(x=>x.el===w); if(o){ DRAG.kind='grab'; DRAG.o=o; DRAG.yaw0=o.yaw; DRAG.y0=o.y; a.classList.add('drag'); AU.tone(500,.05,'sine',.08); } }
   else if(a&&a.classList.contains('slider')){ DRAG.kind='slider'; a.classList.add('drag'); sliderSet(a); }
   else if(a&&a.dataset.canvas!=null){ DRAG.kind='canvas'; const p=localPos(a); a._xr&&a._xr.down&&a._xr.down(p.x,p.y); }
@@ -1056,6 +1058,7 @@ function pinchUp(){
   if(D.a) D.a.classList.remove('drag');
   if(D.kind==='canvas'){ D.a._xr&&D.a._xr.up&&D.a._xr.up(); return; }
   if(D.kind==='grab'){ STORE.set('winpos_'+(D.o.el.dataset.app||''),{yaw:angDiff(D.o.yaw,0),y:D.o.y}); return; }
+  if(D.kind==='press'&&D.pd){ try{ D.a.onpointerup&&D.a.onpointerup(new PointerEvent('pointerup',{clientX:S.cx,clientY:S.cy})); }catch(e){} return; }
   if(D.kind==='press'&&!D.moved&&D.a){ const now=D.hand?D.a:actionable(hitEl()); if(now===D.a){ D.a.classList.add('pressed'); setTimeout(()=>D.a.classList.remove('pressed'),150); AU.click(); D.a.click(); } }
 }
 function sliderSet(a){ const p=localPos(a); const v=clamp(p.x,0,1); a._v=v; drawSlider(a); a.dispatchEvent(new CustomEvent('xrinput',{detail:v})); }
@@ -7442,7 +7445,7 @@ APPIMPL.calc=(body,w)=>{ body.style.display='flex'; let ex='', res='0', sci=LOAD
 
 
 /* ================= アプリの作り込み 3：ミュージック・天気・ピアノ・ドラム・ボイスレコーダー・ドット絵 ================= */
-const AC5={ get(){ if(!AC5.c){ const A=window.AudioContext||window.webkitAudioContext; AC5.c=new A(); AC5.out=AC5.c.createGain(); AC5.out.gain.value=.7; AC5.out.connect(AC5.c.destination); } AC5.c.resume(); return AC5.c; } };
+const AC5={ get(){ if(!AC5.c){ AU.init(); const A=window.AudioContext||window.webkitAudioContext; AC5.c=AU.ctx||new A(); AC5.out=AC5.c.createGain(); AC5.out.gain.value=.7; AC5.out.connect(AC5.c.destination); } AC5.c.resume(); return AC5.c; } };
 // ---------- ミュージック ----------
 APPIMPL.music=(body,w)=>{ body.style.display='flex'; let pl=LOAD('mu5',TRACKS.map(t=>({k:t[0]}))), idx=0, shuf=false, rep=true, t0=0, slp=0, slpT=0;
   const name=it=>it.yt?(it.title||'YouTube'):(()=>{ const t=TRACKS.find(x=>x[0]===it.k); return t?L(t[1],t[2]):'?'; })();
