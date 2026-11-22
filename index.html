@@ -782,7 +782,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.25';
+const APP_VERSION='5.11.26';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9255,10 +9255,54 @@ world.every(7, () => { const x = world.random(-10, 10), y = world.random(14, 20)
 hudText = () => '金魚 ' + C.fish + '　景品 ' + C.prize + '　ヨーヨー ' + C.yoyo + '　食べ物 ' + C.food
 world.on('tick', () => { score = C.fish * 3 + C.prize * 5 + C.yoyo * 2 + C.food; if (score > best) best = score; hud() })`);
   return W({sky:'#1e1b4b',ground:'#14532d',fog:false,spawn:[0,0,4],objs:o,script,ui:[TX('スコア',2,2,56,7,'屋台をタップして遊ぼう',18)]}); };
+// ===== 雪合戦 =====
+NW.snow=()=>{ reset(); const o=[S('cyl',[0,.05,-10],[44,.1,44],'#f8fafc',{solid:0})]; const F=[[-4,-3],[4,-3],[0,-7],[-7,-10],[7,-10],[-3,-13],[3,-13],[0,-18]];
+  F.forEach(([x,z])=>o.push(B([x,.6,z],[2.4,1.2,.8],'#e2e8f0'),B([x,1.25,z],[2.6,.15,.95],'#ffffff',{solid:0})));
+  for(let i=0;i<16;i++){ const a=i/16*6.283; o.push(S('tree',[Math.cos(a)*20,0,Math.sin(a)*20-10],[1.2,1.5,1.2],'#166534')); }
+  o.push(I('snowman_0',[-5,0,6]),I('snowman_0',[5,0,6]),...START([2.6,.5,6.5],'スタート'),T([0,4.6,-1],'Home-XR 雪合戦','#bae6fd',5));
+  const script=PRE(0,`const FT = ${JSON.stringify(F)}; let hp = 100, wave = 0, ko = 0, E = [], SB = []
+const blocked = (a, b) => { for (let i = 1; i < 10; i++) { const t = i / 10, x = a[0] + (b[0] - a[0]) * t, z = a[2] + (b[2] - a[2]) * t, y = a[1] + (b[1] - a[1]) * t; if (y < 1.3 && FT.some(([fx, fz]) => Math.abs(x - fx) < 1.25 && Math.abs(z - fz) < 0.45)) return true } return false }
+const spawnE = () => { const x = world.random(-14, 14), z = world.random(-24, -16); const o = world.spawn({ type: 'item', item: 'snowman_0', pos: [x, 0, z] }); if (!o) return; const e = { o, hp: 2, cd: world.random(1.5, 3), tx: x, tz: z }
+  o.onClick(() => { if (!playing) return; const p = world.player.pos; const b = world.spawn({ type: 'sphere', pos: [p[0], 1.4, p[2]], scale: [0.25, 0.25, 0.25], color: '#ffffff' }); if (!b) return; world.sound(500, 0.04); SB.push({ b, from: [p[0], 1.4, p[2]], to: o.pos.map((v, i) => i === 1 ? 1 : v), t: 0, mine: true, e }) }); E.push(e) }
+const startWave = () => { wave++; for (let i = 0; i < 2 + wave * 2; i++) spawnE(); world.say('ウェーブ ' + wave + '！ ゆきだるまが ' + (2 + wave * 2) + ' 体') }
+onBegin = () => { hp = 100; wave = 0; ko = 0; E.forEach(e => e.o.remove()); E = []; SB.forEach(s => s.b.remove()); SB = []; startWave() }
+onEnd = () => { E.forEach(e => e.o.remove()); E = []; SB.forEach(s => s.b.remove()); SB = [] }
+world.on('tick', dt => { if (!playing) return; const p = world.player.pos
+  E.forEach(e => { e.cd -= dt; if (Math.random() < dt * 0.4) { e.tx = Math.max(-15, Math.min(15, e.tx + world.random(-4, 4))); e.tz = Math.max(-26, Math.min(-12, e.tz + world.random(-3, 3))) } e.o.moveToward(e.tx, 0, e.tz, dt * 1.2); e.o.lookAtPlayer()
+    if (e.cd <= 0) { e.cd = world.random(2.2, 4) - wave * 0.2; const q = e.o.pos; const b = world.spawn({ type: 'sphere', pos: [q[0], 1.2, q[2]], scale: [0.25, 0.25, 0.25], color: '#e0f2fe' }); if (b) SB.push({ b, from: [q[0], 1.2, q[2]], to: [p[0] + world.random(-0.6, 0.6), 1, p[2] + world.random(-0.6, 0.6)], t: 0, mine: false }) } })
+  SB = SB.filter(s => { const L = Math.hypot(s.to[0] - s.from[0], s.to[2] - s.from[2]); s.t += dt * 9 / Math.max(3, L); const t = Math.min(1, s.t); const x = s.from[0] + (s.to[0] - s.from[0]) * t, z = s.from[2] + (s.to[2] - s.from[2]) * t, y = s.from[1] + (s.to[1] - s.from[1]) * t + Math.sin(t * Math.PI) * 1.5; s.b.setPos(x, y, z)
+    if (t > 0.15 && y < 1.3 && FT.some(([fx, fz]) => Math.abs(x - fx) < 1.25 && Math.abs(z - fz) < 0.45)) { s.b.remove(); world.sound(200, 0.03); return false }
+    if (t >= 1) { s.b.remove(); if (s.mine) { if (s.e && E.includes(s.e)) { s.e.hp--; world.sound(700, 0.06); if (s.e.hp <= 0) { ko++; score += 10; s.e.o.remove(); E = E.filter(q => q !== s.e); world.say('ゆきだるまをたおした！'); if (!E.length) { if (wave >= 5) { score += hp; end('雪合戦に勝った！スコア ' + score) } else world.after(1.5, () => { if (playing) startWave() }) } } } }
+      else { const pp = world.player.pos; if (Math.hypot(pp[0] - s.to[0], pp[2] - s.to[2]) < 1.2 && !blocked(s.from, [pp[0], 1, pp[2]])) { hp -= 15; world.sound(150, 0.12); if (hp <= 0) end('雪まみれ！ウェーブ ' + wave + '　スコア ' + score) } }
+      return false } return true }) })
+hudText = () => playing ? ('ウェーブ ' + wave + ' / 5　たおした ' + ko + '　HP ' + Math.max(0, hp) + '　スコア ' + score) : ('スタートを押してね。ゆきだるまをタップで雪玉！かべにかくれてよけよう' + (best ? '　ベスト ' + best : ''))
+hud()`);
+  return W({sky:'#cbd5e1',ground:'#f1f5f9',fog:true,spawn:[0,0,5],objs:o,script,ui:[TX('スコア',2,2,60,7,'',17)]}); };
+// ===== 巨大迷路 =====
+NW.bigmaze=()=>{ reset(); const n=19, S2=3.4, H=3.4; const r=R(777); const g=[...Array(n)].map(()=>[...Array(n)].map(()=>({v:0,w:[1,1,1,1]}))); const st=[[0,0]]; g[0][0].v=1; const D=[[0,-1,0,2],[1,0,1,3],[0,1,2,0],[-1,0,3,1]];
+  while(st.length){ const [cx,cy]=st[st.length-1]; const nb=D.filter(([dx,dy])=>{ const x=cx+dx,y=cy+dy; return x>=0&&y>=0&&x<n&&y<n&&!g[y][x].v; }); if(!nb.length){ st.pop(); continue; } const [dx,dy,a,b]=nb[(r()*nb.length)|0]; g[cy][cx].w[a]=0; g[cy+dy][cx+dx].w[b]=0; g[cy+dy][cx+dx].v=1; st.push([cx+dx,cy+dy]); }
+  for(let i=0;i<n*2;i++){ const x=1+((r()*(n-2))|0), y=1+((r()*(n-2))|0), d=(r()*4)|0, [dx,dy,a,b]=D[d]; g[y][x].w[a]=0; g[y+dy][x+dx].w[b]=0; }
+  const o=[], ox=-n*S2/2, oz=-n*S2-2; const C='#166534';
+  for(let y=0;y<=n;y++){ let s0=null; for(let x=0;x<=n;x++){ const on=x<n&&(y<n?g[y][x].w[0]:g[n-1][x].w[2])&&!(y===n&&x===0); if(on&&s0===null) s0=x; if(!on&&s0!==null){ o.push(B([ox+(s0+x)/2*S2,H/2,oz+y*S2],[(x-s0)*S2+.4,H,.4],C)); s0=null; } } }
+  for(let x=0;x<=n;x++){ let s0=null; for(let y=0;y<=n;y++){ const on=y<n&&(x<n?g[y][x].w[3]:g[y][n-1].w[1]); if(on&&s0===null) s0=y; if(!on&&s0!==null){ o.push(B([ox+x*S2,H/2,oz+(s0+y)/2*S2],[.4,H,(y-s0)*S2+.4],C)); s0=null; } } }
+  o.push(B([0,.05,oz+n*S2/2],[n*S2+2,.1,n*S2+2],'#a3e635',{solid:0,pat:'grass'}));
+  const spots=[[n-1,0],[0,(n/2)|0],[(n/2)|0,(n/2)|0],[n-1,n-1],[(n/2)|0,0]]; spots.forEach(([x,y],i)=>{ const px=ox+(x+.5)*S2, pz=oz+(y+.5)*S2; o.push(S('cyl',[px,.6,pz],[.8,1.2,.8],['#ef4444','#3b82f6','#facc15','#a855f7','#f97316'][i],{name:'旗'+(i+1),glow:1}),T([px,1.8,pz],'旗'+(i+1),'#ffffff',1.4,{op:{billboard:1}})); });
+  const gx=ox+(n-.5)*S2, gz=oz+.5*S2; o.push(B([gx,.1,gz-2.3],[2,.2,1.4],'#facc15',{name:'ゴール',solid:0,glow:1}),T([gx,2.4,gz-2.3],'ゴール（旗を5本集めてから）','#facc15',3,{op:{billboard:1}}),B([gx,H/2,gz-1.7],[S2,H,.4],C,{name:'ゴールのとびら'}));
+  o.push(B([0,6,oz+n*S2/2],[1.2,12,1.2],'#a16207'),S('sphere',[0,12.6,oz+n*S2/2],[2,2,2],'#ef4444',{glow:1}));
+  const script=PRE(0,`let got = {}, t0 = 0
+onBegin = () => { got = {}; t0 = world.time; for (let i = 1; i <= 5; i++) { const f = world.get('旗' + i); if (f) f.show() } const d = world.get('ゴールのとびら'); if (d) d.show() }
+for (let i = 1; i <= 5; i++) { const f = world.get('旗' + i); if (f) f.onTouch(() => { if (!playing || got[i]) return; got[i] = 1; f.hide(); const n = Object.keys(got).length; world.sound(660 + n * 100, 0.1); world.say('旗 ' + n + ' / 5'); if (n === 5) { const d = world.get('ゴールのとびら'); if (d) d.hide(); world.say('旗を全部集めた！ゴールのとびらが開いたよ') } }) }
+const gl = world.get('ゴール'); if (gl) gl.onTouch(() => { if (!playing || Object.keys(got).length < 5) return; const sec = world.time - t0; score = Math.max(1, Math.round(600 - sec)); end('ゴール！ ' + sec.toFixed(1) + ' 秒') })
+hudText = () => playing ? ('旗 ' + Object.keys(got).length + ' / 5　タイム ' + (world.time - t0).toFixed(0) + ' 秒　まよったら赤い塔が真ん中') : ('スタートを押してね。5本の旗を集めてゴールへ！' + (best ? '　ベスト ' + best : ''))
+hud()`);
+  o.push(...START([ox+S2/2+1.6,.5,oz+n*S2+3]));
+  return W({sky:'#bae6fd',ground:'#65a30d',fog:false,spawn:[ox+S2/2,0,oz+n*S2+3],objs:o,script,ui:[TX('スコア',2,2,60,7,'',17)]}); };
 const add=(cat,genre,ja,en,desc,f)=>SWLIST.unshift({cat,genre,ja,en,desc,f});
 add('fun',null,'Home-XR 水族館','Home-XR Aquarium','海・川・サンゴ礁・大きな魚の水そう、頭の上を魚がおよぐ海のトンネル、光るクラゲの深海ゾーン。魚をタップすると名前がわかります。スタンプラリーつき',()=>NW.aqua());
 add('nature',null,'プラネタリウム','Planetarium','本物の星の位置を再現したドーム。冬の空・夏の空を切りかえられて、「星座ツアー」でオリオン座・北斗七星・夏の大三角などを解説します。星をタップすると名前がわかります',()=>NW.planet());
 add('fun',null,'Home-XR 夏祭り','Summer Festival','ちょうちんが光る夜のお祭り。金魚すくい・射的・ヨーヨーつり・たこ焼き・わたあめ・かき氷の屋台と、やぐら、打ち上げ花火があります',()=>NW.matsuri());
+add('game','sport','雪合戦','Snowball fight','ゆきだるまチームと雪合戦！ ゆきだるまをタップすると雪玉を投げます。雪のかべにかくれて雪玉をよけよう。5ウェーブ勝ちぬけ',()=>NW.snow());
+/*MAZE*/if(0)add('game','maze','巨大迷路','Giant maze','19×19マスの、背の高い生け垣の巨大迷路。5本の旗を集めるとゴールのとびらが開きます。真ん中の赤い塔が目印',()=>NW.bigmaze());
 window.NW6=NW; window.NW6add=add;
 })();
 
