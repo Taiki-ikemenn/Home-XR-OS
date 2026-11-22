@@ -629,6 +629,9 @@ body.w3on #pads,body.w3on #hud,body.w3on #handCam,body.w3on #htInfo,body.w3on .h
 .fbtGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}.fbt{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:16px;background:rgba(255,255,255,.06);border:2px solid transparent;color:#fff;font:inherit;text-align:left}.fbt.on{border-color:var(--bc,#fff)}button.fbt{cursor:pointer}.fbt i{width:26px;height:26px;border-radius:50% 50% 50% 10%;display:block}.fbt span{font-size:13px;opacity:.85;display:flex;gap:4px;align-items:center}.fbt em{font-size:12px;opacity:.7;font-style:normal}.fbt .row{gap:6px;flex-wrap:wrap;margin-top:4px}.fbt .btn{padding:6px 10px;font-size:13px}
 #rescue{position:fixed;left:50%;top:20%;transform:translateX(-50%);z-index:2147483000;background:#1e293b;color:#fff;padding:20px 24px;border-radius:20px;max-width:min(520px,90vw);font:15px system-ui;box-shadow:0 20px 60px rgba(0,0,0,.6)}#rescue p{margin:6px 0 12px;opacity:.8}#rescue pre{white-space:pre-wrap;font-size:12px;max-height:160px;overflow:auto;background:#0f172a;padding:8px;border-radius:8px}#rescue .row{display:flex;gap:8px;flex-wrap:wrap}#rescue button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:10px 16px;background:#3b82f6;color:#fff}#rescue button:nth-child(n+2){background:rgba(255,255,255,.15)}
 #errPill{position:fixed;left:10px;bottom:10px;z-index:2147483000;background:#b91c1c;color:#fff;border:0;border-radius:999px;padding:6px 12px;font:700 13px system-ui;opacity:.85}#errList{position:fixed;left:50%;top:12%;transform:translateX(-50%);z-index:2147483001;background:#1e293b;color:#fff;padding:16px 20px;border-radius:16px;width:min(640px,92vw);font:14px system-ui}#errList pre{white-space:pre-wrap;font-size:12px;background:#0f172a;padding:8px;border-radius:8px;max-height:40vh;overflow:auto}#errList small{display:block;opacity:.6;font-size:11px;margin:6px 0;word-break:break-all}#errList button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:8px 16px;background:#3b82f6;color:#fff}
+html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#bootFail{position:fixed;left:50%;top:10%;transform:translateX(-50%) translateZ(100000px);z-index:2147483646;background:#1e293b;color:#fff;padding:18px 22px;border-radius:16px;width:min(600px,92vw);font:15px system-ui}#bootFail pre{white-space:pre-wrap;font-size:12px;background:#0f172a;padding:8px;border-radius:8px;max-height:40vh;overflow:auto}#bootFail small{display:block;font-size:11px;opacity:.6;word-break:break-all;margin:6px 0}#bootFail button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:10px 16px;margin-right:8px;background:#3b82f6;color:#fff}
+#errPill,#errList,#rescue{transform:translateZ(100000px)}#errList,#rescue{transform:translateX(-50%) translateZ(100000px)}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -699,16 +702,24 @@ body.reduce .app.hov{transform:none}
 window.__ERRS=[]; addEventListener('error',function(e){ try{ if(e.target&&e.target!==window) return; __ERRS.push((e.message||'error')+(e.lineno?' ('+e.lineno+':'+e.colno+')':'')); }catch(_){} },true);
 addEventListener('unhandledrejection',function(e){ try{ var r=e.reason; __ERRS.push('Promise: '+(r&&r.message||r)); }catch(_){} });
 (function(){ let n0=0; setInterval(()=>{ const E=window.__ERRS||[]; if(E.length===n0) return; n0=E.length; let b=document.getElementById('errPill'); if(!b){ b=document.createElement('button'); b.id='errPill'; document.body.appendChild(b); b.onclick=()=>{ const d=document.getElementById('errList')||document.createElement('div'); d.id='errList'; d.innerHTML=`<b>エラーの記録（スクリーンショットを送ってください）</b><pre>${(window.__ERRS||[]).slice(-8).map(x=>String(x).replace(/[<>&]/g,'')).join('\n')}</pre><small>v${typeof APP_VERSION!=='undefined'?APP_VERSION:''} ・ ${navigator.userAgent.replace(/[<>&]/g,'')}</small>`; const c=document.createElement('button'); c.textContent='閉じる'; c.onclick=()=>d.remove(); d.appendChild(c); document.body.appendChild(d); }; } b.textContent=`⚠ エラー ${n0}件`; },1500); })();
+
+setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement('div'); d.id='bootFail'; var E=(window.__ERRS||[]).slice(-6).join('\n').replace(/[<>&]/g,'');
+  d.innerHTML='<b>うまく起動できませんでした</b><p>スクリーンショットを送ってください。</p><pre>'+(E||'エラーの記録はありません')+'</pre><small>'+navigator.userAgent.replace(/[<>&]/g,'')+'</small>';
+  var r=document.createElement('button'); r.textContent='再読み込み'; r.onclick=function(){ location.reload(); }; var s2=document.createElement('button'); s2.textContent='セーフモードで開く'; s2.onclick=function(){ location.href=location.pathname+'?safe=1'; }; d.appendChild(r); d.appendChild(s2); document.body.appendChild(d); },7000);
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.10.2';
+const APP_VERSION='5.10.3';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
 const STORE={get(k,d){try{const v=localStorage.getItem('xr_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('xr_'+k,JSON.stringify(v))}catch(e){}}};
 const DEFCFG={env:'living',dim:.15,cur:1,look:1,pad:true,hand:true,vol:.6,gyro:false,sound:true};
 let CFG={...DEFCFG,...STORE.get('cfg',{})};
+// セーフモード（?safe=1）：iPadなどで真っ暗になるときに、軽い表示で開く。?safe=0 で元に戻す
+const SAFE=(()=>{ try{ const q=new URLSearchParams(location.search).get('safe'); if(q==='1') STORE.set('lite',true); if(q==='0') STORE.set('lite',false); }catch(e){} return !!STORE.get('lite',false); })();
+const MOBDEV=(navigator.maxTouchPoints||0)>0||/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
+if(MOBDEV) document.documentElement.classList.add('mob'); if(SAFE){ document.documentElement.classList.add('lite'); if(CFG.env==='photo') CFG.env='living'; }
 const saveCfg=()=>STORE.set('cfg',CFG);
 const h=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -782,7 +793,7 @@ function rnd(seed){ let s=seed>>>0||1; return ()=>((s=Math.imul(s^s>>>15,1|s)+0x
 function paintPano(){
   // iPad・スマホは大きすぎる画像を作れない（作れても真っ暗になる）ので、画質を下げて安全に作る
   const W=4096, H=Math.round(4096*(2*Math.tan(rad(VANG)))/TAU), MOB=(navigator.maxTouchPoints||0)>0||/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
-  let K=PANO.k||(MOB?1:2), c, g;
+  let K=PANO.k||(MOB||SAFE?1:2), c, g;
   for(;;){ c=document.createElement('canvas'); c.width=W*K; c.height=H*K; g=c.getContext('2d'); if(g||K<=.5) break; c.width=c.height=0; K=K>1?1:.5; }
   PANO.k=K; g.scale(K,K);
   const X=a=>(a+180)/360*W; // 角度→x
@@ -7914,7 +7925,7 @@ APPIMPL.hanoi=(body)=>{ body.classList.add('gmBody'); let n=LOAD('hn5',4), pegs,
   const card=()=>{ if(shown||document.getElementById('rescue')) return; shown=true; const d=document.createElement('div'); d.id='rescue';
     d.innerHTML=`<b>画面がうまく表示されていないようです</b><p>下のボタンをお試しください。</p>${__ERRS.length?`<details><summary>くわしい情報（${__ERRS.length}件）</summary><pre>${__ERRS.slice(-6).map(x=>String(x).replace(/[<>&]/g,'')).join('\n')}</pre></details>`:''}`;
     const row=document.createElement('div'); row.className='row';
-    const b1=document.createElement('button'); b1.textContent='景色を作り直す'; b1.onclick=()=>{ try{ PANO.k=.5; PANO.tiles=null; buildEnv(); }catch(e){ __ERRS.push(String(e&&e.message||e)); } d.remove(); shown=false; setTimeout(check,1500); };
+    const b1=document.createElement('button'); b1.textContent='景色を作り直す'; b1.onclick=()=>{ try{ PANO.k=1; PANO.tiles=null; buildEnv(); }catch(e){ __ERRS.push(String(e&&e.message||e)); } d.remove(); shown=false; setTimeout(check,1500); };
     const b2=document.createElement('button'); b2.textContent='再読み込み'; b2.onclick=()=>location.reload();
     const b3=document.createElement('button'); b3.textContent='閉じる'; b3.onclick=()=>d.remove();
     row.append(b1,b2,b3); d.appendChild(row); document.body.appendChild(d); };
@@ -8186,6 +8197,8 @@ gameReg('flashcalc','フラッシュ暗算','Flash Math','zap','#facc15,#b45309)
   const draw=()=>{ const [n,dg,ms]=LV[lv-1]; top.innerHTML=gTop([[L('レベル','Level'),lv],[L('数の個数','Numbers'),n],[L('けた','Digits'),dg],[L('表示','Flash'),ms/1000+L('秒','s')]]); ctl.innerHTML=''; ctl.append(gSeg([1,2,3,4,5,6].map(k=>[k,'Lv'+k,'Lv'+k]),lv,k=>{ lv=k; SAVE('fc5',k); draw(); }),btn(IC('play')+(st==='home'?L('スタート','Start'):L('つぎの問題','Next')),start,'pri')); if(st==='home') disp.innerHTML=`<small>${L('レベルを選んでスタート','Pick a level and start')}</small>`; };
   draw(); });
 ['blockdrop','runner','lanerace','pong','rhythmtap','gomoku','numtouch','flashcalc'].forEach(id=>{ if(!INST.includes(id)){ INST.push(id); } }); STORE.set('inst',INST);
+
+window.__BOOTED=1;
 
 </script>
 </body>

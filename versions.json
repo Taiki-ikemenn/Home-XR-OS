@@ -1,6 +1,12 @@
 {
- "latest": "5.10.2",
+ "latest": "5.10.3",
  "versions": [
+  {
+   "v": "5.10.3",
+   "date": "2026-11-22",
+   "notes_ja": "iPad・スマホでの真っ暗対策をさらに強化しました。重い「すりガラス」効果をiPad・スマホでは使わないようにして、画面の負担を減らしました。起動に失敗したときは、真っ暗の画面でも原因が表示されるようにしました。「セーフモード」（アドレスの最後に ?safe=1）を追加し、軽い表示で開けるようにしました。",
+   "notes_en": "More black-screen fixes for iPad: no backdrop blur on mobile, boot-failure screen, safe mode (?safe=1)."
+  },
   {
    "v": "5.10.2",
    "date": "2026-11-22",
