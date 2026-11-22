@@ -782,7 +782,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.24';
+const APP_VERSION='5.11.25';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9229,9 +9229,36 @@ onBegin = () => { if (touring) return; touring = true; showLines = true; const t
 hudText = () => touring ? '星座ツアー中… 上を見上げてね' : '「星座ツアー」で解説スタート。星をタップすると名前がわかります'
 hud()`);
   return W({sky:'#020617',ground:'#020617',fog:false,spawn:[0,0,1.8],objs:o,script,ui:[TX('スコア',2,2,56,7,'',16)]}); };
+// ===== 夏祭り =====
+NW.matsuri=()=>{ reset(); const o=[B([0,.05,-12],[30,.1,40],'#a16207',{solid:0,pat:'stone'})];
+  const stall=(x,z,ry,name,col,label)=>{ const sd=x<0?1:-1; o.push(B([x,1,z],[2,.1,3.2],'#78350f',{solid:0}),B([x,1.2,z-1.5],[.12,2.4,.12],'#78350f'),B([x,1.2,z+1.5],[.12,2.4,.12],'#78350f'),B([x,2.5,z],[2.4,.2,3.6],col),B([x+sd*.9,.5,z],[.2,1,3.2],'#fef3c7'),T([x+sd*1.25,2.9,z],label,'#ffffff',2.6,{r:[0,sd*90,0]}),B([x,1.1,z],[.8,.2,1.2],col,{name,solid:0,glow:1})); };
+  stall(-9,-4,0,'金魚','#ef4444','金魚すくい'); stall(9,-4,0,'射的','#2563eb','射的'); stall(-9,-12,0,'ヨーヨー','#f472b6','ヨーヨーつり'); stall(9,-12,0,'たこ焼き','#f97316','たこ焼き'); stall(-9,-20,0,'わたあめ','#a855f7','わたあめ'); stall(9,-20,0,'かき氷','#06b6d4','かき氷');
+  o.push(S('cyl',[-6.2,.3,-4],[2.2,.4,2.2],'#0ea5e9',{solid:0,name:'金魚いけ'}),S('cyl',[-6.2,.3,-12],[2.2,.4,2.2],'#38bdf8',{solid:0}));
+  for(let i=0;i<5;i++) o.push(B([9.4,1.25,-5.4+i*.7],[.4,.06,.5],'#92400e',{solid:0}));
+  for(let z=0;z>-28;z-=4) [-13.5,13.5].forEach(x=>o.push(B([x,2,z],[.1,4,.1],'#78350f'),I('lantern_0',[x,3.6,z])));
+  for(let i=0;i<14;i++) o.push(S('sphere',[-6+i*.95,3.6+Math.sin(i*.8)*.2,-26],[.45,.6,.45],i%2?'#ef4444':'#fde68a',{glow:1,solid:0}));
+  o.push(B([0,1.2,-28],[4,2.4,4],'#7f1d1d'),B([0,2.6,-28],[5,.3,5],'#b91c1c'),T([0,3.4,-25.8],'やぐら','#fde68a',2),S('tree',[-14,0,-28],[1.2,1.6,1.2],'#166534'),S('tree',[14,0,-28],[1.2,1.6,1.2],'#166534'));
+  o.push(T([0,4.2,2.5],'Home-XR 夏祭り','#fbbf24',6),T([0,3.4,2.5],'屋台をタップして遊ぼう！花火も上がるよ','#fde68a',5));
+  const script=PRE(0,`const C = { fish: 0, prize: 0, yoyo: 0, food: 0 }; const tell = (m, f) => { world.say(m); world.sound(f || 880, 0.08) }
+const GF = []; for (let i = 0; i < 9; i++) { const o = world.spawn({ type: 'sphere', pos: [-6.2, 0.55, -4], scale: [0.22, 0.12, 0.14], color: world.pick(['#f97316', '#ef4444', '#fde68a', '#111827']) }); if (o) GF.push({ o, a: world.random(0, 6.28), sp: world.random(0.5, 1.4) }) }
+let poi = 3; GF.forEach(g => g.o.onClick(() => { if (g.o.distanceToPlayer() > 5) { tell('もっと近づいてね'); return } if (poi <= 0) { tell('ポイがやぶれちゃった！屋台をタップすると新しいポイ', 300); return } if (Math.random() < 0.45) { C.fish++; g.o.setPos(-6.2, -5, -4); g.gone = true; tell('金魚をすくった！（' + C.fish + 'ひき）', 1046); world.after(4, () => { g.gone = false }) } else { poi--; tell(poi > 0 ? 'にげられた！ポイのこり ' + poi : 'ポイがやぶれた…', 300) } }))
+const k1 = world.get('金魚'); if (k1) k1.onClick(() => { poi = 3; tell('新しいポイをもらった！金魚をタップしてすくおう') })
+const PZ = []; ['teddy_0', 'duck_0', 'present_0', 'trophy_0', 'dice_0'].forEach((it, i) => { const o = world.spawn({ type: 'item', item: it, pos: [9.4, 1.3, -5.4 + i * 0.7], scale: [0.6, 0.6, 0.6] }); if (o) PZ.push({ o, i, down: false }) })
+let shots = 5; PZ.forEach(p => p.o.onClick(() => { if (shots <= 0) { tell('たまがない！屋台をタップしてね', 300); return } shots--; world.sound(500, 0.05); if (p.down) return; if (Math.random() < 0.4) { p.down = true; C.prize++; p.o.setRot(0, 0, -80); p.o.move(0.3, -0.2, 0); tell('当たった！景品ゲット（のこりのたま ' + shots + '）', 1046); world.after(5, () => { p.down = false; p.o.setRot(0, 0, 0); p.o.setPos(9.4, 1.3, -5.4 + p.i * 0.7) }) } else tell('はずれ…（のこりのたま ' + shots + '）', 400) }))
+const k2 = world.get('射的'); if (k2) k2.onClick(() => { shots = 5; tell('たまを5発もらった！景品をタップしてねらおう') })
+const YY = []; for (let i = 0; i < 7; i++) { const o = world.spawn({ type: 'sphere', pos: [-6.2 + world.random(-0.7, 0.7), 0.62, -12 + world.random(-0.7, 0.7)], scale: [0.28, 0.28, 0.28], color: world.pick(['#f472b6', '#60a5fa', '#facc15', '#4ade80', '#c084fc']) }); if (o) { YY.push(o); o.onClick(() => { if (o.distanceToPlayer() > 5) { tell('もっと近づいてね'); return } if (Math.random() < 0.55) { C.yoyo++; o.setPos(-6.2, -5, -12); tell('ヨーヨーつれた！（' + C.yoyo + 'こ）', 1046); world.after(6, () => o.setPos(-6.2 + world.random(-0.7, 0.7), 0.62, -12)) } else tell('こよりが切れちゃった…', 300) }) } }
+;[['たこ焼き', 'たこ焼きを買った！アツアツ 🐙'], ['わたあめ', 'わたあめを買った！ふわふわ ☁️'], ['かき氷', 'かき氷を買った！いちご味 🍧']].forEach(([n, m]) => { const b = world.get(n); if (b) b.onClick(() => { C.food++; tell(m, 784) }) })
+world.on('tick', dt => GF.forEach(g => { if (g.gone) return; g.a += g.sp * dt; g.o.setPos(-6.2 + Math.cos(g.a) * 0.8, 0.55, -4 + Math.sin(g.a * 1.3) * 0.8); g.o.setRot(0, -g.a * 57, 0) }))
+world.every(7, () => { const x = world.random(-10, 10), y = world.random(14, 20), z = world.random(-40, -30), col = world.pick(['#f87171', '#facc15', '#4ade80', '#60a5fa', '#f472b6', '#ffffff']); world.sound(120, 0.3); const P = []
+  for (let i = 0; i < 18; i++) { const a = i / 18 * 6.28; const o = world.spawn({ type: 'sphere', pos: [x, y, z], scale: [0.5, 0.5, 0.5], color: col, glow: true }); if (o) P.push({ o, a }) }
+  let t = 0; const step = () => { t += 0.05; P.forEach(p => p.o.setPos(x + Math.cos(p.a) * t * 6, y + Math.sin(p.a) * t * 6 - t * t * 2, z)); if (t < 1.2) world.after(0.05, step); else P.forEach(p => p.o.remove()) }; step() })
+hudText = () => '金魚 ' + C.fish + '　景品 ' + C.prize + '　ヨーヨー ' + C.yoyo + '　食べ物 ' + C.food
+world.on('tick', () => { score = C.fish * 3 + C.prize * 5 + C.yoyo * 2 + C.food; if (score > best) best = score; hud() })`);
+  return W({sky:'#1e1b4b',ground:'#14532d',fog:false,spawn:[0,0,4],objs:o,script,ui:[TX('スコア',2,2,56,7,'屋台をタップして遊ぼう',18)]}); };
 const add=(cat,genre,ja,en,desc,f)=>SWLIST.unshift({cat,genre,ja,en,desc,f});
 add('fun',null,'Home-XR 水族館','Home-XR Aquarium','海・川・サンゴ礁・大きな魚の水そう、頭の上を魚がおよぐ海のトンネル、光るクラゲの深海ゾーン。魚をタップすると名前がわかります。スタンプラリーつき',()=>NW.aqua());
 add('nature',null,'プラネタリウム','Planetarium','本物の星の位置を再現したドーム。冬の空・夏の空を切りかえられて、「星座ツアー」でオリオン座・北斗七星・夏の大三角などを解説します。星をタップすると名前がわかります',()=>NW.planet());
+add('fun',null,'Home-XR 夏祭り','Summer Festival','ちょうちんが光る夜のお祭り。金魚すくい・射的・ヨーヨーつり・たこ焼き・わたあめ・かき氷の屋台と、やぐら、打ち上げ花火があります',()=>NW.matsuri());
 window.NW6=NW; window.NW6add=add;
 })();
 
