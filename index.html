@@ -632,6 +632,7 @@ body.w3on #pads,body.w3on #hud,body.w3on #handCam,body.w3on #htInfo,body.w3on .h
 html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 #bootFail{position:fixed;left:50%;top:10%;transform:translateX(-50%) translateZ(100000px);z-index:2147483646;background:#1e293b;color:#fff;padding:18px 22px;border-radius:16px;width:min(600px,92vw);font:15px system-ui}#bootFail pre{white-space:pre-wrap;font-size:12px;background:#0f172a;padding:8px;border-radius:8px;max-height:40vh;overflow:auto}#bootFail small{display:block;font-size:11px;opacity:.6;word-break:break-all;margin:6px 0}#bootFail button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:10px 16px;margin-right:8px;background:#3b82f6;color:#fff}
 #errPill,#errList,#rescue{transform:translateZ(100000px)}#errList,#rescue{transform:translateX(-50%) translateZ(100000px)}
+.dtCv{height:min(60vh,580px);width:auto;border-radius:50%;touch-action:none;cursor:none}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -709,7 +710,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.10.6';
+const APP_VERSION='5.11.0';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -8215,6 +8216,37 @@ gameReg('flashcalc','フラッシュ暗算','Flash Math','zap','#facc15,#b45309)
 ['blockdrop','runner','lanerace','pong','rhythmtap','gomoku','numtouch','flashcalc'].forEach(id=>{ if(!INST.includes(id)){ INST.push(id); } }); STORE.set('inst',INST);
 
 window.__BOOTED=1;
+
+/* ================= v6 の新しいアプリ（1つずつ追加） ================= */
+const INST6=id=>{ if(!INST.includes(id)){ INST.push(id); STORE.set('inst',INST); } };
+// ---------- ダーツ ----------
+regApp('darts',{name:'ダーツ',en:'Darts',g:'target',bg:G1+'#f43f5e,#1e293b)',cat:'game',w:900,h:700,desc:'ねらいを定めてピンチ（タップ）で投げます。カウントアップ（8ラウンド）と301（ぴったり0にする）。手のゆれもあります。',den:'Aim and pinch to throw. Count-Up and 301.',
+ impl(body){ body.classList.add('gmBody'); const ORD=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5]; let mode=LOAD('dt6','count'), rnd, darts, total, left, hits, over, msg='', msgT=0, turnStart, fly=null;
+  const top=h('div'), cvs=cv(640,640); cvs.className='dtCv'; const ctl=h('div','gmCtl'); body.append(top,cvs,ctl); const x=cvs.getContext('2d'), P=ptrOn(cvs); const R=290;
+  const score=(dx,dy)=>{ const r=Math.hypot(dx,dy)/R; if(r<.04) return [50,'BULL']; if(r<.09) return [25,'25']; if(r>1) return [0,'OUT']; let a=Math.atan2(dx,-dy)*180/Math.PI; a=(a+360+9)%360; const n=ORD[Math.floor(a/18)];
+    if(r>.58&&r<.64) return [n*3,'T'+n]; if(r>.94) return [n*2,'D'+n]; return [n,String(n)]; };
+  const reset=()=>{ rnd=1; darts=3; total=0; left=301; hits=[]; over=false; turnStart=301; draw(); };
+  const throwAt=(nx,ny)=>{ if(over||fly) return; const sway=mode==='301'?.025:.02; const tx=(nx-.5)*640+(Math.random()-.5)*640*sway, ty=(ny-.5)*640+(Math.random()-.5)*640*sway; fly={tx,ty,t:0}; AU.noise(.08,.06,3000); };
+  const land=(tx,ty)=>{ const [v,lab]=score(tx,ty); hits.push({x:tx,y:ty}); AU.tone(v>=50?1318:v>0?700+v*6:200,.08,'triangle',.07); darts--;
+    if(mode==='count'){ total+=v; msg=lab==='OUT'?L('はずれ','Miss'):`${lab}  +${v}`; }
+    else { if(left-v<0||left-v===1){ msg=L('バースト！','Bust!'); left=turnStart; darts=0; } else { left-=v; msg=lab==='OUT'?L('はずれ','Miss'):`${lab}  -${v}`; if(left===0){ over=true; gWin('darts',Math.max(10,300-rnd*20)); msg=L('ぴったり0！','Checkout!'); [523,659,784,1046].forEach((f,i)=>setTimeout(()=>AU.tone(f,.12,'triangle',.08),i*100)); } } }
+    msgT=1.4; if(!over&&darts<=0){ if(mode==='count'&&rnd>=8){ over=true; gWin('darts',total); msg=L(`合計 ${total}点！`,`Total ${total}!`); } else setTimeout(()=>{ rnd++; darts=3; hits=[]; turnStart=left; draw(); },900); } draw(); };
+  cvs.onpointerup=e=>{ const r=cvs.getBoundingClientRect(); throwAt((e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height); }; cvs.dataset.canvas=''; cvs._xr={down:()=>{},move:()=>{},up:(nx,ny)=>throwAt(nx,ny)};
+  const draw=()=>{ top.innerHTML=gTop(mode==='count'?[[L('ラウンド','Round'),`${rnd}/8`],[L('のこり','Darts'),'🎯'.repeat(Math.max(0,darts))],[L('合計','Total'),total],[L('ベスト','Best'),bestScore('darts')]]:[[L('ラウンド','Round'),rnd],[L('のこり','Darts'),'🎯'.repeat(Math.max(0,darts))],[L('あと','Left'),left]]);
+    ctl.innerHTML=''; ctl.append(gSeg([['count','カウントアップ','Count-Up'],['301','301','301']],mode,k=>{ mode=k; SAVE('dt6',k); reset(); }),btn(IC('rotate-ccw')+L('はじめから','Restart'),reset,'pri'),h('span','sub',L('ねらってピンチ（タップ）で投げます。T=3倍、D=2倍','Aim and pinch. T=triple, D=double'))); };
+  loopOn(body,dt=>{ const p=P(); x.setTransform(1,0,0,1,0,0); x.fillStyle='#0f172a'; x.fillRect(0,0,640,640); x.translate(320,320);
+    x.fillStyle='#111'; x.beginPath(); x.arc(0,0,R+30,0,TAU); x.fill(); for(let i=0;i<20;i++){ const a0=(i*18-9-90)*Math.PI/180, a1=a0+18*Math.PI/180;
+      [[1,.64,i%2?'#f5f0e1':'#111'],[.64,.58,i%2?'#16a34a':'#dc2626'],[.58,.09,i%2?'#f5f0e1':'#111']].forEach(([o,ii,c])=>{ x.fillStyle=c; x.beginPath(); x.arc(0,0,R*o,a0,a1); x.arc(0,0,R*ii,a1,a0,true); x.fill(); });
+      x.fillStyle=i%2?'#16a34a':'#dc2626'; x.beginPath(); x.arc(0,0,R,a0,a1); x.arc(0,0,R*.94,a1,a0,true); x.fill();
+      x.fillStyle='#fff'; x.font='900 22px system-ui'; x.textAlign='center'; x.textBaseline='middle'; const am=(a0+a1)/2; x.fillText(ORD[i],Math.cos(am)*(R+16),Math.sin(am)*(R+16)); }
+    x.fillStyle='#16a34a'; x.beginPath(); x.arc(0,0,R*.09,0,TAU); x.fill(); x.fillStyle='#dc2626'; x.beginPath(); x.arc(0,0,R*.04,0,TAU); x.fill();
+    hits.forEach(hh=>{ x.fillStyle='#facc15'; x.strokeStyle='#000'; x.lineWidth=2; x.beginPath(); x.arc(hh.x,hh.y,6,0,TAU); x.fill(); x.stroke(); });
+    if(fly){ fly.t+=dt*4; const k=Math.min(1,fly.t), s=1+(1-k)*2.5; x.save(); x.translate(fly.tx,fly.ty); x.scale(s,s); x.fillStyle='#e2e8f0'; x.beginPath(); x.moveTo(0,0); x.lineTo(4,18); x.lineTo(-4,18); x.fill(); x.fillStyle='#f43f5e'; x.fillRect(-6,18,12,10); x.restore(); if(k>=1){ const f=fly; fly=null; land(f.tx,f.ty); } }
+    const sx=Math.sin(performance.now()/420)*6, sy=Math.cos(performance.now()/530)*6, ax=(p.x-.5)*640+sx, ay=(p.y-.5)*640+sy; x.strokeStyle='rgba(255,255,255,.9)'; x.lineWidth=2; x.beginPath(); x.arc(ax,ay,14,0,TAU); x.moveTo(ax-22,ay); x.lineTo(ax+22,ay); x.moveTo(ax,ay-22); x.lineTo(ax,ay+22); x.stroke();
+    x.setTransform(1,0,0,1,0,0); if(msgT>0){ msgT-=dt; x.globalAlpha=Math.min(1,msgT*2); x.fillStyle='rgba(0,0,0,.6)'; x.fillRect(170,20,300,56); x.fillStyle='#fff'; x.font='900 32px system-ui'; x.textAlign='center'; x.fillText(msg,320,50); x.globalAlpha=1; }
+    if(over) ending(x,640,640,mode==='count'?L(`${total}点`,`${total} pts`):L('ゲームクリア','Checkout!'),L('「はじめから」でもう一度','Restart to play again')); });
+  reset(); }});
+INST6('darts');
 
 </script>
 </body>
