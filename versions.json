@@ -1,6 +1,12 @@
 {
- "latest": "5.10.0",
+ "latest": "5.10.1",
  "versions": [
+  {
+   "v": "5.10.1",
+   "date": "2026-11-22",
+   "notes_ja": "画面が真っ暗になって開けない問題を直しました。原因は、景色の画像が大きすぎて、iPadなどでは作れずに止まってしまうことでした。iPad・スマホでは景色の画質を自動で調整し、使い終わった画像のメモリもすぐに返すようにしました。プログラムを部分ごとに読み込むようにして、一部で問題が起きても全体が止まらないようにしました。それでもうまく表示されないときは「お助けカード」が出て、景色の作り直しや再読み込みができます。",
+   "notes_en": "Fixed the black screen on iPad (panorama canvas too large). Auto quality, memory release, isolated scripts and a rescue card."
+  },
   {
    "v": "5.10.0",
    "date": "2026-11-22",
