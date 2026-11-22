@@ -782,7 +782,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.26';
+const APP_VERSION='5.11.27';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9302,7 +9302,7 @@ add('fun',null,'Home-XR 水族館','Home-XR Aquarium','海・川・サンゴ礁�
 add('nature',null,'プラネタリウム','Planetarium','本物の星の位置を再現したドーム。冬の空・夏の空を切りかえられて、「星座ツアー」でオリオン座・北斗七星・夏の大三角などを解説します。星をタップすると名前がわかります',()=>NW.planet());
 add('fun',null,'Home-XR 夏祭り','Summer Festival','ちょうちんが光る夜のお祭り。金魚すくい・射的・ヨーヨーつり・たこ焼き・わたあめ・かき氷の屋台と、やぐら、打ち上げ花火があります',()=>NW.matsuri());
 add('game','sport','雪合戦','Snowball fight','ゆきだるまチームと雪合戦！ ゆきだるまをタップすると雪玉を投げます。雪のかべにかくれて雪玉をよけよう。5ウェーブ勝ちぬけ',()=>NW.snow());
-/*MAZE*/if(0)add('game','maze','巨大迷路','Giant maze','19×19マスの、背の高い生け垣の巨大迷路。5本の旗を集めるとゴールのとびらが開きます。真ん中の赤い塔が目印',()=>NW.bigmaze());
+add('game','maze','巨大迷路','Giant maze','19×19マスの、背の高い生け垣の巨大迷路。5本の旗を集めるとゴールのとびらが開きます。真ん中の赤い塔が目印',()=>NW.bigmaze());
 window.NW6=NW; window.NW6add=add;
 })();
 
