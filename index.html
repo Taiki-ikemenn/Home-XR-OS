@@ -724,6 +724,12 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .xdBook{flex:1;display:flex;justify-content:center;align-items:stretch;min-height:0}.xdPage{width:min(640px,96%);background:repeating-linear-gradient(#fffdf7 0 31px,#fbcfe8 31px 32px);color:#1f2937;border-radius:8px 18px 18px 8px;padding:20px 28px;box-shadow:inset 14px 0 0 #fda4af,0 10px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:6px;position:relative;font-size:18px;line-height:32px}.xdPage.me{box-shadow:inset 14px 0 0 #93c5fd,0 10px 30px rgba(0,0,0,.4)}.xdPage p{white-space:pre-wrap;margin:0;flex:1}.xdPage small{position:absolute;right:16px;bottom:8px;opacity:.5}.xdPage.empty{display:grid;place-items:center}
 .xdPH{display:flex;gap:10px;align-items:center}.xdPH span{opacity:.6;font-size:14px}.xdPH i{font-style:normal;font-size:26px;margin-left:auto}.xdStk span{font-size:30px;margin-right:4px;display:inline-block;transform:rotate(-8deg)}.xdNav{display:flex;gap:8px;justify-content:center}
 .xdPage.write{line-height:1.4;background:#fffdf7}.xdMoods,.xdStkPick{display:flex;gap:4px;flex-wrap:wrap}.xdMoods button,.xdStkPick button{font-size:24px;border:2px solid transparent;border-radius:12px;background:#f1f5f9;padding:2px 6px;cursor:pointer}.xdMoods button.on,.xdStkPick button.on{border-color:#ec4899;background:#fce7f3}.xdText{width:100%!important;min-height:100px;align-items:flex-start!important}
+.gfWrap{flex:1;padding:14px 22px;display:flex;flex-direction:column;gap:12px;overflow:auto}.gfGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+.gfBox{position:relative;height:170px;border:0;background:none;color:#fff;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}.gfBody{width:110px;height:84px;background:var(--c);border-radius:8px;position:relative;box-shadow:0 8px 20px rgba(0,0,0,.4)}.gfBody::after{content:'';position:absolute;left:47px;top:0;bottom:0;width:16px;background:#fde68a}
+.gfLid{position:absolute;bottom:108px;width:124px;height:26px;background:var(--c);filter:brightness(1.15);border-radius:6px;transition:transform .5s;z-index:1}.gfLid::after{content:'🎀';position:absolute;left:50%;top:-26px;transform:translateX(-50%);font-size:34px}.gfBox:hover .gfLid{transform:translateY(-6px) rotate(-4deg)}.gfBox.open .gfLid{transform:translateY(-70px) rotate(-30deg);opacity:0}.gfBox.open .gfBody{animation:gpl .3s 3 alternate}
+.gfCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,90%);background:#fffdf7;color:#1f2937;border-radius:22px;padding:24px;text-align:center;box-shadow:0 0 0 8px var(--c),0 20px 60px rgba(0,0,0,.6);z-index:5;animation:gcIn .4s}.gfCE{font-size:64px}.gfCard h2{margin:4px 0}.gfWhat{font-size:26px;font-weight:900;margin:10px 0}.gfCard small{display:block;margin-bottom:10px;opacity:.6}
+.gfSend{display:flex;flex-direction:column;gap:10px}.gfCards,.gfFigs{display:flex;flex-wrap:wrap;gap:8px}.gfCd,.gfFig{display:flex;flex-direction:column;align-items:center;gap:2px;width:96px;padding:10px 4px;border:2px solid transparent;border-radius:14px;background:rgba(255,255,255,.06);color:#fff;font:inherit;cursor:pointer}.gfCd i,.gfFig i{font-style:normal;font-size:30px}.gfCd small,.gfFig small{font-size:11px}.gfCd.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 25%,transparent)}.gfFig.on{border-color:#fbbf24}
+.gfLog{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.05)}.gfLog span{flex:1}.gfLog small{opacity:.6}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -801,7 +807,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.35';
+const APP_VERSION='5.11.36';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9603,6 +9609,32 @@ regApp('xdiary',{name:'交換日記',en:'Shared Diary',g:'book-heart',bg:G1+'#fd
       draw(); };
     home(); }); }});
 INST6('xdiary');
+// ---------- ギフト ----------
+regApp('gift',{name:'ギフト',en:'Gifts',g:'gift',bg:G1+'#fb7185,#ea580c)',cat:'social',w:980,h:720,desc:'フレンドにコインや、ガチャでかぶったフィギュアをプレゼントできます。メッセージカードのデザインも選べます。届いたギフトは、箱をタップして開けます。',den:'Send coins and gacha figures to friends with a message card.',
+ impl(body,w){ const root=h('div','soRoot'); body.appendChild(root); const sub=SO.subs(w); const CARDS=[['bd','🎂','おめでとう','#f472b6'],['ty','💐','ありがとう','#4ade80'],['fr','🤝','これからもよろしく','#60a5fa'],['cheer','💪','がんばって！','#f97316'],['star','⭐','すごい！','#facc15'],['xm','🎄','メリークリスマス','#22c55e']];
+  SO.gate(root,w,async()=>{ const m=FB.m; let tab='inbox', inbox=[]; const wrap=h('div','gfWrap'); root.appendChild(wrap);
+    const draw=()=>{ wrap.innerHTML=''; const hd=h('div','plHead'); hd.append(gSeg([['inbox',`届いた（${inbox.length}）`,`Inbox (${inbox.length})`],['send','送る','Send'],['log','送ったきろく','Sent']],tab,k=>{ tab=k; draw(); }),typeof coinChip==='function'?coinChip():h('span')); wrap.appendChild(hd); ({inbox:inboxV,send:sendV,log:logV})[tab](); };
+    const inboxV=()=>{ if(!inbox.length){ wrap.appendChild(h('div','bbEmpty',`${IC('gift')}<p>${L('まだギフトは届いていません','No gifts yet')}</p>`)); return; } const g=h('div','gfGrid');
+      inbox.forEach(x=>{ const c=CARDS.find(k=>k[0]===x.card)||CARDS[0]; const b=h('button','gfBox'); b.style.setProperty('--c',c[3]); b.innerHTML=`<div class="gfLid"></div><div class="gfBody"></div><span>${esc(x.fromName)}${L('さんから','')}</span>`; b.onclick=()=>openGift(x,b); g.appendChild(b); }); wrap.appendChild(g); };
+    const openGift=async(x,el)=>{ if(el.classList.contains('open')) return; el.classList.add('open'); [523,659,784,1046].forEach((f,i)=>setTimeout(()=>AU.tone(f,.12,'triangle',.08),i*110)); await m.updateDoc(m.doc(FB.db,'xr_gifts',x.id),{claimed:true,openedAt:Date.now()});
+      let what=''; if(x.kind==='coin'){ COIN.add(x.amount,L('ギフト','Gift')); what=`🪙 ${x.amount} ${L('コイン','coins')}`; } else if(x.kind==='fig'){ const f=GACHA[x.fig]; const cc=STORE.get('gacha',{}); cc[x.fig]=(cc[x.fig]||0)+1; STORE.set('gacha',cc); what=`${f.e} ${f.n}（${'★'.repeat(f.r)}）`; }
+      const c=CARDS.find(k=>k[0]===x.card)||CARDS[0]; setTimeout(()=>{ const d=h('div','gfCard'); d.style.setProperty('--c',c[3]); d.innerHTML=`<div class="gfCE">${c[1]}</div><h2>${esc(c[2])}</h2><p>${esc(x.msg||'')}</p><div class="gfWhat">${what}</div><small>${esc(x.fromName)} ${L('より','')}</small>`; d.appendChild(btn(L('うけとる','Close'),()=>{ d.remove(); draw(); },'pri')); root.appendChild(d); },600); };
+    const sendV=()=>{ let to=null, kind='coin', amt=10, fig=null, card='ty'; const box=h('div','gfSend'); wrap.appendChild(box);
+      const dr=async()=>{ box.innerHTML=''; if(!to){ await SO.pickFriend(box,L('だれに送る？','Send to whom?'),f=>{ to=f; dr(); }); return; }
+        box.appendChild(h('h3','',L(`${to.name}さんへ`,`To ${to.name}`))); box.appendChild(gSeg([['coin','コイン','Coins'],['fig','フィギュア','Figure']],kind,k=>{ kind=k; dr(); }));
+        if(kind==='coin') box.appendChild(gSeg([[5,'5','5'],[10,'10','10'],[30,'30','30'],[50,'50','50'],[100,'100','100']].map(([k,a,b2])=>[k,'🪙'+a,'🪙'+b2]),amt,k=>{ amt=k; dr(); }));
+        else { const cc=STORE.get('gacha',{}); const dup=GACHA.filter(g=>cc[g.id]>1); if(!dup.length) box.appendChild(h('p','sub',L('かぶっているフィギュアがありません（2こ以上持っているものを送れます）','No duplicate figures to send'))); const g=h('div','gfFigs'); dup.forEach(f=>{ const b=h('button','gfFig'+(fig===f.id?' on':''),`<i>${f.e}</i><small>${f.n} ×${cc[f.id]}</small>`); b.onclick=()=>{ fig=f.id; dr(); }; g.appendChild(b); }); box.appendChild(g); }
+        box.appendChild(h('b','',L('カード','Card'))); const cr=h('div','gfCards'); CARDS.forEach(([k,e,t,c])=>{ const b=h('button','gfCd'+(card===k?' on':''),`<i>${e}</i><small>${t}</small>`); b.style.setProperty('--c',c); b.onclick=()=>{ card=k; cr.querySelectorAll('.gfCd').forEach(q=>q.classList.toggle('on',q===b)); }; cr.appendChild(b); }); box.appendChild(cr);
+        const msg=inputField(460,L('メッセージ（なくてもOK）','Message (optional)')); box.appendChild(msg);
+        const r=h('div','row'); r.style.gap='8px'; r.append(btn(L('ほかの人にする','Change'),()=>{ to=null; dr(); }),btn(IC('gift')+L('送る','Send'),async()=>{ const t=msg.get().trim().slice(0,120); if(SO.bad(t)){ toastW(L('やさしいことばで書きましょう','Please be kind')); return; } hideKB&&hideKB(); const me=SO.me();
+          if(kind==='coin'){ if(!COIN.spend(amt)) return; } else { const cc=STORE.get('gacha',{}); if(fig==null||!(cc[fig]>1)){ toastW(L('フィギュアを選んでください','Pick a figure')); return; } cc[fig]--; STORE.set('gacha',cc); }
+          await m.addDoc(m.collection(FB.db,'xr_gifts'),{to:to.id,toName:to.name,from:me.uid,fromName:me.name,kind,amount:kind==='coin'?amt:0,fig:kind==='fig'?fig:null,card,msg:t,at:m.serverTimestamp(),claimed:false});
+          const lg=STORE.get('giftLog',[]); lg.unshift({to:to.name,kind,amount:amt,fig,at:Date.now()}); STORE.set('giftLog',lg.slice(0,50)); toastW(L(`${to.name}さんにギフトを送りました🎁`,`Gift sent to ${to.name}`)); AU.tone(988,.1,'triangle',.07); tab='log'; draw(); },'pri')); box.appendChild(r); };
+      dr(); };
+    const logV=()=>{ const lg=STORE.get('giftLog',[]); if(!lg.length){ wrap.appendChild(h('p','sub',L('まだ送ったことはありません','Nothing sent yet'))); return; } lg.forEach(x=>wrap.appendChild(h('div','gfLog',`${IC('gift')}<b>${esc(x.to)}</b><span>${x.kind==='coin'?`🪙 ${x.amount}`:(GACHA[x.fig]?GACHA[x.fig].e+' '+GACHA[x.fig].n:'')}</span><small>${SO.ago(x.at)}</small>`))); };
+    sub(m.onSnapshot(m.query(m.collection(FB.db,'xr_gifts'),m.where('to','==',FB.user.uid),m.where('claimed','==',false),m.limit(50)),qs=>{ inbox=qs.docs.map(d=>({id:d.id,...d.data()})); if(tab==='inbox'&&!root.querySelector('.gfBox.open')) draw(); }));
+    draw(); }); }});
+INST6('gift');
 
 </script>
 </body>
