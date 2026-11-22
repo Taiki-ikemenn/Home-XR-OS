@@ -1,6 +1,12 @@
 {
- "latest": "5.9.0",
+ "latest": "5.9.1",
  "versions": [
+  {
+   "v": "5.9.1",
+   "date": "2026-11-22",
+   "notes_ja": "つり：★5（でんせつ）が釣れやすくなりました。かかる確率を約2倍にし、★5以外が続くほど確率が上がり、30回目で必ず★5がかかります（「★5確定まで あと◯回」で確認できます）。めずらしい魚ほど巻くのが楽になり、かかったときの猶予も長くしました。50コインの「金のエサ」で5回のあいだ、★4・★5がさらにかかりやすくなります。",
+   "notes_en": "Fishing: Legendary fish are easier to catch — higher odds, pity counter (guaranteed by 30), easier reeling, and Gold bait (50 coins, 5 casts)."
+  },
   {
    "v": "5.9.0",
    "date": "2026-11-22",

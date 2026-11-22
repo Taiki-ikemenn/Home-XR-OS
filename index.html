@@ -622,6 +622,7 @@ body.w3on #pads,body.w3on #hud,body.w3on #handCam,body.w3on #htInfo,body.w3on .h
 .ntGrid{display:grid;gap:8px;width:min(460px,56vh)}.ntC{aspect-ratio:1;border:0;border-radius:14px;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:28px;font-weight:900;cursor:pointer}.ntC.ok{background:#16a34a;opacity:.35}.ntC.ng{background:#b91c1c}
 .fcDisp{font-size:120px;font-weight:900;min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}.fcDisp.fl{animation:fcf .15s}@keyframes fcf{from{transform:scale(.7);opacity:0}}.fcDisp small{font-size:18px;opacity:.7}.fcDisp .ok{color:#4ade80;font-size:56px}.fcDisp .ng{color:#f87171;font-size:56px}
 .fcIn{font-size:40px;font-weight:900;text-align:center;min-width:220px;border-bottom:3px solid rgba(255,255,255,.3);margin-bottom:8px}.fcKeys{display:grid;grid-template-columns:repeat(3,70px);gap:6px}
+.fshPity{position:relative;display:inline-flex;gap:4px;align-items:center;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.35);font-size:13px;overflow:hidden}.fshPity i{position:absolute;left:0;bottom:0;height:3px;background:#fbbf24}.fshTop .btn.baitB{background:rgba(15,23,42,.55);color:#fde68a}.fshTop .btn.gold{background:linear-gradient(135deg,#fbbf24,#d97706);color:#1c1917}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -690,7 +691,7 @@ body.reduce .app.hov{transform:none}
 </div>
 <script>
 'use strict';
-const APP_VERSION='5.9.0';
+const APP_VERSION='5.9.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -7927,8 +7928,9 @@ function drawFish(x,f,W,H,sil){ const hs=f.h, hue=hs%360, L1=.5+(hs%7)/14, hgt=.
   x.restore(); }
 function fishThumb(f,sil,sz=120){ const c=document.createElement('canvas'); c.width=sz; c.height=sz*.6; drawFish(c.getContext('2d'),f,sz,sz*.6,sil); return c; }
 const FBOOK={ get(){ return STORE.get('fishbook',{}); }, add(f,cm){ const b=FBOOK.get(); const e=b[f.id]||{n:0,max:0,first:Date.now()}; const isNew=!b[f.id]; const rec=cm>e.max; e.n++; e.max=Math.max(e.max,cm); e.last=Date.now(); b[f.id]=e; STORE.set('fishbook',b); return {isNew,rec}; } };
-function fishPick(sp){ const pool=FISH.filter(f=>f.sp===sp); const W={1:50,2:28,3:14,4:6,5:2}; let tot=0; pool.forEach(f=>tot+=W[f.r]/(f.form?3:1)); let r=Math.random()*tot; for(const f of pool){ r-=W[f.r]/(f.form?3:1); if(r<=0) return f; } return pool[0]; }
-function fishOpen(){ if(document.querySelector('.fsh')) return; let spot=STORE.get('fishSpot','sea'), st='idle', t=0, waitT=0, cur=null, prog=0, tens=0, lastA=null, cxAvg=null, holdUp=0, shake=0, bob=0, msg='', msgT=0, own={x:innerWidth/2,y:innerHeight*.45,t:0}, total=0;
+const FPITY=30; function fishPick(sp,pity=0,bait=false){ const pool=FISH.filter(f=>f.sp===sp); if(pity>=FPITY-1){ const l=pool.filter(f=>f.r===5); return l[Math.floor(Math.random()*l.length)]; }
+  const W={1:50,2:28,3:14,4:6*(bait?2:1),5:4*(1+pity*.2)*(bait?4:1)}; let tot=0; pool.forEach(f=>tot+=W[f.r]/(f.form?3:1)); let r=Math.random()*tot; for(const f of pool){ r-=W[f.r]/(f.form?3:1); if(r<=0) return f; } return pool[0]; }
+function fishOpen(){ if(document.querySelector('.fsh')) return; let spot=STORE.get('fishSpot','sea'), st='idle', t=0, waitT=0, cur=null, prog=0, tens=0, lastA=null, cxAvg=null, holdUp=0, shake=0, bob=0, msg='', msgT=0, own={x:innerWidth/2,y:innerHeight*.45,t:0}, total=0, bait=STORE.get('fishBait',0);
   const ov=h('div','fsh'); const cvs=document.createElement('canvas'); ov.appendChild(cvs); document.body.appendChild(ov); const x=cvs.getContext('2d');
   const top=h('div','fshTop'); ov.appendChild(top); const hint=h('div','fshHint'); ov.appendChild(hint);
   const size=()=>{ cvs.width=innerWidth*Math.min(2,devicePixelRatio||1); cvs.height=innerHeight*Math.min(2,devicePixelRatio||1); }; size(); addEventListener('resize',size);
@@ -7947,6 +7949,8 @@ function fishOpen(){ if(document.querySelector('.fsh')) return; let spot=STORE.g
     const s=h('div','seg'); SPOTS.forEach(([k,ja,en])=>{ const b=h('button',spot===k?'on':'',L(ja,en)); b.onclick=()=>{ if(st!=='idle'&&st!=='caught') return; spot=k; STORE.set('fishSpot',k); st='idle'; drawTop(); }; s.appendChild(b); }); top.append(s,h('span','sp'));
     const cs=h('div','seg'); [['ptr','ポインター','Pointer'],['gyro','ジャイロ','Gyro']].forEach(([k,ja,en])=>{ const b=h('button',ctl===k?'on':'',IC(k==='ptr'?'mouse-pointer-2':'smartphone')+L(ja,en)); b.onclick=()=>{ ctl=k; STORE.set('fishCtl',k); if(k==='gyro') gyOn(); else gyOff(); drawTop(); }; cs.appendChild(b); }); top.appendChild(cs);
     if(ctl==='gyro') top.append(btn(IC('crosshair')+L('まっすぐを合わせる','Calibrate'),()=>{ gy.base=null; toastW(L('いまの向きを「まっすぐ」にしました','Calibrated')); }),btn(IC('arrow-up-down')+L('上下を反対に','Invert'),()=>{ gy.inv=!gy.inv; STORE.set('fishGyInv',gy.inv); gy.base=null; toastW(gy.inv?L('上下を反対にしました','Inverted'):L('上下をもとにもどしました','Normal')); }));
+    const pt=STORE.get('fishPity',0); top.append(h('span','fshPity',`<b style="color:#fbbf24">★5</b> ${L(`確定まで あと${FPITY-pt}回`,`in ≤${FPITY-pt}`)}<i style="width:${pt/FPITY*100}%"></i>`));
+    top.append(btn(IC('sparkles')+(bait>0?L(`金のエサ 残り${bait}回`,`Gold bait ×${bait}`):L('金のエサ（50コイン）','Gold bait (50)')),()=>{ if(bait>0){ toastW(L('金のエサを使用中です','Gold bait active')); return; } if(typeof COIN!=='undefined'&&!COIN.spend(50)) return; bait=5; STORE.set('fishBait',5); toastW(L('金のエサをつけました！5回のあいだ、めずらしい魚がかかりやすくなります','Gold bait on for 5 casts!')); drawTop(); },bait>0?'gold':'baitB'));
     const bk=FBOOK.get(); top.append(btn(IC('book-open')+L(`図鑑 ${Object.keys(bk).length}/500`,`Book ${Object.keys(bk).length}/500`),()=>fishBook(),'pri'),typeof coinChip==='function'?coinChip():h('span')); };
   const close=()=>{ ov.remove(); removeEventListener('resize',size); cancelAnimationFrame(raf); gyOff(); };
   const say=(t,s=2)=>{ msg=t; msgT=s; };
@@ -7973,18 +7977,18 @@ function fishOpen(){ if(document.querySelector('.fsh')) return; let spot=STORE.g
     x.strokeStyle='#fff'; x.lineWidth=3*k; x.beginPath(); x.arc(p.x*k,p.y*k,14*k,0,TAU); x.stroke();
     // じょうたい
     if(st==='idle'){ hint.innerHTML=look>.72?L('そのまま…水に投げます！','Casting…'):(ctl==='gyro'?L('端末を下へかたむけて、水に投げましょう','Tilt down to cast'):L('ポインターを下へ動かして（下を向いて）水に投げましょう','Move the pointer down to cast')); if(look>.75){ st='wait'; waitT=2+Math.random()*6; AU.noise(.15,.15,1500); say(L('ポチャン！','Splash!'),1); } }
-    else if(st==='wait'){ hint.innerHTML=(ctl==='gyro'?L('魚がかかるのを待っています…（下にかたむけたまま）','Waiting…'):L('魚がかかるのを待っています…（ポインターを下に向けたまま）','Waiting for a bite…')); waitT-=dt; if(look<.45){ st='idle'; say(L('引き上げました','Reeled in')); } if(waitT<=0){ cur=fishPick(spot); st='bite'; holdUp=1.6; shake=1.2; navigator.vibrate&&navigator.vibrate([120,60,120]); AU.tone(220,.3,'square',.08); } }
+    else if(st==='wait'){ hint.innerHTML=(ctl==='gyro'?L('魚がかかるのを待っています…（下にかたむけたまま）','Waiting…'):L('魚がかかるのを待っています…（ポインターを下に向けたまま）','Waiting for a bite…')); waitT-=dt; if(look<.45){ st='idle'; say(L('引き上げました','Reeled in')); } if(waitT<=0){ cur=fishPick(spot,STORE.get('fishPity',0),bait>0); if(bait>0){ bait--; STORE.set('fishBait',bait); drawTop(); } st='bite'; holdUp=1.6+(cur.r>=4?.8:0); shake=1.2; navigator.vibrate&&navigator.vibrate([120,60,120]); AU.tone(220,.3,'square',.08); } }
     else if(st==='bite'){ hint.innerHTML=`<b class="fshBig">${ctl==='gyro'?L('かかった！端末を上へかたむけて！','Bite! Tilt UP!'):L('かかった！ポインターを上へ！','Bite! Pointer UP!')}</b>`; holdUp-=dt; shake=Math.max(shake,.3); if(look<.38){ st='reel'; prog=.15; tens=.3; lastA=null; cxAvg=null; say(L('ポインターをくるくる回して巻きましょう！','Spin the pointer to reel!'),2); } else if(holdUp<=0){ st='idle'; say(L('にげられた…','It got away…')); cur=null; } }
     else if(st==='reel'){ const ax=p.x, ay=p.y; cxAvg=cxAvg?{x:cxAvg.x*.92+ax*.08,y:cxAvg.y*.92+ay*.08}:{x:ax,y:ay}; const dx=ax-cxAvg.x, dy=ay-cxAvg.y, rr=Math.hypot(dx,dy); const a=Math.atan2(dy,dx);
-      if(lastA!=null&&rr>18){ let da=a-lastA; da=Math.atan2(Math.sin(da),Math.cos(da)); const g=Math.abs(da); prog+=g*.035/(1+cur.r*.35); tens=Math.min(1.2,tens+g*.02); if(g>.05&&Math.random()<.3) AU.tone(300+prog*400,.02,'sine',.03); } lastA=a;
-      const pull=(.025+cur.r*.018)*(1+Math.sin(t*3+cur.h)*.6); prog-=pull*dt; tens=Math.max(0,tens-dt*.35); if(Math.random()<dt*cur.r*.3) shake=.4;
+      if(lastA!=null&&rr>18){ let da=a-lastA; da=Math.atan2(Math.sin(da),Math.cos(da)); const g=Math.abs(da); prog+=g*.035/(1+cur.r*.22); tens=Math.min(1.2,tens+g*.02); if(g>.05&&Math.random()<.3) AU.tone(300+prog*400,.02,'sine',.03); } lastA=a;
+      const pull=(.025+cur.r*.011)*(1+Math.sin(t*3+cur.h)*.6); prog-=pull*dt; tens=Math.max(0,tens-dt*.35); if(Math.random()<dt*cur.r*.3) shake=.4;
       if(look>.75){ prog-=dt*.15; }
       hint.innerHTML=`<div class="fshMeter"><span>${L('まきとり','Reel')}</span><i style="width:${Math.max(0,Math.min(1,prog))*100}%"></i></div><div class="fshMeter t"><span>${L('糸の強さ','Tension')}</span><i style="width:${Math.min(1,tens)*100}%;background:${tens>.95?'#ef4444':tens>.7?'#f59e0b':'#22c55e'}"></i></div><div class="sub">${L('くるくる回して巻く・回しすぎると糸が切れます','Spin to reel — not too fast!')}</div>`;
       if(tens>=1.15){ st='idle'; say(L('糸が切れた！','Line snapped!')); AU.tone(120,.3,'sawtooth',.08); cur=null; } else if(prog<=0){ st='idle'; say(L('にげられた…','It got away…')); cur=null; } else if(prog>=1){ caught(); } }
     if(st==='caught') hint.innerHTML=''; hint.style.display=hint.innerHTML?'':'none';
     if(msgT>0){ msgT-=dt; x.fillStyle=`rgba(0,0,0,${Math.min(.5,msgT)})`; x.font=`900 ${36*k}px system-ui`; x.textAlign='center'; const tw=x.measureText(msg).width; x.fillRect(W/2-tw/2-20*k,H*.18-36*k,tw+40*k,54*k); x.fillStyle=`rgba(255,255,255,${Math.min(1,msgT*2)})`; x.fillText(msg,W/2,H*.18); }
     ov.classList.toggle('shaking',shake>0); };
-  const caught=()=>{ st='caught'; const f=cur; const cm=Math.round(f.cm*(.55+Math.pow(Math.random(),1.6)*.95)*10)/10; const {isNew,rec}=FBOOK.add(f,cm); total++; const R=RARE[f.r]; if(typeof COIN!=='undefined') COIN.add(R[3]*(isNew?2:1),L('つり','Fishing')); if(typeof ACHS!=='undefined') ACHS.bump('fish');
+  const caught=()=>{ st='caught'; const f=cur; const cm=Math.round(f.cm*(.55+Math.pow(Math.random(),1.6)*.95)*10)/10; const {isNew,rec}=FBOOK.add(f,cm); total++; STORE.set('fishPity',f.r===5?0:STORE.get('fishPity',0)+1); drawTop(); const R=RARE[f.r]; if(typeof COIN!=='undefined') COIN.add(R[3]*(isNew?2:1),L('つり','Fishing')); if(typeof ACHS!=='undefined') ACHS.bump('fish');
     [523,659,784,1046].forEach((fr,i)=>setTimeout(()=>AU.tone(fr,.12,'triangle',.08),i*100)); if(f.r>=4) setTimeout(()=>[784,988,1175,1568].forEach((fr,i)=>setTimeout(()=>AU.tone(fr,.15,'triangle',.08),i*110)),500);
     const card=h('div','fshCard r'+f.r); card.innerHTML=`${isNew?`<div class="fshNew">${L('新しい魚！','New species!')}</div>`:''}<div class="fshStars" style="color:${R[2]}">${'★'.repeat(f.r)}${'☆'.repeat(5-f.r)}</div>`; card.appendChild(fishThumb(f,false,360));
     card.appendChild(h('div','',`<h2>${esc(L(f.name,f.en))}</h2><div class="fshSize">${cm} cm${rec&&!isNew?` <span>${L('自己ベスト！','Personal best!')}</span>`:''}</div><div class="sub">${esc(L(R[0],R[1]))} ・ ${esc(L(SPOTS.find(s=>s[0]===f.sp)[1],SPOTS.find(s=>s[0]===f.sp)[2]))} ・ No.${String(f.id+1).padStart(3,'0')} ・ ${L('コイン','Coins')} +${R[3]*(isNew?2:1)}</div>`));
