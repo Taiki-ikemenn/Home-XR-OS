@@ -709,7 +709,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.10.3';
+const APP_VERSION='5.10.4';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -3482,7 +3482,11 @@ ENVPAINT.photo=(g,W,H,X)=>{
 const IDB={db:null, open(){ return this.db||(this.db=new Promise((ok,ng)=>{ try{ const q=indexedDB.open('homexr',1); q.onupgradeneeded=()=>q.result.createObjectStore('kv'); q.onsuccess=()=>ok(q.result); q.onerror=()=>ng(q.error); }catch(e){ ng(e); } })); },
   async get(k){ const db=await this.open(); return new Promise((ok,ng)=>{ const t=db.transaction('kv').objectStore('kv').get(k); t.onsuccess=()=>ok(t.result); t.onerror=()=>ng(t.error); }); },
   async set(k,v){ const db=await this.open(); return new Promise((ok,ng)=>{ const t=db.transaction('kv','readwrite'); t.objectStore('kv').put(v,k); t.oncomplete=()=>ok(); t.onerror=()=>ng(t.error); }); } };
-function loadWallImg(blob){ return new Promise((ok,ng)=>{ const im=new Image(); im.onload=()=>ok(im); im.onerror=ng; im.src=URL.createObjectURL(blob); }); }
+function loadWallImg(blob){ return new Promise((ok,ng)=>{ const im=new Image(); const u=URL.createObjectURL(blob); im.onload=()=>{ URL.revokeObjectURL(u);
+    // iPad・スマホはメモリが少ないので、景色の写真を小さくしてから使う（元の大きな画像はすぐ手放す）
+    const mx=Math.max(im.naturalWidth,im.naturalHeight), lim=MOBDEV?4096:8192; if(mx<=lim){ ok(im); return; }
+    const k=lim/mx, c=document.createElement('canvas'); c.width=Math.round(im.naturalWidth*k); c.height=Math.round(im.naturalHeight*k); const g=c.getContext('2d'); if(!g){ ok(im); return; } g.drawImage(im,0,0,c.width,c.height); c.naturalWidth=c.width; c.naturalHeight=c.height; im.src=''; ok(c); };
+  im.onerror=e=>{ URL.revokeObjectURL(u); ng(e); }; im.src=u; }); }
 async function setWallpaper(file,mode){
   try{ const im=await loadWallImg(file); const m=mode||(Math.abs(im.naturalWidth/im.naturalHeight-2)<.12?'360':'photo');
     // 大きすぎる写真は縮める

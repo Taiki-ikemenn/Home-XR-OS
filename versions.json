@@ -1,6 +1,12 @@
 {
- "latest": "5.10.3",
+ "latest": "5.10.4",
  "versions": [
+  {
+   "v": "5.10.4",
+   "date": "2026-11-22",
+   "notes_ja": "iPad・スマホで景色を写真にしているときに使うメモリを減らしました。大きな写真は自動で小さくしてから使い、元の画像はすぐに手放します。何回か開き直さないと表示されないことが減ります。",
+   "notes_en": "Lower memory use for photo backgrounds on iPad/phones."
+  },
   {
    "v": "5.10.3",
    "date": "2026-11-22",
