@@ -782,7 +782,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='5.11.19';
+const APP_VERSION='5.11.20';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9029,6 +9029,53 @@ regApp('bowling',{name:'ボウリング',en:'Bowling',g:'circle-dot',bg:G1+'#f97
   setInterval(()=>{ if(A.alive&&(phase==='pow'||phase==='spin')){ const m=ctl.querySelector('.bwMeter i'); if(m){ if(phase==='pow') m.style.width=pow*100+'%'; else m.style.left=(50+spin*45)+'%'; } } },50);
   window.__bw=()=>({b,px,ang,pow,spin,phase}); cam.position.set(0,1.1,1.6); reset(); }});
 INST6('bowling');
+// ---------- ミニゴルフ ----------
+const GOLF=[ {par:2,poly:[[-.7,3],[.7,3],[.7,-3],[-.7,-3]],s:[0,2.4],hole:[0,-2.4]},
+  {par:3,poly:[[-.7,3],[.7,3],[.7,-1.6],[3.4,-1.6],[3.4,-3],[-.7,-3]],s:[0,2.4],hole:[2.8,-2.3]},
+  {par:3,poly:[[-1.4,3],[1.4,3],[1.4,-3],[-1.4,-3]],s:[0,2.5],hole:[0,-2.5],bump:[[-.6,.6,.22],[.6,.6,.22],[0,-.4,.25],[-.9,-1.2,.18],[.9,-1.2,.18]]},
+  {par:3,poly:[[-.9,3.2],[.9,3.2],[.9,-3.2],[-.9,-3.2]],s:[0,2.6],hole:[0,-2.7],mill:[0,0,.75,1.6]},
+  {par:3,poly:[[-1.6,3],[1.6,3],[1.6,-3],[-1.6,-3]],s:[-1.1,2.5],hole:[1.1,-2.5],sand:[[0,0,.8]],wall:[[-1.6,1,.6,1],[-.6,-1,1.6,-1]]},
+  {par:4,poly:[[-2,3.2],[2,3.2],[2,-3.2],[-2,-3.2]],s:[-1.5,2.7],hole:[1.5,-2.7],water:[[-.2,.9,1.2,.4],[.3,-.9,1.2,.4]],bump:[[1.3,0,.2],[-1.3,0,.2]]} ];
+regApp('minigolf',{name:'ミニゴルフ',en:'Mini Golf',g:'flag',bg:G1+'#4ade80,#166534)',cat:'game',w:1000,h:720,desc:'3Dのミニゴルフ6ホール。ボールを引っぱって放すと打てます。バンパー・回る風車・砂・池があります。パーより少ない打数をめざそう！',den:'6-hole 3D mini golf. Pull back and release to putt.',
+ async impl(body,w){ const A=await sport3D(body,w,{bg:0x7dd3fc,fov:50}); if(!A) return; const {T,sc,cam,top,ctl}=A; const BR=.045;
+  { const gnd=new T.Mesh(new T.PlaneGeometry(80,80),A.mat(0x65a30d)); gnd.rotation.x=-Math.PI/2; gnd.position.y=-.05; gnd.receiveShadow=true; sc.add(gnd); }
+  let hi=0, cards=[], strokes=0, grp=null, segs=[], ball={x:0,z:0,vx:0,vz:0}, aim=null, mill=null, millA=0, inHole=false, last={x:0,z:0}, msg='';
+  const bm=new T.Mesh(new T.SphereGeometry(BR,24,16),A.mat(0xffffff,{roughness:.3})); bm.castShadow=true; sc.add(bm);
+  const arrow=new T.Mesh(new T.BoxGeometry(.03,.01,1),new T.MeshBasicMaterial({color:0xfacc15})); sc.add(arrow); const ring=new T.Mesh(new T.RingGeometry(.06,.08,24),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.6})); ring.rotation.x=-Math.PI/2; sc.add(ring);
+  const build=()=>{ if(grp){ sc.remove(grp); grp.traverse(o=>{ o.geometry&&o.geometry.dispose(); }); } grp=new T.Group(); sc.add(grp); const H=GOLF[hi]; segs=[];
+    const sh=new T.Shape(); H.poly.forEach(([x,z],i)=>i?sh.lineTo(x,-z):sh.moveTo(x,-z)); const fl=new T.Mesh(new T.ShapeGeometry(sh),A.mat(0x16a34a,{roughness:.9})); fl.rotation.x=-Math.PI/2; fl.receiveShadow=true; grp.add(fl);
+    const wall=(x1,z1,x2,z2)=>{ segs.push([x1,z1,x2,z2]); const l=Math.hypot(x2-x1,z2-z1); const m=new T.Mesh(new T.BoxGeometry(l+.08,.12,.08),A.mat(0xa16207)); m.position.set((x1+x2)/2,.06,(z1+z2)/2); m.rotation.y=-Math.atan2(z2-z1,x2-x1); m.castShadow=m.receiveShadow=true; grp.add(m); };
+    H.poly.forEach((p,i)=>{ const q=H.poly[(i+1)%H.poly.length]; wall(p[0],p[1],q[0],q[1]); }); (H.wall||[]).forEach(s=>wall(...s));
+    (H.bump||[]).forEach(([x,z,r])=>{ const m=new T.Mesh(new T.CylinderGeometry(r,r,.14,24),A.mat(0xef4444,{roughness:.4})); m.position.set(x,.07,z); m.castShadow=true; grp.add(m); });
+    (H.sand||[]).forEach(([x,z,r])=>{ const m=new T.Mesh(new T.CircleGeometry(r,32),A.mat(0xfde68a,{roughness:1})); m.rotation.x=-Math.PI/2; m.position.set(x,.003,z); grp.add(m); });
+    (H.water||[]).forEach(([x,z,ww,hh])=>{ const m=new T.Mesh(new T.PlaneGeometry(ww,hh),A.mat(0x0ea5e9,{roughness:.1,metalness:.3})); m.rotation.x=-Math.PI/2; m.position.set(x,.004,z); grp.add(m); });
+    mill=null; if(H.mill){ const [x,z,len]=H.mill; const base=new T.Mesh(new T.CylinderGeometry(.08,.08,.3,16),A.mat(0x7c3aed)); base.position.set(x,.15,z); grp.add(base); const bar=new T.Mesh(new T.BoxGeometry(len*2,.1,.07),A.mat(0xf472b6)); bar.position.set(x,.08,z); bar.castShadow=true; grp.add(bar); mill={bar,x,z,len,sp:H.mill[3]}; }
+    const hole=new T.Mesh(new T.CircleGeometry(.075,24),new T.MeshBasicMaterial({color:0x020617})); hole.rotation.x=-Math.PI/2; hole.position.set(H.hole[0],.005,H.hole[1]); grp.add(hole);
+    const pole=new T.Mesh(new T.CylinderGeometry(.008,.008,.7),A.mat(0xe5e7eb)); pole.position.set(H.hole[0],.35,H.hole[1]); grp.add(pole); const flg=new T.Mesh(new T.PlaneGeometry(.22,.14),new T.MeshBasicMaterial({map:txtTex(T,String(hi+1),{w:128,h:80,bg:'#ef4444',fg:'#fff',font:'900 60px system-ui'}),side:T.DoubleSide})); flg.position.set(H.hole[0]+.11,.62,H.hole[1]); grp.add(flg);
+    ball={x:H.s[0],z:H.s[1],vx:0,vz:0}; last={...ball}; strokes=0; inHole=false; draw(); };
+  const moving=()=>Math.hypot(ball.vx,ball.vz)>.02;
+  const toWorld=(nx,ny)=>{ const rc=new T.Raycaster(); rc.setFromCamera(A.ndc(nx,ny),cam); const p=new T.Vector3(); return rc.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),0),p)?p:null; };
+  A.onDown=(nx,ny)=>{ if(inHole||moving()) return; const p=toWorld(nx,ny); if(p) aim={sx:p.x,sz:p.z,dx:0,dz:0}; };
+  A.onMove=(nx,ny)=>{ if(!aim) return; const p=toWorld(nx,ny); if(p){ aim.dx=aim.sx-p.x; aim.dz=aim.sz-p.z; } };
+  A.onUp=()=>{ if(!aim) return; const d=Math.min(1.6,Math.hypot(aim.dx,aim.dz)); if(d>.05){ const a=Math.atan2(aim.dz,aim.dx); const sp=d*3.2; ball.vx=Math.cos(a)*sp; ball.vz=Math.sin(a)*sp; last={x:ball.x,z:ball.z}; strokes++; AU.tone(500+d*200,.05,'triangle',.07); draw(); } aim=null; };
+  const H0=()=>GOLF[hi];
+  const sinkDone=()=>{ cards[hi]=strokes; const par=H0().par, d=strokes-par; msg=strokes===1?L('ホールインワン！','HOLE IN ONE!'):[L('イーグル！','Eagle!'),L('バーディー！','Birdie!'),L('パー','Par'),L('ボギー','Bogey')][Math.max(0,Math.min(3,d+2))]||L(`+${d}`,`+${d}`); toastW(msg); [523,659,784,1046].forEach((f,i)=>setTimeout(()=>AU.tone(f,.1,'triangle',.08),i*90));
+    setTimeout(()=>{ if(!A.alive) return; if(hi<GOLF.length-1){ hi++; build(); } else { const tot=cards.reduce((a,b)=>a+b,0), par=GOLF.reduce((a,g)=>a+g.par,0); gWin('minigolf',Math.max(1,100-(tot-par)*10)); msg=L(`全${GOLF.length}ホール終了！ ${tot}打（パー${par}）`,`Finished! ${tot} strokes (par ${par})`); draw(true); } },1600); };
+  A.frame=dt=>{ const H=H0(); if(mill){ millA+=dt*mill.sp; mill.bar.rotation.y=millA; }
+    if(!inHole){ const n=6; for(let k=0;k<n;k++){ const d=dt/n; const sp=Math.hypot(ball.vx,ball.vz); if(sp<.02){ ball.vx=ball.vz=0; break; }
+        let fr=1.1; (H.sand||[]).forEach(([x,z,r])=>{ if(Math.hypot(ball.x-x,ball.z-z)<r) fr=5; }); const ns=Math.max(0,sp-fr*d); ball.vx*=ns/sp; ball.vz*=ns/sp; ball.x+=ball.vx*d; ball.z+=ball.vz*d;
+        for(const [x1,z1,x2,z2] of segs){ const ex=x2-x1, ez=z2-z1, L2=ex*ex+ez*ez; let t=((ball.x-x1)*ex+(ball.z-z1)*ez)/L2; t=Math.max(0,Math.min(1,t)); const cx=x1+ex*t, cz=z1+ez*t, dx=ball.x-cx, dz=ball.z-cz, dd=Math.hypot(dx,dz); if(dd<BR+.04&&dd>0){ const nx=dx/dd, nz=dz/dd, vn=ball.vx*nx+ball.vz*nz; if(vn<0){ ball.vx-=1.8*vn*nx; ball.vz-=1.8*vn*nz; AU.tone(300,.02,'square',.03); } ball.x=cx+nx*(BR+.04); ball.z=cz+nz*(BR+.04); } }
+        (H.bump||[]).forEach(([x,z,r])=>{ const dx=ball.x-x, dz=ball.z-z, dd=Math.hypot(dx,dz); if(dd<r+BR){ const nx=dx/dd, nz=dz/dd, vn=ball.vx*nx+ball.vz*nz; if(vn<0){ ball.vx-=2.2*vn*nx; ball.vz-=2.2*vn*nz; AU.tone(700,.04,'triangle',.05); } ball.x=x+nx*(r+BR); ball.z=z+nz*(r+BR); } });
+        if(mill){ const ca=Math.cos(millA), sa=-Math.sin(millA); const rx=ball.x-mill.x, rz=ball.z-mill.z; const along=rx*ca+rz*sa, perp=-rx*sa+rz*ca; if(Math.abs(along)<mill.len&&Math.abs(perp)<BR+.035){ const s=Math.sign(perp)||1; const nx=-sa*s, nz=ca*s; ball.x=mill.x+along*ca-sa*s*(BR+.04)*1; ball.z=mill.z+along*sa+ca*s*(BR+.04); const push=mill.sp*Math.abs(along)*.9; ball.vx=nx*Math.max(push,Math.abs(ball.vx*nx+ball.vz*nz)); ball.vz=nz*Math.max(push,Math.abs(ball.vx*nx+ball.vz*nz)); AU.tone(250,.03,'square',.03); } }
+        const hd=Math.hypot(ball.x-H.hole[0],ball.z-H.hole[1]); if(hd<.07&&Math.hypot(ball.vx,ball.vz)<1.6){ inHole=true; ball.vx=ball.vz=0; ball.x=H.hole[0]; ball.z=H.hole[1]; sinkDone(); break; } else if(hd<.1){ const pull=.8*d; ball.vx+=(H.hole[0]-ball.x)*pull*8; ball.vz+=(H.hole[1]-ball.z)*pull*8; }
+        if((H.water||[]).some(([x,z,ww,hh])=>Math.abs(ball.x-x)<ww/2&&Math.abs(ball.z-z)<hh/2)){ ball={x:last.x,z:last.z,vx:0,vz:0}; strokes++; toastW(L('池ポチャ！1打プラス','Splash! +1 stroke')); AU.noise(.3,.12,800); break; } } }
+    bm.position.set(ball.x,inHole?-.03:BR,ball.z); ring.position.set(ball.x,.006,ball.z); ring.visible=!moving()&&!inHole;
+    if(aim){ const d=Math.min(1.6,Math.hypot(aim.dx,aim.dz)); const a=Math.atan2(aim.dz,aim.dx); arrow.visible=d>.05; arrow.scale.z=d*.7; arrow.position.set(ball.x+Math.cos(a)*d*.35,.03,ball.z+Math.sin(a)*d*.35); arrow.rotation.y=-a+Math.PI/2; arrow.material.color.setHSL(.33-d/1.6*.33,1,.5); } else arrow.visible=false;
+    const ty=new T.Vector3(ball.x*.5,0,ball.z*.4+0); cam.position.lerp(new T.Vector3(ball.x*.4,3.6,ball.z+3.4),Math.min(1,dt*2)); cam.lookAt(ty.x,0,ball.z-.6); };
+  const draw=(fin)=>{ const par=GOLF.reduce((a,g)=>a+g.par,0); top.innerHTML=gTop([[L('ホール','Hole'),`${hi+1}/${GOLF.length}`],[L('パー','Par'),H0().par],[L('打数','Strokes'),strokes],[L('合計','Total'),cards.reduce((a,b)=>a+(b||0),0)+(fin?'':`（${L('パー','par')}${par}）`)]]);
+    ctl.innerHTML=''; ctl.append(h('span','sub',fin?msg:L('ボールの近くから、打ちたい方向と反対に引っぱって放します','Pull back from the ball and release')),btn(IC('rotate-ccw')+L('最初から','Restart'),()=>{ hi=0; cards=[]; build(); })); };
+  window.__gf=()=>({ball,inHole,n:grp.children.length,cam:cam.position.toArray().map(v=>+v.toFixed(2))}); cam.position.set(0,3.6,6); build(); }});
+INST6('minigolf');
 
 </script>
 </body>
