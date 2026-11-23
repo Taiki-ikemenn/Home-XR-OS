@@ -838,7 +838,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='6.1.0';
+const APP_VERSION='6.1.1';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -4199,7 +4199,7 @@ function w3Mesh(o){ if(o.t==='item'&&typeof w3ItemMesh==='function') return w3It
   else if(o.t==='cone') m=new T.Mesh(new T.ConeGeometry(.5,1,28),mat());
   else if(o.t==='panel') m=new T.Mesh(new T.BoxGeometry(1,1,.06),mat());
   else if(o.t==='stairs'){ m=new T.Group(); for(let i=0;i<4;i++){ const st=new T.Mesh(new T.BoxGeometry(1,.25*(i+1),.25),mat()); st.position.set(0,.125*(i+1)-.5,.375-i*.25); m.add(st); } }
-  else if(o.t==='text'){ m=new T.Mesh(new T.PlaneGeometry(1,.25),new T.MeshBasicMaterial({map:w3TextTex(T,o.txt||'',okCol(o.c),'rgba(0,0,0,.45)'),transparent:true,side:T.DoubleSide})); }
+  else if(o.t==='text'){ const tx=w3TextTex(T,o.txt||'',okCol(o.c),'rgba(0,0,0,.45)'), g=new T.PlaneGeometry(1,.25); m=new T.Mesh(g,new T.MeshBasicMaterial({map:tx,transparent:true})); const bk=new T.Mesh(g,new T.MeshBasicMaterial({map:tx,transparent:true})); bk.rotation.y=Math.PI; m.add(bk); /* うらから見ても文字が反対にならない */ }
   else if(o.t==='tree'){ m=new T.Group(); const tr=new T.Mesh(new T.CylinderGeometry(.15,.2,1.2,10),new T.MeshStandardMaterial({color:0x7c4a1e,roughness:.9})); tr.position.y=.6; m.add(tr); for(let i=0;i<3;i++){ const c=new T.Mesh(new T.ConeGeometry(.9-i*.2,1.1,12),mat()); c.position.y=1.4+i*.55; m.add(c); } }
   else if(o.t==='light'){ m=new T.Group(); const l=new T.PointLight(col,30,18); m.add(l); const b=new T.Mesh(new T.SphereGeometry(.15,12,8),new T.MeshBasicMaterial({color:col})); b.userData.editOnly=1; m.add(b); }
   else m=new T.Mesh(new T.BoxGeometry(1,1,1),mat());
@@ -9941,6 +9941,24 @@ regApp('osplus',{name:'カスタマイズ',en:'Customize',g:'palette',bg:G1+'#a7
   draw(); }});
 if(/[?&]unlock=1/.test(location.search)) OS6.set({pin:''});
 INST6('osplus');
+
+/* ================= 公式ワールドの物の向きを自動でととのえる ================= */
+// アイテムは「前」が -z 向き。いす・ソファ・テレビ・雪だるまなどが、変な向き（うしろ向き・かべ向き）にならないように直す
+const ORI={ SEAT:['chair','sofa','bench','beanbag'], TABLE:['table','desk'], SCREEN:['tv','laptop','piano','console','microwave','speaker','xylophone','drum'], WALL:['bookshelf','wardrobe','fridge','mirror','frame','washer','chest','clock','neon'], FACE:['snowman','teddy','duck','trophy','present','treasure'] };
+function oriFix(d){ if(!d||!Array.isArray(d.objs)) return d; const fam=o=>o.t==='item'&&o.item?String(o.item).split('_')[0]:null; const items=d.objs.filter(o=>fam(o)); if(!items.length) return d;
+  const sp=d.spawn||[0,0,8]; const P=o=>({x:o.p[0],z:o.p[2]}); const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z); const face=(o,t)=>{ const dx=t.x-o.p[0], dz=t.z-o.p[2]; if(Math.hypot(dx,dz)<.05) return; o.r=[o.r[0]||0,Math.round(Math.atan2(-dx,-dz)*180/Math.PI),o.r[2]||0]; };
+  const of=g=>items.filter(o=>ORI[g].includes(fam(o))); const near=(o,list,max)=>{ let b=null, bd=max; list.forEach(q=>{ if(q===o) return; const dd=dist(P(o),P(q)); if(dd<bd){ bd=dd; b=q; } }); return b; };
+  const walls=d.objs.filter(o=>o.t==='box'&&o.solid!==0&&o.s&&o.s[1]>=1.4&&(Math.min(o.s[0],o.s[2])<=.7)&&(Math.max(o.s[0],o.s[2])>=1.6)&&!(o.r&&o.r[1]%180));
+  const wallAway=o=>{ let best=null, bd=1.4; for(const wl of walls){ const thinX=wl.s[0]<wl.s[2]; const along=thinX?Math.abs(o.p[2]-wl.p[2])<=wl.s[2]/2+.3:Math.abs(o.p[0]-wl.p[0])<=wl.s[0]/2+.3; if(!along) continue; const dd=thinX?Math.abs(o.p[0]-wl.p[0])-wl.s[0]/2:Math.abs(o.p[2]-wl.p[2])-wl.s[2]/2; if(dd<bd&&Math.abs(o.p[1]-wl.p[1])<wl.s[1]){ bd=dd; best={x:thinX?o.p[0]+(o.p[0]-wl.p[0]):o.p[0],z:thinX?o.p[2]:o.p[2]+(o.p[2]-wl.p[2])}; } } return best; };
+  const sx={x:sp[0],z:sp[2]}; const cen=(()=>{ let x=0,z=0; items.forEach(o=>{ x+=o.p[0]; z+=o.p[2]; }); return {x:x/items.length,z:z/items.length}; })();
+  const seats=of('SEAT'), tables=of('TABLE'), screens=of('SCREEN');
+  seats.forEach(o=>{ const f=fam(o); let t=null; if(f==='sofa'||f==='beanbag'){ const tv=near(o,screens.filter(q=>fam(q)==='tv'),7); t=tv||near(o,tables,2.6); } else t=near(o,tables,f==='bench'?1.8:1.7);
+    if(t){ face(o,P(t)); return; } const w=wallAway(o); if(w){ face(o,w); return; } if(f==='bench'){ const others=seats.filter(q=>fam(q)==='bench'); if(others.length>=3){ face(o,cen); return; } face(o,sx); } });
+  screens.forEach(o=>{ const s2=near(o,seats,7); if(s2&&fam(o)!=='piano'){ face(o,P(s2)); return; } const w=wallAway(o); if(w){ face(o,w); return; } if(o.p[1]>.3){ const tb=near(o,tables,.9); if(tb){ const c=near(tb,seats,2); if(c){ face(o,P(c)); return; } } } face(o,sx); });
+  of('WALL').forEach(o=>{ const w=wallAway(o); face(o,w||sx); });
+  of('FACE').forEach(o=>face(o,sx));
+  return d; }
+(function(){ if(typeof SWLIST==='undefined') return; SWLIST.forEach(s=>{ if(s._ori) return; const f=s.f; s.f=(...a)=>oriFix(f(...a)); s._ori=1; }); })();
 
 </script>
 </body>
