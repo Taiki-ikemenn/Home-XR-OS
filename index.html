@@ -752,6 +752,15 @@ html.mob .vp *,html.lite *{-webkit-backdrop-filter:none!important;backdrop-filte
 .bpScript{flex:1;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}.bpHead{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.bpList{flex:1;overflow:auto;display:flex;flex-direction:column;gap:4px;padding:4px}.bpHat{align-self:flex-start;background:#eab308;color:#111;font-weight:800;padding:8px 14px;border-radius:16px 16px 8px 8px;display:flex;gap:6px;align-items:center;cursor:pointer}.bpTools{display:flex;gap:6px;flex-wrap:wrap}
 .bpRight{width:500px;padding:10px;display:flex;flex-direction:column;gap:8px;border-left:1px solid var(--line)}.bpStage{width:480px;height:360px;border-radius:12px}.bpCtl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .msStage{position:relative;width:min(900px,96%);height:min(52vh,500px);border-radius:16px;overflow:hidden;background:#111}.msStage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.msOv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#todTint{position:absolute;inset:0;pointer-events:none;z-index:5;transition:background 2s;mix-blend-mode:multiply}
+#os6Boot{position:fixed;inset:0;z-index:2147483500;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;transition:opacity .6s}#os6Boot.out{opacity:0}#os6Boot b{font:900 40px system-ui;letter-spacing:.06em;animation:bootT 1.2s .3s backwards}#os6Boot small{opacity:.5}@keyframes bootT{from{opacity:0;transform:translateY(12px);letter-spacing:.4em}}
+.bLogo{position:relative;width:110px;height:110px}.bLogo i{position:absolute;inset:0;border-radius:50%;border:6px solid transparent;border-top-color:#38bdf8;animation:bootR 1.4s cubic-bezier(.5,0,.3,1) infinite}.bLogo i:nth-child(2){inset:14px;border-top-color:#a78bfa;animation-delay:.12s}.bLogo i:nth-child(3){inset:28px;border-top-color:#f472b6;animation-delay:.24s}@keyframes bootR{to{transform:rotate(360deg)}}
+#os6Lock{position:fixed;inset:0;z-index:2147483400;background:linear-gradient(160deg,rgba(15,23,42,.72),rgba(30,27,75,.85));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;transition:opacity .4s,transform .4s}#os6Lock.out{opacity:0;transform:translateY(-40px)}
+.lkTime{font:200 110px/1 system-ui;letter-spacing:-.02em}.lkDate{font-size:22px;opacity:.85}.lkNoti{display:flex;flex-direction:column;gap:6px;width:min(420px,90vw);margin:10px 0}.lkNoti div{background:rgba(255,255,255,.12);border-radius:16px;padding:8px 14px;display:flex;flex-direction:column}.lkNoti span{font-size:13px;opacity:.8}
+.lkPin{display:flex;gap:14px}.lkPin i{width:16px;height:16px;border-radius:50%;border:2px solid #fff}.lkPin i.on{background:#fff}.lkPin.ng{animation:gshake .3s 2}.lkPad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;margin-top:10px}.lkPad button{height:72px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font:600 28px system-ui;cursor:pointer}.lkPad button:empty{visibility:hidden}.lkOpen{margin-top:30px;border:0;border-radius:999px;padding:14px 30px;background:rgba(255,255,255,.18);color:#fff;font:700 18px system-ui;cursor:pointer;animation:gpl 1s infinite alternate}
+.osWrap{display:flex;flex-direction:column;gap:10px}.osWrap h3{margin:8px 0 0}.osThemes{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}.osTh{display:flex;flex-direction:column;align-items:center;gap:6px;border:2px solid transparent;border-radius:16px;padding:8px;background:rgba(255,255,255,.05);color:inherit;font:inherit;cursor:pointer}.osTh.on{border-color:var(--acc)}.osTh i{display:block;width:100%;height:60px;border-radius:12px;border:2px solid;position:relative}.osTh em{position:absolute;right:8px;bottom:8px;width:22px;height:22px;border-radius:50%}
+.osDockCur,.osDockAll{display:flex;flex-wrap:wrap;gap:6px}.osDockAll{max-height:42vh;overflow:auto}.osDA{display:flex;flex-direction:column;align-items:center;gap:4px;width:86px;padding:8px 4px;border:2px solid transparent;border-radius:14px;background:rgba(255,255,255,.05);color:inherit;font:inherit;font-size:11px;cursor:pointer}.osDA.on{border-color:var(--acc)}.osDA .appIcon,.osDA>div:first-child{width:46px;height:46px}
+.dock .dFav .appIcon,.dock .dFav>div:first-child{width:40px;height:40px;border-radius:12px}
 .offBadge{display:inline-flex;align-items:center;gap:4px;background:#1d4ed8;color:#fff;font-size:12px;font-weight:800;padding:3px 9px 3px 6px;border-radius:999px}
 .offBadge svg,.offBy svg{width:14px;height:14px}
 .offBy{display:flex;align-items:center;gap:4px;color:#93c5fd;margin-top:2px}
@@ -829,7 +838,7 @@ setTimeout(function(){ if(window.__BOOTED) return; var d=document.createElement(
 </script>
 <script>
 'use strict';
-const APP_VERSION='6.0.1';
+const APP_VERSION='6.1.0';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
 const angDiff=(a,b)=>{const d=a-b; if(!isFinite(d)) return 0; return ((d%360)+540)%360-180;};
@@ -9882,6 +9891,56 @@ regApp('arpet',{name:'ARペット',en:'AR Pet',g:'paw-print',bg:G1+'#fdba74,#be1
     h('span','sub',L('ペットをタップでなでる・ほかの場所をタップでそこへ歩く','Tap the pet to pet it, tap elsewhere to walk'))); };
   draw(); }});
 INST6('arpet');
+
+/* ================= OSの機能追加（テーマ・時間の景色・ドック・ロック画面・起動・アカウント・バックアップ ほか） ================= */
+const OS6={ get(){ return {theme:'default',round:30,tod:true,boot:true,bootSnd:true,lock:false,pin:'',dock:[],...STORE.get('os6',{})}; }, set(p){ STORE.set('os6',{...OS6.get(),...p}); } };
+// ---------- テーマ ----------
+const THEMES=[['default','いつもの','Default','rgba(30,30,34,.95)','rgba(255,255,255,.1)','#4c8dff','rgba(28,28,30,.82)','#fff'],['light','ライト','Light','rgba(248,250,252,.96)','rgba(15,23,42,.12)','#2563eb','rgba(241,245,249,.9)','#0f172a'],['pastel','パステル','Pastel','rgba(253,242,248,.96)','rgba(190,24,93,.15)','#ec4899','rgba(252,231,243,.9)','#4a044e'],['neon','ネオン','Neon','rgba(10,6,30,.95)','rgba(34,211,238,.45)','#22d3ee','rgba(10,6,30,.88)','#e0f2fe'],['forest','森','Forest','rgba(20,40,28,.95)','rgba(134,239,172,.2)','#22c55e','rgba(20,40,28,.88)','#f0fdf4'],['ocean','海','Ocean','rgba(12,30,58,.95)','rgba(125,211,252,.22)','#38bdf8','rgba(12,30,58,.88)','#f0f9ff']];
+function applyTheme(){ const o=OS6.get(), t=THEMES.find(x=>x[0]===o.theme)||THEMES[0]; let st=$('os6Theme'); if(!st){ st=document.createElement('style'); st.id='os6Theme'; document.head.appendChild(st); }
+  const light=t[7]!=='#fff'&&!/^#[ef]/.test(t[7])&&['light','pastel'].includes(t[0]);
+  st.textContent=t[0]==='default'&&o.round===30?'':`:root{--glass:${t[3]};--line:${t[4]};--acc:${t[5]}}.dock{background:${t[6]}!important}.winBox{border-radius:${o.round}px!important}.mini{border-radius:${Math.max(8,o.round-2)}px!important}
+${light?`.winBox,.mini,.dock{color:${t[7]}}.winBox .sub,.mini .sub{color:rgba(15,23,42,.6)!important}.winTitle{color:${t[7]}}.dock .dbtn{color:${t[7]}}.winBox .btn:not(.pri){background:rgba(15,23,42,.08);color:${t[7]}}.winBox .seg{background:rgba(15,23,42,.08)}.winBox .seg button{color:${t[7]}}.winBox .seg button.on{background:#fff}.winBox .field{background:rgba(15,23,42,.06);color:${t[7]}}`:''}
+${t[0]==='neon'?`.winBox{box-shadow:0 0 0 1px #22d3ee,0 0 40px rgba(34,211,238,.45),0 0 90px rgba(217,70,239,.25)!important}.dock{box-shadow:0 0 0 1px #d946ef,0 0 30px rgba(217,70,239,.5)!important}`:''}`; }
+applyTheme();
+// ---------- 時間で変わる景色 ----------
+const TOD=()=>{ const hr=new Date().getHours()+new Date().getMinutes()/60; if(hr>=5&&hr<7) return ['dawn','rgba(251,146,60,.18)','朝焼け']; if(hr>=7&&hr<16) return ['day','rgba(0,0,0,0)','昼']; if(hr>=16&&hr<18.5) return ['eve','rgba(249,115,22,.22)','夕方']; return ['night','rgba(15,23,80,.38)','夜']; };
+function applyTod(){ let d=$('todTint'); if(!d){ d=document.createElement('div'); d.id='todTint'; $('vpE').appendChild(d); } const o=OS6.get(); const t=TOD(); d.style.background=o.tod?t[1]:'transparent'; d.dataset.t=o.tod?t[0]:''; }
+applyTod(); setInterval(applyTod,60000);
+// ---------- 起動アニメーション ----------
+function bootAnim(){ const o=OS6.get(); if(!o.boot) return; const d=document.createElement('div'); d.id='os6Boot'; d.innerHTML=`<div class="bLogo"><i></i><i></i><i></i></div><b>Home XR OS</b><small>v${APP_VERSION}</small>`; document.body.appendChild(d);
+  if(o.bootSnd){ try{ AU.init(); [392,523,659,784,1046].forEach((f,i)=>setTimeout(()=>AU.tone(f,.5,'sine',.06),i*140)); }catch(e){} } setTimeout(()=>d.classList.add('out'),1700); setTimeout(()=>d.remove(),2300); }
+(function(){ const s1=$('startBtn'), s2=$('startBtn2'); if(!s1) return; const w=b=>{ const f=b.onclick; b.onclick=e=>{ f&&f(e); bootAnim(); setTimeout(()=>lockShow(true),OS6.get().boot?2200:300); }; }; setTimeout(()=>{ w(s1); w(s2); },0); })();
+// ---------- ドックのカスタマイズ ----------
+function dockApply(){ const dk=DOCK&&DOCK.el; if(!dk) return; dk.querySelectorAll('.dbtn.dFav,.sep.dFavSep').forEach(e=>e.remove()); const favs=OS6.get().dock.filter(id=>APPS[id]); if(!favs.length) return;
+  const anchor=$('dQuick')||dk.lastChild; const sep=h('div','sep dFavSep'); dk.insertBefore(sep,anchor.previousSibling&&anchor.previousSibling.classList&&anchor.previousSibling.classList.contains('sep')?anchor.previousSibling:anchor);
+  favs.forEach(id=>{ const b=h('button','dbtn dFav'); b.appendChild(iconEl(id)); b.setAttribute('aria-label',APPS[id].name); b.onclick=()=>openApp(id); dk.insertBefore(b,sep); }); DOCK.place(); }
+setTimeout(dockApply,300);
+// ---------- ロック画面 ----------
+let LOCKED=false, lastAct=Date.now(); ['pointerdown','keydown'].forEach(ev=>addEventListener(ev,()=>lastAct=Date.now(),true)); FRAME.push(()=>{ if(S.pinch) lastAct=Date.now(); });
+function lockShow(first){ const o=OS6.get(); if(!o.lock||LOCKED) return; LOCKED=true; const d=document.createElement('div'); d.id='os6Lock'; let code='';
+  const draw=()=>{ const n=new Date(); const nt=(typeof NTF!=='undefined'?NTF.list():[]).filter(x=>!x.read).slice(0,3);
+    d.innerHTML=`<div class="lkTime">${two(n.getHours())}:${two(n.getMinutes())}</div><div class="lkDate">${n.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'long'})}</div><div class="lkNoti">${nt.map(x=>`<div><b>${esc(x.t)}</b><span>${esc(x.m)}</span></div>`).join('')}</div>${o.pin?`<div class="lkPin">${[0,1,2,3].map(i=>`<i class="${i<code.length?'on':''}"></i>`).join('')}</div><div class="lkPad">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div>`:`<button class="lkOpen">${L('タップしてひらく','Tap to unlock')}</button>`}`;
+    d.querySelectorAll('.lkPad button').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(k==='') return; if(k==='⌫') code=code.slice(0,-1); else if(code.length<4) code+=k; AU.tone(900,.03,'sine',.04); if(code.length===4){ if(code===o.pin){ open(); return; } AU.tone(160,.15,'sawtooth',.05); d.querySelector('.lkPin').classList.add('ng'); setTimeout(()=>{ code=''; draw(); },400); return; } draw(); });
+    const op=d.querySelector('.lkOpen'); if(op) op.onclick=open; };
+  const open=()=>{ LOCKED=false; clearInterval(iv); d.classList.add('out'); AU.tone(1046,.08,'triangle',.05); setTimeout(()=>d.remove(),400); lastAct=Date.now(); };
+  const iv=setInterval(draw,15000); draw(); document.body.appendChild(d); }
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) OS6._hid=Date.now(); else if(OS6._hid&&Date.now()-OS6._hid>5*60e3) lockShow(); });
+setInterval(()=>{ if(!$('start')&&Date.now()-lastAct>10*60e3) lockShow(); },30000);
+// ---------- カスタマイズ アプリ ----------
+regApp('osplus',{name:'カスタマイズ',en:'Customize',g:'palette',bg:G1+'#a78bfa,#0ea5e9)',cat:'tool',w:980,h:720,pin:1,desc:'テーマ・ウィンドウの角の丸さ・時間で変わる景色・ドックに入れるアプリ・ロック画面とパスコード・起動アニメーションを設定できます。',den:'Themes, time-of-day lighting, dock apps, lock screen and boot animation.',
+ impl(body){ const wrap=h('div','scroll pad osWrap'); body.appendChild(wrap); let tab='look';
+  const draw=()=>{ wrap.innerHTML=''; const o=OS6.get(); wrap.appendChild(gSeg([['look','見た目','Look'],['dock','ドック','Dock'],['lock','ロック画面','Lock'],['boot','起動','Boot']],tab,k=>{ tab=k; draw(); }));
+    if(tab==='look'){ wrap.appendChild(h('h3','',L('テーマ','Theme'))); const g=h('div','osThemes'); THEMES.forEach(t=>{ const b=h('button','osTh'+(o.theme===t[0]?' on':''),`<i style="background:${t[3]};border-color:${t[5]}"><em style="background:${t[5]}"></em></i><span>${L(t[1],t[2])}</span>`); b.onclick=()=>{ OS6.set({theme:t[0]}); applyTheme(); draw(); }; g.appendChild(b); }); wrap.appendChild(g);
+      wrap.appendChild(h('h3','',L('ウィンドウの角の丸さ','Corner roundness'))); wrap.appendChild(gSeg([[8,'四角め','Square'],[18,'少し丸い','Slight'],[30,'ふつう','Normal'],[44,'まんまる','Round']],o.round,k=>{ OS6.set({round:k}); applyTheme(); draw(); }));
+      wrap.appendChild(h('h3','',L('時間で変わる景色','Time-of-day lighting'))); const t=TOD(); wrap.appendChild(h('p','sub',L(`朝焼け（5〜7時）・昼・夕方（16〜18時半）・夜で、景色の色合いが自動で変わります。いまは「${t[2]}」です。`,'The scenery tint follows the time of day.'))); wrap.appendChild(qrow(L('時間で変える','Enable'),makeToggle(o.tod,v=>{ OS6.set({tod:v}); applyTod(); }))); }
+    if(tab==='dock'){ wrap.appendChild(h('p','sub',L('ドックに入れるアプリを4つまで選べます。もう一度押すと外れます。','Pick up to 4 apps for the dock.'))); const cur=h('div','osDockCur'); o.dock.forEach(id=>{ if(!APPS[id]) return; const b=h('button','osDA on'); b.append(iconEl(id),h('span','',esc(L(APPS[id].name,APPS[id].en||APPS[id].name)))); b.onclick=()=>{ OS6.set({dock:o.dock.filter(x=>x!==id)}); dockApply(); draw(); }; cur.appendChild(b); }); if(!o.dock.length) cur.appendChild(h('span','sub',L('まだ選んでいません','None yet'))); wrap.appendChild(cur);
+      const g=h('div','osDockAll'); INST.filter(i=>APPS[i]&&!o.dock.includes(i)).forEach(id=>{ const b=h('button','osDA'); b.append(iconEl(id),h('span','',esc(L(APPS[id].name,APPS[id].en||APPS[id].name)))); b.onclick=()=>{ if(o.dock.length>=4){ toastW(L('4つまでです','Up to 4')); return; } OS6.set({dock:[...o.dock,id]}); dockApply(); draw(); }; g.appendChild(b); }); wrap.appendChild(g); }
+    if(tab==='lock'){ wrap.appendChild(h('p','sub',L('起動したときと、10分さわらなかったとき・5分以上ほかのアプリにいたときに、ロック画面が出ます。','Shows at start, after 10 min idle, or after 5 min away.'))); wrap.appendChild(qrow(L('ロック画面を使う','Use lock screen'),makeToggle(o.lock,v=>{ OS6.set({lock:v}); draw(); })));
+      if(o.lock){ wrap.appendChild(qrow(L('パスコード（4けた）','Passcode'),h('span','',o.pin?'●●●●':L('なし','None')))); const r=h('div','row'); r.style.gap='8px'; const f=inputField(160,L('新しい4けた','New 4 digits'),{mode:'num'}); r.append(f,btn(L('設定','Set'),()=>{ const v=f.get().replace(/\D/g,''); if(v.length!==4){ toastW(L('4けたの数字にしてください','Use 4 digits')); return; } hideKB&&hideKB(); OS6.set({pin:v}); toastW(L('パスコードを設定しました','Passcode set')); draw(); },'pri'),btn(L('パスコードを消す','Remove'),()=>{ OS6.set({pin:''}); draw(); })); wrap.appendChild(r); wrap.appendChild(btn(IC('lock')+L('いますぐロック','Lock now'),()=>lockShow())); wrap.appendChild(h('p','sub',L('パスコードを忘れたときは、ページのアドレスの最後に ?unlock=1 をつけて開くと、パスコードが消えます。','Forgot it? Open with ?unlock=1 to clear.'))); } }
+    if(tab==='boot'){ wrap.appendChild(qrow(L('起動アニメーション','Boot animation'),makeToggle(o.boot,v=>OS6.set({boot:v})))); wrap.appendChild(qrow(L('起動音','Boot sound'),makeToggle(o.bootSnd,v=>OS6.set({bootSnd:v})))); wrap.appendChild(btn(IC('play')+L('ためしに見る','Preview'),bootAnim,'pri')); } };
+  draw(); }});
+if(/[?&]unlock=1/.test(location.search)) OS6.set({pin:''});
+INST6('osplus');
 
 </script>
 </body>
